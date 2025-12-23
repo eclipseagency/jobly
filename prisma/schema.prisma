@@ -11,28 +11,131 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
+// User role enumeration
+enum UserRole {
+  EMPLOYEE
+  EMPLOYER
+}
+
 // Multi-tenant architecture: Tenant/Organization model
 model Tenant {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logo        String?
+  website     String?
+  industry    String?
+  size        String?  // e.g., "1-10", "11-50", "51-200", "201-500", "500+"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   users User[]
+  jobs  Job[]
 
   @@map("tenants")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  role          UserRole
+  avatar        String?
+  phone         String?
+  bio           String?
+  location      String?
+
+  // Employee-specific fields
+  title         String?   // Job title (for employees)
+  skills        String[]  // Skills array (for employees)
+  resumeUrl     String?
+  linkedinUrl   String?
+  portfolioUrl  String?
+  yearsOfExp    Int?
+
+  // Common fields
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Auth fields
+  emailVerified DateTime?
+  lastLoginAt   DateTime?
+  isActive      Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  applications  Application[]
+  savedJobs     SavedJob[]
 
   @@index([tenantId])
+  @@index([role])
+  @@index([email])
   @@map("users")
+}
+
+model Job {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  requirements String?
+  location     String?
+  locationType String?  // "remote", "onsite", "hybrid"
+  salary       String?
+  jobType      String?  // "full-time", "part-time", "contract", "internship"
+  department   String?
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime?
+
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  applications Application[]
+  savedJobs    SavedJob[]
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("jobs")
+}
+
+model Application {
+  id          String   @id @default(cuid())
+  status      String   @default("pending") // pending, reviewing, interviewed, offered, rejected
+  coverLetter String?
+  resumeUrl   String?
+  notes       String?
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+  @@index([status])
+  @@map("applications")
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@map("saved_jobs")
 }
