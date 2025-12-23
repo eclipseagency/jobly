@@ -2,13 +2,13 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-lg md:text-xl shadow-lg shadow-primary-500/25">
                 J
               </div>
@@ -17,7 +17,7 @@ export default function Home() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
-              <Link href="/jobs" className="text-slate-600 hover:text-primary-600 font-medium transition-colors">
+              <Link href="/dashboard/jobs" className="text-slate-600 hover:text-primary-600 font-medium transition-colors">
                 Find Jobs
               </Link>
               <Link href="/auth/employer/login" className="text-slate-600 hover:text-primary-600 font-medium transition-colors">
@@ -29,7 +29,7 @@ export default function Home() {
             </div>
 
             {/* Auth Buttons */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-shrink-0">
               <Link
                 href="/auth"
                 className="hidden sm:inline-flex px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition-colors"
@@ -56,19 +56,21 @@ export default function Home() {
           <div className="absolute -bottom-24 right-1/3 w-80 h-80 bg-employer-100 rounded-full opacity-40 blur-3xl" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 md:pt-20 md:pb-32">
-          <div className="text-center max-w-4xl mx-auto">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 md:pt-20 md:pb-32">
+          <div className="w-full max-w-4xl mx-auto text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md border border-slate-100 mb-6 md:mb-8">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              <span className="text-sm text-slate-600 font-medium">Trusted by 10k+ Filipino professionals</span>
+            <div className="flex justify-center mb-6 md:mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md border border-slate-100">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span className="text-sm text-slate-600 font-medium">Trusted by 10k+ Filipino professionals</span>
+              </div>
             </div>
 
             {/* Heading */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-slate-800 mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-slate-800 mb-6 leading-tight px-2">
               Find your dream job in the{' '}
               <span className="bg-gradient-to-r from-primary-600 via-employee-500 to-employer-500 bg-clip-text text-transparent">
                 Philippines
@@ -77,13 +79,13 @@ export default function Home() {
             </h1>
 
             {/* Subheading */}
-            <p className="text-lg md:text-xl text-slate-600 mb-10 md:mb-12 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-slate-600 mb-10 md:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
               Connect with top employers, showcase your skills, and land the career you deserve.
               Join thousands of professionals today.
             </p>
 
             {/* Search Box */}
-            <div className="max-w-3xl mx-auto mb-10 md:mb-12">
+            <div className="w-full max-w-3xl mx-auto mb-10 md:mb-12 px-2">
               <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-3 md:p-4 border border-slate-100">
                 <div className="flex flex-col md:flex-row gap-3">
                   {/* Job Title Input */}
@@ -116,7 +118,7 @@ export default function Home() {
                   </div>
 
                   {/* Search Button */}
-                  <button className="w-full md:w-auto px-8 py-3 md:py-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold rounded-xl shadow-lg shadow-primary-600/25 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                  <button className="w-full md:w-auto px-8 py-3 md:py-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl shadow-lg shadow-primary-600/25 transition-all">
                     Search
                   </button>
                 </div>
@@ -124,7 +126,7 @@ export default function Home() {
             </div>
 
             {/* Feature Pills */}
-            <div className="flex flex-wrap justify-center gap-3 md:gap-4 mb-12 md:mb-16">
+            <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mb-10 md:mb-12 px-2">
               {[
                 { icon: '✓', text: 'Verified Employers', color: 'bg-green-50 text-green-700 border-green-200' },
                 { icon: '⚡', text: 'Smart Matching', color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -141,9 +143,9 @@ export default function Home() {
             </div>
 
             {/* Social Proof */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 md:gap-8">
+            <div className="flex flex-col items-center gap-6 md:gap-0 md:flex-row md:justify-center md:divide-x md:divide-slate-200 px-4">
               {/* Avatar Stack */}
-              <div className="flex items-center">
+              <div className="flex items-center md:pr-8">
                 <div className="flex -space-x-3">
                   {['bg-gradient-to-br from-pink-400 to-pink-600', 'bg-gradient-to-br from-blue-400 to-blue-600', 'bg-gradient-to-br from-green-400 to-green-600', 'bg-gradient-to-br from-yellow-400 to-yellow-600', 'bg-gradient-to-br from-purple-400 to-purple-600'].map((bg, i) => (
                     <div
@@ -154,7 +156,7 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <div className="ml-4">
+                <div className="ml-4 text-left">
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <svg key={star} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -166,35 +168,31 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Divider */}
-              <div className="hidden sm:block w-px h-12 bg-slate-200" />
-
               {/* Active Users */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 md:px-8">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-employee-500 to-employee-600 flex items-center justify-center text-white shadow-lg shadow-employee-500/25">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <div>
+                <div className="text-left">
                   <p className="text-2xl font-bold text-slate-800">10k+</p>
                   <p className="text-sm text-slate-500">Active Users</p>
                 </div>
               </div>
 
-              {/* Divider */}
-              <div className="hidden sm:block w-px h-12 bg-slate-200" />
-
               {/* Join CTA */}
-              <Link
-                href="/auth/employee/register"
-                className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors group"
-              >
-                Join the community
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Link>
+              <div className="md:pl-8">
+                <Link
+                  href="/auth/employee/register"
+                  className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors group"
+                >
+                  Join the community
+                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -202,7 +200,7 @@ export default function Home() {
 
       {/* How It Works Section */}
       <section className="py-16 md:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 mb-4">
@@ -238,7 +236,7 @@ export default function Home() {
                   </svg>
                 ),
                 gradient: 'from-employee-500 to-employee-600',
-                bgLight: 'bg-employee-50',
+                bgLight: 'bg-green-50',
               },
               {
                 step: '3',
@@ -250,15 +248,10 @@ export default function Home() {
                   </svg>
                 ),
                 gradient: 'from-employer-500 to-employer-600',
-                bgLight: 'bg-employer-50',
+                bgLight: 'bg-purple-50',
               },
             ].map((item, i) => (
               <div key={i} className="relative group">
-                {/* Connection Line (hidden on mobile) */}
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-slate-200 to-transparent" />
-                )}
-
                 <div className={`relative p-8 rounded-2xl ${item.bgLight} border border-slate-100 hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1`}>
                   {/* Step Number */}
                   <div className={`absolute -top-4 left-8 w-8 h-8 rounded-full bg-gradient-to-r ${item.gradient} text-white text-sm font-bold flex items-center justify-center shadow-lg`}>
@@ -282,7 +275,6 @@ export default function Home() {
 
       {/* Stats Section */}
       <section className="py-16 md:py-20 bg-gradient-to-r from-slate-800 to-slate-900 relative overflow-hidden">
-        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full" style={{
             backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
@@ -290,7 +282,7 @@ export default function Home() {
           }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
             {[
               { number: '50k+', label: 'Live Jobs', icon: '💼' },
@@ -310,7 +302,7 @@ export default function Home() {
 
       {/* Two Portal Section */}
       <section className="py-16 md:py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 mb-4">
@@ -326,14 +318,12 @@ export default function Home() {
             {/* Job Seeker Card */}
             <Link href="/auth/employee/register" className="group">
               <div className="h-full bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/50 border-2 border-transparent hover:border-employee-300 transition-all duration-300 group-hover:-translate-y-2">
-                {/* Icon */}
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-employee-400 to-employee-600 flex items-center justify-center mb-8 shadow-lg shadow-employee-500/25 group-hover:scale-110 transition-transform">
                   <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
 
-                {/* Content */}
                 <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-4 group-hover:text-employee-600 transition-colors">
                   For Job Seekers
                 </h3>
@@ -341,7 +331,6 @@ export default function Home() {
                   Create your profile, upload your resume, and start applying to thousands of jobs from top companies in the Philippines and abroad.
                 </p>
 
-                {/* Features */}
                 <ul className="space-y-3 mb-8">
                   {['Free to join and apply', 'One-click applications', 'Real-time job alerts', 'Career resources & tips'].map((feature, i) => (
                     <li key={i} className="flex items-center gap-3 text-slate-600">
@@ -353,7 +342,6 @@ export default function Home() {
                   ))}
                 </ul>
 
-                {/* CTA */}
                 <div className="flex items-center justify-between">
                   <span className="text-employee-600 font-semibold group-hover:text-employee-700">Create Free Account</span>
                   <div className="w-10 h-10 rounded-full bg-employee-100 flex items-center justify-center text-employee-600 group-hover:bg-employee-600 group-hover:text-white transition-all">
@@ -368,14 +356,12 @@ export default function Home() {
             {/* Employer Card */}
             <Link href="/auth/employer/register" className="group">
               <div className="h-full bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/50 border-2 border-transparent hover:border-employer-300 transition-all duration-300 group-hover:-translate-y-2">
-                {/* Icon */}
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-employer-400 to-employer-600 flex items-center justify-center mb-8 shadow-lg shadow-employer-500/25 group-hover:scale-110 transition-transform">
                   <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
 
-                {/* Content */}
                 <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-4 group-hover:text-employer-600 transition-colors">
                   For Employers
                 </h3>
@@ -383,7 +369,6 @@ export default function Home() {
                   Post jobs, manage applications, and hire the best candidates. Our tools make recruiting faster and more efficient.
                 </p>
 
-                {/* Features */}
                 <ul className="space-y-3 mb-8">
                   {['Post unlimited jobs', 'AI-powered matching', 'Applicant tracking', 'Team collaboration'].map((feature, i) => (
                     <li key={i} className="flex items-center gap-3 text-slate-600">
@@ -395,7 +380,6 @@ export default function Home() {
                   ))}
                 </ul>
 
-                {/* CTA */}
                 <div className="flex items-center justify-between">
                   <span className="text-employer-600 font-semibold group-hover:text-employer-700">Post a Job</span>
                   <div className="w-10 h-10 rounded-full bg-employer-100 flex items-center justify-center text-employer-600 group-hover:bg-employer-600 group-hover:text-white transition-all">
@@ -412,9 +396,8 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative bg-gradient-to-br from-primary-600 via-primary-700 to-employer-700 rounded-3xl p-8 md:p-12 lg:p-16 overflow-hidden">
-            {/* Background decorations */}
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-employee-500/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
@@ -432,7 +415,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
                   href="/auth/employee/register"
-                  className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-100 text-primary-700 font-semibold text-lg rounded-xl transition-all shadow-xl hover:shadow-2xl transform hover:scale-[1.02]"
+                  className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-100 text-primary-700 font-semibold text-lg rounded-xl transition-all shadow-xl hover:shadow-2xl"
                 >
                   Create Free Account
                 </Link>
@@ -450,7 +433,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
@@ -531,7 +514,7 @@ export default function Home() {
 
       {/* Mobile Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-50">
-        <div className="flex items-center justify-around py-3">
+        <div className="flex items-center justify-around py-3 px-2">
           {[
             { label: 'Home', icon: (
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -542,25 +525,25 @@ export default function Home() {
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-            ), href: '/jobs' },
+            ), href: '/dashboard/jobs', active: false },
             { label: 'Employers', icon: (
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-            ), href: '/auth/employer/login' },
+            ), href: '/auth/employer/login', active: false },
             { label: 'Account', icon: (
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-            ), href: '/auth' },
+            ), href: '/auth', active: false },
           ].map((item) => (
             <Link
               key={item.label}
               href={item.href}
-              className={`flex flex-col items-center gap-1 px-3 py-1 ${item.active ? 'text-primary-600' : 'text-slate-500'}`}
+              className={`flex flex-col items-center gap-1 px-3 py-1 min-w-0 ${item.active ? 'text-primary-600' : 'text-slate-500'}`}
             >
               {item.icon}
-              <span className="text-xs font-medium">{item.label}</span>
+              <span className="text-xs font-medium truncate">{item.label}</span>
             </Link>
           ))}
         </div>
