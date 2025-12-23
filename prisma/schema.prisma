@@ -1,5 +1,6 @@
 // Prisma schema for Jobly
-// Using PostgreSQL via Neon.tech with connection pooling
+// Job platform with multi-tenant architecture
+// PostgreSQL via Neon.tech with connection pooling
 
 generator client {
   provider = "prisma-client-js"
@@ -11,28 +12,596 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
-// Multi-tenant architecture: Tenant/Organization model
-model Tenant {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ============================================
+// ENUMS
+// ============================================
 
-  users User[]
-
-  @@map("tenants")
+enum UserRole {
+  JOBSEEKER
+  EMPLOYER_OWNER
+  EMPLOYER_STAFF
+  ADMIN
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum RecordStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
 
-  @@index([tenantId])
+enum CompanyVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum VerificationType {
+  ID_VERIFICATION
+  CREDENTIAL_VERIFICATION
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  FREELANCE
+  CONTRACT
+  INTERNSHIP
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  CLOSED
+}
+
+enum ApplicationStatus {
+  NEW
+  SHORTLISTED
+  INTERVIEW
+  OFFER
+  HIRED
+  REJECTED
+}
+
+enum ScreeningQuestionType {
+  YES_NO
+  TEXT
+  MULTIPLE_CHOICE
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  SYSTEM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}
+
+enum LedgerType {
+  CREDIT_PURCHASE
+  PLAN_CREDIT
+  UNLOCK_SPEND
+  REFUND
+  ADMIN_ADJUST
+}
+
+enum LedgerRefType {
+  PAYMENT
+  UNLOCK
+  SUBSCRIPTION
+  ADMIN
+}
+
+enum PaymentProvider {
+  GCASH
+  CARD
+  BANK_TRANSFER
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  CREDIT_PACK
+  ADDON
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// ============================================
+// AUTH & USERS
+// ============================================
+
+model User {
+  id              String       @id @default(cuid())
+  role            UserRole
+  phone           String       @unique @db.VarChar(32)
+  email           String?      @unique
+  passwordHash    String?      @map("password_hash")
+  phoneVerifiedAt DateTime?    @map("phone_verified_at")
+  emailVerifiedAt DateTime?    @map("email_verified_at")
+  status          RecordStatus @default(ACTIVE)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  sessions             UserSession[]
+  ownedCompanies       Company[]              @relation("CompanyOwner")
+  companyMemberships   CompanyMember[]
+  jobseekerProfile     JobseekerProfile?
+  verificationRequests VerificationRequest[]
+  createdJobs          Job[]
+  applications         Application[]
+  applicationNotes     ApplicationNote[]
+  conversations        Conversation[]
+  messages             Message[]
+  payments             Payment[]
+  candidateUnlocks     CandidateUnlock[]      @relation("UnlockedBy")
+  unlockedAsCandidate  CandidateUnlock[]      @relation("UnlockedCandidate")
+
+  @@index([role])
+  @@index([status])
   @@map("users")
+}
+
+model UserSession {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  refreshTokenHash String   @map("refresh_token_hash")
+  expiresAt        DateTime @map("expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model OtpRequest {
+  id        String   @id @default(cuid())
+  phone     String   @db.VarChar(32)
+  otpHash   String   @map("otp_hash")
+  purpose   String   @db.VarChar(32)
+  expiresAt DateTime @map("expires_at")
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([phone])
+  @@index([expiresAt])
+  @@map("otp_requests")
+}
+
+// ============================================
+// COMPANIES
+// ============================================
+
+model Company {
+  id                 String                    @id @default(cuid())
+  ownerUserId        String                    @map("owner_user_id")
+  name               String
+  industry           String?
+  sizeRange          String?                   @map("size_range")
+  address            String?
+  city               String?
+  province           String?
+  website            String?
+  logo               String?
+  verificationStatus CompanyVerificationStatus @default(UNVERIFIED) @map("verification_status")
+  status             RecordStatus              @default(ACTIVE)
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
+
+  // Relations
+  owner            User                @relation("CompanyOwner", fields: [ownerUserId], references: [id])
+  members          CompanyMember[]
+  jobs             Job[]
+  applications     Application[]
+  conversations    Conversation[]
+  subscription     CompanySubscription?
+  creditWallet     CreditWallet?
+  payments         Payment[]
+  invoices         Invoice[]
+  candidateUnlocks CandidateUnlock[]
+  creditLedger     CreditLedger[]
+
+  @@index([ownerUserId])
+  @@index([status])
+  @@map("companies")
+}
+
+model CompanyMember {
+  id         String   @id @default(cuid())
+  companyId  String   @map("company_id")
+  userId     String   @map("user_id")
+  memberRole String   @default("RECRUITER") @map("member_role") @db.VarChar(32)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@index([companyId])
+  @@map("company_members")
+}
+
+// ============================================
+// JOBSEEKER PROFILES
+// ============================================
+
+model JobseekerProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique @map("user_id")
+  firstName          String?  @map("first_name")
+  lastName           String?  @map("last_name")
+  headlineRole       String?  @map("headline_role")
+  summary            String?
+  city               String?
+  province           String?
+  preferredLocations Json     @default("[]") @map("preferred_locations")
+  employmentTypes    Json     @default("[]") @map("employment_types")
+  availability       String?
+  expectedSalaryMin  Int?     @map("expected_salary_min")
+  expectedSalaryMax  Int?     @map("expected_salary_max")
+  yearsExperience    Decimal? @map("years_experience") @db.Decimal
+  languages          Json     @default("[]")
+  profilePhotoUrl    String?  @map("profile_photo_url")
+  cvFileUrl          String?  @map("cv_file_url")
+  joblyCvPdfUrl      String?  @map("jobly_cv_pdf_url")
+  visibilityStatus   String   @default("PUBLIC") @map("visibility_status")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills      JobseekerProfileSkill[]
+  experiences JobseekerExperience[]
+  educations  JobseekerEducation[]
+
+  @@index([city, province])
+  @@index([visibilityStatus])
+  @@map("jobseeker_profiles")
+}
+
+model Skill {
+  id   String @id @default(cuid())
+  name String @unique
+
+  jobseekerSkills JobseekerProfileSkill[]
+  jobSkills       JobSkill[]
+
+  @@map("skills")
+}
+
+model JobseekerProfileSkill {
+  id        String  @id @default(cuid())
+  profileId String  @map("profile_id")
+  skillId   String  @map("skill_id")
+  level     String?
+
+  profile JobseekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  skill   Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, skillId])
+  @@index([profileId])
+  @@index([skillId])
+  @@map("jobseeker_profile_skills")
+}
+
+model JobseekerExperience {
+  id          String    @id @default(cuid())
+  profileId   String    @map("profile_id")
+  companyName String    @map("company_name")
+  jobTitle    String    @map("job_title")
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  isCurrent   Boolean   @default(false) @map("is_current")
+  description String?
+
+  profile JobseekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@map("jobseeker_experiences")
+}
+
+model JobseekerEducation {
+  id         String    @id @default(cuid())
+  profileId  String    @map("profile_id")
+  schoolName String    @map("school_name")
+  degree     String?
+  field      String?
+  startDate  DateTime? @map("start_date") @db.Date
+  endDate    DateTime? @map("end_date") @db.Date
+
+  profile JobseekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@map("jobseeker_educations")
+}
+
+model VerificationRequest {
+  id         String             @id @default(cuid())
+  userId     String             @map("user_id")
+  type       VerificationType
+  status     VerificationStatus @default(PENDING)
+  docUrls    Json               @default("[]") @map("doc_urls")
+  adminNotes String?            @map("admin_notes")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("verification_requests")
+}
+
+// ============================================
+// JOBS & APPLICATIONS
+// ============================================
+
+model Job {
+  id              String          @id @default(cuid())
+  companyId       String          @map("company_id")
+  title           String
+  category        String?
+  employmentType  EmploymentType? @map("employment_type")
+  city            String?
+  province        String?
+  salaryMin       Int?            @map("salary_min")
+  salaryMax       Int?            @map("salary_max")
+  description     String?
+  requirements    String?
+  status          JobStatus       @default(DRAFT)
+  createdByUserId String          @map("created_by_user_id")
+  publishedAt     DateTime?       @map("published_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  company            Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy          User                     @relation(fields: [createdByUserId], references: [id])
+  skills             JobSkill[]
+  screeningQuestions JobScreeningQuestion[]
+  applications       Application[]
+  conversations      Conversation[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([city, province])
+  @@map("jobs")
+}
+
+model JobSkill {
+  id      String @id @default(cuid())
+  jobId   String @map("job_id")
+  skillId String @map("skill_id")
+
+  job   Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, skillId])
+  @@index([jobId])
+  @@map("job_skills")
+}
+
+model JobScreeningQuestion {
+  id       String                @id @default(cuid())
+  jobId    String                @map("job_id")
+  question String
+  type     ScreeningQuestionType
+  options  Json                  @default("[]")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("job_screening_questions")
+}
+
+model Application {
+  id               String            @id @default(cuid())
+  jobId            String            @map("job_id")
+  jobseekerUserId  String            @map("jobseeker_user_id")
+  companyId        String            @map("company_id")
+  status           ApplicationStatus @default(NEW)
+  coverLetter      String?           @map("cover_letter")
+  screeningAnswers Json              @default("{}") @map("screening_answers")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  job       Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobseeker User              @relation(fields: [jobseekerUserId], references: [id], onDelete: Cascade)
+  company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  notes     ApplicationNote[]
+
+  @@unique([jobId, jobseekerUserId])
+  @@index([jobId])
+  @@index([companyId])
+  @@index([status])
+  @@map("applications")
+}
+
+model ApplicationNote {
+  id              String   @id @default(cuid())
+  applicationId   String   @map("application_id")
+  createdByUserId String   @map("created_by_user_id")
+  note            String
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdBy   User        @relation(fields: [createdByUserId], references: [id])
+
+  @@index([applicationId])
+  @@map("application_notes")
+}
+
+// ============================================
+// MESSAGING
+// ============================================
+
+model Conversation {
+  id              String   @id @default(cuid())
+  companyId       String   @map("company_id")
+  jobseekerUserId String   @map("jobseeker_user_id")
+  jobId           String?  @map("job_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobseeker User      @relation(fields: [jobseekerUserId], references: [id], onDelete: Cascade)
+  job       Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  messages  Message[]
+
+  @@unique([companyId, jobseekerUserId, jobId])
+  @@index([companyId])
+  @@index([jobseekerUserId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String      @map("conversation_id")
+  senderUserId   String      @map("sender_user_id")
+  type           MessageType @default(TEXT)
+  content        Json        @default("{}")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderUserId], references: [id])
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// ============================================
+// BILLING & SUBSCRIPTIONS
+// ============================================
+
+model Plan {
+  id              String @id @default(cuid())
+  code            String @unique
+  pricePHP        Int    @map("price_php")
+  jobPostLimit    Int    @map("job_post_limit")
+  creditsIncluded Int    @map("credits_included")
+  features        Json   @default("{}")
+
+  subscriptions CompanySubscription[]
+
+  @@map("plans")
+}
+
+model CompanySubscription {
+  id                 String             @id @default(cuid())
+  companyId          String             @unique @map("company_id")
+  planId             String             @map("plan_id")
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime           @map("current_period_start")
+  currentPeriodEnd   DateTime           @map("current_period_end")
+  autoRenew          Boolean            @default(true) @map("auto_renew")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan    Plan    @relation(fields: [planId], references: [id])
+
+  @@index([companyId])
+  @@index([status])
+  @@map("company_subscriptions")
+}
+
+model CreditWallet {
+  companyId String   @id @map("company_id")
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("credit_wallets")
+}
+
+model Payment {
+  id                String          @id @default(cuid())
+  companyId         String          @map("company_id")
+  userId            String          @map("user_id")
+  provider          PaymentProvider
+  type              PaymentType
+  amountPHP         Int             @map("amount_php")
+  status            PaymentStatus   @default(PENDING)
+  providerReference String?         @map("provider_reference")
+  metadata          Json            @default("{}")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@index([companyId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  companyId     String   @map("company_id")
+  paymentId     String   @map("payment_id")
+  invoiceNumber String   @unique @map("invoice_number")
+  pdfUrl        String?  @map("pdf_url")
+  issuedAt      DateTime @default(now()) @map("issued_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model CandidateUnlock {
+  id               String   @id @default(cuid())
+  companyId        String   @map("company_id")
+  jobseekerUserId  String   @map("jobseeker_user_id")
+  unlockedByUserId String   @map("unlocked_by_user_id")
+  creditsSpent     Int      @default(1) @map("credits_spent")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobseeker  User    @relation("UnlockedCandidate", fields: [jobseekerUserId], references: [id], onDelete: Cascade)
+  unlockedBy User    @relation("UnlockedBy", fields: [unlockedByUserId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, jobseekerUserId])
+  @@index([companyId])
+  @@index([jobseekerUserId])
+  @@map("candidate_unlocks")
+}
+
+model CreditLedger {
+  id            String        @id @default(cuid())
+  companyId     String        @map("company_id")
+  type          LedgerType
+  amount        Int
+  referenceType LedgerRefType @map("reference_type")
+  referenceId   String?       @map("reference_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([createdAt])
+  @@map("credit_ledger")
 }
