@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 
 export default function DashboardLayout({
@@ -28,11 +29,8 @@ export default function DashboardLayout({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <Link href="/" className="flex items-center gap-2 ml-3">
-            <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-sm">
-              J
-            </div>
-            <span className="text-lg font-semibold text-slate-900">Jobly</span>
+          <Link href="/" className="ml-3">
+            <Image src="/logo.svg" alt="Jobly" width={80} height={22} />
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors relative">

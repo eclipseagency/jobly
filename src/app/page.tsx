@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   return (
@@ -7,11 +8,8 @@ export default function Home() {
       <nav className="border-b border-slate-100 w-full">
         <div className="container-center">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-sm">
-                J
-              </div>
-              <span className="text-xl font-semibold text-slate-900">Jobly</span>
+            <Link href="/">
+              <Image src="/logo.svg" alt="Jobly" width={100} height={28} priority />
             </Link>
 
             <div className="hidden md:flex items-center gap-8">
@@ -259,11 +257,8 @@ export default function Home() {
         <div className="container-center">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-sm">
-                  J
-                </div>
-                <span className="text-lg font-semibold text-slate-900">Jobly</span>
+              <div className="mb-4">
+                <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
               </div>
               <p className="text-sm text-slate-500">
                 Connecting talent with opportunity across the Philippines.

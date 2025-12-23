@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
@@ -100,11 +101,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-slate-100">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-sm">
-                J
-              </div>
-              <span className="text-lg font-semibold text-slate-900">Jobly</span>
+            <Link href="/">
+              <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
             </Link>
             <button
               onClick={onClose}
