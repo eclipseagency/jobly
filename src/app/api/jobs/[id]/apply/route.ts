@@ -9,11 +9,11 @@ import {
   unauthorizedResponse,
   validationErrorResponse,
 } from "@/lib/api-response";
-import { JobStatus } from "@prisma/client";
+import { JobStatus, Prisma } from "@prisma/client";
 
 const applySchema = z.object({
   coverLetter: z.string().optional(),
-  screeningAnswers: z.record(z.string(), z.unknown()).optional(),
+  screeningAnswers: z.record(z.string(), z.any()).optional(),
 });
 
 export async function POST(
@@ -63,7 +63,7 @@ export async function POST(
         jobseekerUserId: session.id,
         companyId: job.companyId,
         coverLetter: result.data.coverLetter,
-        screeningAnswers: result.data.screeningAnswers || {},
+        screeningAnswers: (result.data.screeningAnswers || {}) as Prisma.InputJsonValue,
       },
       include: {
         job: { select: { id: true, title: true } },
