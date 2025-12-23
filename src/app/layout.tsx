@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Jobly - Where Talent Meets Opportunity",
-  description: "The modern job platform connecting exceptional talent with innovative companies. Find your dream job or hire your next star employee.",
-  keywords: "jobs, hiring, recruitment, career, employment, job search, talent acquisition",
+  title: "Jobly - Find Your Dream Job in the Philippines",
+  description: "Connect with top employers in the Philippines and beyond. Find jobs, post vacancies, and build your career with Jobly - the trusted job portal for Filipino professionals.",
+  keywords: "jobs Philippines, hiring Philippines, Manila jobs, Cebu jobs, career Philippines, job portal, employment, recruitment, job search",
 };
 
 export default function RootLayout({
