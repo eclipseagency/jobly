@@ -27,16 +27,12 @@
   --color-slate-900: #0f172a;
 }
 
-/* Base Styles */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* Base Styles - minimal reset, let Tailwind handle the rest */
 html, body {
   width: 100%;
   min-height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
