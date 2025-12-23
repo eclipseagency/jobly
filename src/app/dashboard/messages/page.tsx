@@ -9,7 +9,6 @@ const conversations = [
     lastMessage: 'Thank you for your application. We would like to schedule an interview...',
     time: '2 hours ago',
     unread: true,
-    avatar: 'TF',
   },
   {
     id: '2',
@@ -17,7 +16,6 @@ const conversations = [
     lastMessage: 'Your interview is confirmed for tomorrow at 2 PM.',
     time: '1 day ago',
     unread: true,
-    avatar: 'SH',
   },
   {
     id: '3',
@@ -25,7 +23,6 @@ const conversations = [
     lastMessage: 'We have reviewed your portfolio and are impressed with your work.',
     time: '3 days ago',
     unread: false,
-    avatar: 'CM',
   },
   {
     id: '4',
@@ -33,7 +30,6 @@ const conversations = [
     lastMessage: 'Thank you for attending the interview. We will get back to you soon.',
     time: '1 week ago',
     unread: false,
-    avatar: 'DV',
   },
 ];
 
@@ -41,7 +37,7 @@ const messages = [
   {
     id: '1',
     sender: 'company',
-    text: 'Hello Alex! Thank you for applying to the Senior Frontend Developer position at TechFlow Solutions.',
+    text: 'Hello! Thank you for applying to the Senior Frontend Developer position at TechFlow Solutions.',
     time: '10:30 AM',
   },
   {
@@ -59,7 +55,7 @@ const messages = [
   {
     id: '4',
     sender: 'company',
-    text: 'Great! How about tomorrow at 2:00 PM? The interview will be conducted via Google Meet and will last approximately 45 minutes.',
+    text: 'Great! How about tomorrow at 2:00 PM? The interview will be via Google Meet.',
     time: '11:45 AM',
   },
   {
@@ -67,12 +63,6 @@ const messages = [
     sender: 'user',
     text: 'That works perfectly for me. I look forward to speaking with you!',
     time: '12:00 PM',
-  },
-  {
-    id: '6',
-    sender: 'company',
-    text: 'Perfect! I will send you the meeting link shortly. Please be prepared to discuss your experience with React and TypeScript.',
-    time: '12:05 PM',
   },
 ];
 
@@ -82,25 +72,18 @@ export default function MessagesPage() {
   const [showChatList, setShowChatList] = useState(true);
 
   return (
-    <div className="h-[calc(100vh-4rem)] lg:h-[calc(100vh-0px)] flex">
+    <div className="h-[calc(100vh-4rem)] lg:h-screen flex">
       {/* Conversations List */}
-      <div className={`${showChatList ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-80 lg:w-96 border-r border-slate-200 bg-white`}>
-        {/* Header */}
-        <div className="p-4 border-b border-slate-200">
-          <h1 className="text-xl font-bold text-slate-800 mb-4">Messages</h1>
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search messages..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-            />
-          </div>
+      <div className={`${showChatList ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-80 border-r border-slate-200 bg-white`}>
+        <div className="p-4 border-b border-slate-100">
+          <h1 className="text-lg font-semibold text-slate-900 mb-3">Messages</h1>
+          <input
+            type="text"
+            placeholder="Search messages..."
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
         </div>
 
-        {/* Conversations */}
         <div className="flex-1 overflow-y-auto">
           {conversations.map((conv) => (
             <button
@@ -113,17 +96,17 @@ export default function MessagesPage() {
                 selectedChat?.id === conv.id ? 'bg-primary-50 border-r-2 border-primary-600' : ''
               }`}
             >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-slate-600 font-semibold flex-shrink-0">
-                {conv.avatar}
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-medium text-sm flex-shrink-0">
+                {conv.company.substring(0, 2).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className={`font-medium truncate ${conv.unread ? 'text-slate-800' : 'text-slate-600'}`}>
+                  <h3 className={`text-sm font-medium truncate ${conv.unread ? 'text-slate-900' : 'text-slate-600'}`}>
                     {conv.company}
                   </h3>
-                  <span className="text-xs text-slate-500 flex-shrink-0">{conv.time}</span>
+                  <span className="text-xs text-slate-400 flex-shrink-0">{conv.time}</span>
                 </div>
-                <p className={`text-sm truncate ${conv.unread ? 'text-slate-700 font-medium' : 'text-slate-500'}`}>
+                <p className={`text-sm truncate ${conv.unread ? 'text-slate-700' : 'text-slate-500'}`}>
                   {conv.lastMessage}
                 </p>
               </div>
@@ -146,21 +129,16 @@ export default function MessagesPage() {
                 className="md:hidden p-2 hover:bg-slate-100 rounded-lg"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-slate-600 font-semibold">
-                {selectedChat.avatar}
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-medium text-sm">
+                {selectedChat.company.substring(0, 2).toUpperCase()}
               </div>
               <div className="flex-1">
-                <h2 className="font-semibold text-slate-800">{selectedChat.company}</h2>
+                <h2 className="font-medium text-slate-900">{selectedChat.company}</h2>
                 <p className="text-xs text-green-600">Online</p>
               </div>
-              <button className="p-2 hover:bg-slate-100 rounded-lg">
-                <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-              </button>
             </div>
 
             {/* Messages */}
@@ -174,7 +152,7 @@ export default function MessagesPage() {
                     className={`max-w-[80%] sm:max-w-[70%] px-4 py-3 rounded-2xl ${
                       msg.sender === 'user'
                         ? 'bg-primary-600 text-white rounded-br-md'
-                        : 'bg-white text-slate-800 rounded-bl-md shadow-sm'
+                        : 'bg-white text-slate-900 rounded-bl-md border border-slate-200'
                     }`}
                   >
                     <p className="text-sm">{msg.text}</p>
@@ -189,19 +167,14 @@ export default function MessagesPage() {
             {/* Message Input */}
             <div className="p-4 bg-white border-t border-slate-200">
               <div className="flex items-center gap-3">
-                <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                  </svg>
-                </button>
                 <input
                   type="text"
                   placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <button className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition-colors">
+                <button className="p-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
@@ -212,10 +185,10 @@ export default function MessagesPage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <svg className="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              <p className="text-slate-500">Select a conversation to start messaging</p>
+              <p className="text-slate-500">Select a conversation</p>
             </div>
           </div>
         )}

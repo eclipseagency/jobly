@@ -1,38 +1,18 @@
 @import "tailwindcss";
 
-/* Custom Theme Variables */
+/* Clean, Minimal Design System */
 @theme {
-  /* Colors */
-  --color-primary-50: oklch(0.97 0.02 250);
-  --color-primary-100: oklch(0.93 0.04 250);
-  --color-primary-200: oklch(0.86 0.08 250);
-  --color-primary-300: oklch(0.76 0.12 250);
-  --color-primary-400: oklch(0.66 0.16 250);
-  --color-primary-500: oklch(0.55 0.18 250);
-  --color-primary-600: oklch(0.47 0.18 250);
-  --color-primary-700: oklch(0.40 0.16 250);
-  --color-primary-800: oklch(0.33 0.12 250);
-  --color-primary-900: oklch(0.27 0.08 250);
-
-  /* Employee Theme - Warm, approachable */
-  --color-employee-50: oklch(0.98 0.02 165);
-  --color-employee-100: oklch(0.94 0.05 165);
-  --color-employee-200: oklch(0.88 0.10 165);
-  --color-employee-300: oklch(0.78 0.15 165);
-  --color-employee-400: oklch(0.68 0.18 165);
-  --color-employee-500: oklch(0.58 0.18 165);
-  --color-employee-600: oklch(0.50 0.16 165);
-  --color-employee-700: oklch(0.42 0.13 165);
-
-  /* Employer Theme - Professional, bold */
-  --color-employer-50: oklch(0.97 0.02 280);
-  --color-employer-100: oklch(0.92 0.05 280);
-  --color-employer-200: oklch(0.85 0.10 280);
-  --color-employer-300: oklch(0.75 0.15 280);
-  --color-employer-400: oklch(0.65 0.18 280);
-  --color-employer-500: oklch(0.55 0.18 280);
-  --color-employer-600: oklch(0.47 0.16 280);
-  --color-employer-700: oklch(0.40 0.13 280);
+  /* Primary Blue */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
 
   /* Neutral Grays */
   --color-slate-50: #f8fafc;
@@ -45,45 +25,6 @@
   --color-slate-700: #334155;
   --color-slate-800: #1e293b;
   --color-slate-900: #0f172a;
-
-  /* Animations */
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-pulse-slow: pulse-slow 4s ease-in-out infinite;
-  --animate-gradient: gradient 8s ease infinite;
-  --animate-slide-up: slide-up 0.5s ease-out;
-  --animate-fade-in: fade-in 0.6s ease-out;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-}
-
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes slide-up {
-  0% {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-in {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
 }
 
 /* Base Styles */
@@ -103,50 +44,28 @@ body {
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  background-color: var(--color-slate-50);
-}
-
-/* Gradient Backgrounds */
-.bg-gradient-employee {
-  background: linear-gradient(135deg, var(--color-employee-400), var(--color-employee-600));
-}
-
-.bg-gradient-employer {
-  background: linear-gradient(135deg, var(--color-employer-400), var(--color-employer-600));
-}
-
-.bg-gradient-mesh {
-  background-image:
-    radial-gradient(at 40% 20%, var(--color-primary-200) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, var(--color-employee-200) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, var(--color-employer-200) 0px, transparent 50%);
-}
-
-/* Glass Effect */
-.glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: #ffffff;
+  color: #1e293b;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-slate-100);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-slate-300);
-  border-radius: 4px;
+  background: #e2e8f0;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-slate-400);
+  background: #cbd5e1;
 }

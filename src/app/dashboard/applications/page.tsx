@@ -7,237 +7,147 @@ const applications = [
     id: '1',
     title: 'Senior Frontend Developer',
     company: 'TechFlow Solutions',
-    location: 'Makati, Philippines',
-    salary: '₱120k - ₱180k',
+    location: 'Makati',
     status: 'in_review',
     statusLabel: 'In Review',
     appliedAt: 'Dec 21, 2024',
-    lastUpdate: '2 days ago',
   },
   {
     id: '2',
     title: 'Full Stack Developer',
     company: 'StartUp Hub PH',
     location: 'BGC, Taguig',
-    salary: '₱80k - ₱120k',
     status: 'interview',
-    statusLabel: 'Interview Scheduled',
+    statusLabel: 'Interview',
     appliedAt: 'Dec 18, 2024',
-    lastUpdate: '5 days ago',
   },
   {
     id: '3',
     title: 'UX/UI Designer',
     company: 'Creative Minds Agency',
     location: 'Remote',
-    salary: '$2,500 - $4,000',
     status: 'applied',
-    statusLabel: 'Application Sent',
+    statusLabel: 'Applied',
     appliedAt: 'Dec 16, 2024',
-    lastUpdate: '1 week ago',
   },
   {
     id: '4',
     title: 'React Developer',
     company: 'Digital Ventures',
     location: 'Cebu City',
-    salary: '₱100k - ₱150k',
     status: 'rejected',
     statusLabel: 'Not Selected',
     appliedAt: 'Dec 10, 2024',
-    lastUpdate: '2 weeks ago',
   },
   {
     id: '5',
     title: 'Mobile App Developer',
     company: 'AppWorks Studio',
     location: 'Remote',
-    salary: '₱100k - ₱150k',
-    status: 'offered',
+    status: 'offer',
     statusLabel: 'Offer Received',
     appliedAt: 'Dec 5, 2024',
-    lastUpdate: '3 days ago',
-  },
-  {
-    id: '6',
-    title: 'DevOps Engineer',
-    company: 'CloudTech Systems',
-    location: 'Remote',
-    salary: '₱130k - ₱200k',
-    status: 'in_review',
-    statusLabel: 'In Review',
-    appliedAt: 'Dec 20, 2024',
-    lastUpdate: '3 days ago',
   },
 ];
 
-const statusConfig: Record<string, { color: string; bgColor: string }> = {
-  applied: { color: 'text-slate-700', bgColor: 'bg-slate-100' },
-  in_review: { color: 'text-blue-700', bgColor: 'bg-blue-100' },
-  interview: { color: 'text-green-700', bgColor: 'bg-green-100' },
-  offered: { color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
-  rejected: { color: 'text-red-700', bgColor: 'bg-red-100' },
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'interview': return 'bg-green-50 text-green-600';
+    case 'in_review': return 'bg-blue-50 text-blue-600';
+    case 'offer': return 'bg-purple-50 text-purple-600';
+    case 'rejected': return 'bg-slate-100 text-slate-500';
+    default: return 'bg-slate-100 text-slate-600';
+  }
 };
 
 export default function ApplicationsPage() {
   const [filter, setFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredApplications = applications.filter((app) => {
-    const matchesFilter = filter === 'all' || app.status === filter;
-    const matchesSearch =
-      app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.company.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
-
-  const stats = {
-    total: applications.length,
-    inReview: applications.filter((a) => a.status === 'in_review').length,
-    interviews: applications.filter((a) => a.status === 'interview').length,
-    offers: applications.filter((a) => a.status === 'offered').length,
-  };
+  const filteredApps = filter === 'all'
+    ? applications
+    : applications.filter(app => app.status === filter);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">My Applications</h1>
-        <p className="text-slate-600">Track and manage all your job applications</p>
+        <h1 className="text-2xl font-semibold text-slate-900">Applications</h1>
+        <p className="text-slate-500 mt-1">Track your job applications</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Applications', value: stats.total, color: 'bg-slate-500' },
-          { label: 'In Review', value: stats.inReview, color: 'bg-blue-500' },
-          { label: 'Interviews', value: stats.interviews, color: 'bg-green-500' },
-          { label: 'Offers', value: stats.offers, color: 'bg-emerald-500' },
+          { label: 'Total', value: applications.length, color: 'text-slate-900' },
+          { label: 'In Review', value: applications.filter(a => a.status === 'in_review').length, color: 'text-blue-600' },
+          { label: 'Interviews', value: applications.filter(a => a.status === 'interview').length, color: 'text-green-600' },
+          { label: 'Offers', value: applications.filter(a => a.status === 'offer').length, color: 'text-purple-600' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl p-4 border border-slate-200">
-            <div className={`w-2 h-2 rounded-full ${stat.color} mb-2`} />
-            <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
+          <div key={i} className="bg-white rounded-lg border border-slate-200 p-4">
             <p className="text-sm text-slate-500">{stat.label}</p>
+            <p className={`text-2xl font-semibold ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search applications..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
+      {/* Filter tabs */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto">
+        {[
+          { key: 'all', label: 'All' },
+          { key: 'applied', label: 'Applied' },
+          { key: 'in_review', label: 'In Review' },
+          { key: 'interview', label: 'Interview' },
+          { key: 'offer', label: 'Offer' },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setFilter(tab.key)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
+              filter === tab.key
+                ? 'bg-slate-900 text-white'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-          {/* Filter Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-            {[
-              { value: 'all', label: 'All' },
-              { value: 'in_review', label: 'In Review' },
-              { value: 'interview', label: 'Interview' },
-              { value: 'offered', label: 'Offered' },
-              { value: 'rejected', label: 'Rejected' },
-            ].map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setFilter(tab.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  filter === tab.value
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+      {/* Applications list */}
+      <div className="bg-white rounded-lg border border-slate-200">
+        <div className="divide-y divide-slate-100">
+          {filteredApps.map((app) => (
+            <div key={app.id} className="p-5 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-medium text-sm flex-shrink-0">
+                {app.company.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-slate-900 truncate">{app.title}</h3>
+                <div className="flex items-center gap-2 text-sm text-slate-500 mt-0.5">
+                  <span>{app.company}</span>
+                  <span className="text-slate-300">|</span>
+                  <span>{app.location}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${getStatusColor(app.status)}`}>
+                  {app.statusLabel}
+                </span>
+                <span className="text-xs text-slate-400 hidden sm:block">{app.appliedAt}</span>
+                <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Applications List */}
-      <div className="space-y-4">
-        {filteredApplications.map((app) => (
-          <div
-            key={app.id}
-            className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 hover:shadow-lg hover:border-slate-300 transition-all"
-          >
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Company Logo */}
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold">
-                  {app.company.substring(0, 2).toUpperCase()}
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-800">{app.title}</h3>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 mt-1">
-                      <span>{app.company}</span>
-                      <span>{app.location}</span>
-                      <span>{app.salary}</span>
-                    </div>
-                  </div>
-                  <span
-                    className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusConfig[app.status].bgColor} ${statusConfig[app.status].color}`}
-                  >
-                    {app.statusLabel}
-                  </span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-slate-100">
-                  <div className="flex items-center gap-4 text-sm text-slate-500">
-                    <span>Applied: {app.appliedAt}</span>
-                    <span>Last update: {app.lastUpdate}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
-                      View Details
-                    </button>
-                    {app.status === 'offered' && (
-                      <button className="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors">
-                        Review Offer
-                      </button>
-                    )}
-                    {app.status === 'interview' && (
-                      <button className="px-4 py-2 text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors">
-                        View Schedule
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {filteredApplications.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
-          <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">No applications found</h3>
-          <p className="text-slate-500 mb-4">Start applying to jobs to see them here</p>
-          <a
-            href="/dashboard/jobs"
-            className="inline-flex px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
-          >
-            Browse Jobs
-          </a>
+      {filteredApps.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-slate-500">No applications found</p>
         </div>
       )}
     </div>
