@@ -2,10 +2,10 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white w-full">
       {/* Navigation */}
-      <nav className="border-b border-slate-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <nav className="border-b border-slate-100 w-full">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center text-white font-semibold text-sm">
@@ -42,8 +42,8 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="py-16 md:py-24">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <section className="py-16 md:py-24 w-full">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 tracking-tight">
               Find your next job in the Philippines
@@ -98,8 +98,8 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="py-16 md:py-24 bg-slate-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <section className="py-16 md:py-24 bg-slate-50 w-full">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-slate-900">How it works</h2>
             <p className="mt-3 text-slate-600">Get started in three simple steps</p>
@@ -136,8 +136,8 @@ export default function Home() {
       </section>
 
       {/* For Job Seekers & Employers */}
-      <section className="py-16 md:py-24">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <section className="py-16 md:py-24 w-full">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Job Seekers */}
             <div className="p-8 border border-slate-200 rounded-xl hover:border-primary-200 transition-colors">
@@ -229,8 +229,8 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 md:py-24 bg-slate-900">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+      <section className="py-16 md:py-24 bg-slate-900 w-full">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to find your next opportunity?
           </h2>
@@ -255,8 +255,8 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-slate-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <footer className="py-12 border-t border-slate-100 w-full">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
