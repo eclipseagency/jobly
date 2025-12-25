@@ -23,7 +23,7 @@ export default function EmployerLoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-slate-50">
         <div className="w-full max-w-md animate-slide-up">
           {/* Mobile back link */}
-          <Link href="/auth" className="lg:hidden inline-flex items-center gap-2 mb-8 text-slate-600 hover:text-employer-600 transition-colors">
+          <Link href="/auth" className="lg:hidden inline-flex items-center gap-2 mb-8 text-slate-600 hover:text-primary-600 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -32,7 +32,7 @@ export default function EmployerLoginPage() {
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-employer-500 to-employer-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-employer-500/25">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-primary-500/25">
               J
             </div>
             <div>
@@ -49,7 +49,6 @@ export default function EmployerLoginPage() {
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                variant="employer"
                 icon={
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -65,7 +64,6 @@ export default function EmployerLoginPage() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  variant="employer"
                   icon={
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -95,16 +93,16 @@ export default function EmployerLoginPage() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded border-slate-300 text-employer-600 focus:ring-employer-500"
+                    className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                   />
                   <span className="text-sm text-slate-600">Keep me signed in</span>
                 </label>
-                <Link href="/auth/forgot-password" className="text-sm text-employer-600 hover:text-employer-700 font-medium">
+                <Link href="/auth/forgot-password" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
                   Forgot password?
                 </Link>
               </div>
 
-              <Button type="submit" variant="employer" fullWidth size="lg" isLoading={isLoading}>
+              <Button type="submit" fullWidth size="lg" isLoading={isLoading}>
                 Access Dashboard
               </Button>
             </form>
@@ -142,7 +140,7 @@ export default function EmployerLoginPage() {
           {/* Register link */}
           <p className="text-center text-slate-600">
             New to Jobly for Business?{' '}
-            <Link href="/auth/employer/register" className="text-employer-600 hover:text-employer-700 font-semibold">
+            <Link href="/auth/employer/register" className="text-primary-600 hover:text-primary-700 font-semibold">
               Create employer account
             </Link>
           </p>
@@ -150,7 +148,7 @@ export default function EmployerLoginPage() {
       </div>
 
       {/* Right Panel - Decorative */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-employer-600 to-employer-800 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 to-primary-800 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">

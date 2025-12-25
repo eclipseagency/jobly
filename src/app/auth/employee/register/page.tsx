@@ -35,7 +35,7 @@ export default function EmployeeRegisterPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Decorative */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-employee-500 to-employee-700 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-500 to-primary-700 relative overflow-hidden">
         {/* Animated shapes */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-2xl rotate-12 animate-float" />
@@ -81,7 +81,7 @@ export default function EmployeeRegisterPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-slate-50">
         <div className="w-full max-w-md animate-slide-up">
           {/* Mobile back link */}
-          <Link href="/auth" className="lg:hidden inline-flex items-center gap-2 mb-8 text-slate-600 hover:text-employee-600 transition-colors">
+          <Link href="/auth" className="lg:hidden inline-flex items-center gap-2 mb-8 text-slate-600 hover:text-primary-600 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -90,7 +90,7 @@ export default function EmployeeRegisterPage() {
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-employee-500 to-employee-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-employee-500/25">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-primary-500/25">
               J
             </div>
             <div>
@@ -101,8 +101,8 @@ export default function EmployeeRegisterPage() {
 
           {/* Progress indicator */}
           <div className="flex gap-2 mb-8">
-            <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-employee-500' : 'bg-slate-200'}`} />
-            <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-employee-500' : 'bg-slate-200'}`} />
+            <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-primary-500' : 'bg-slate-200'}`} />
+            <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-primary-500' : 'bg-slate-200'}`} />
           </div>
 
           <Card variant="elevated" className="mb-6">
@@ -116,7 +116,6 @@ export default function EmployeeRegisterPage() {
                     placeholder="John Doe"
                     value={formData.fullName}
                     onChange={handleChange}
-                    variant="employee"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -132,7 +131,6 @@ export default function EmployeeRegisterPage() {
                     placeholder="you@example.com"
                     value={formData.email}
                     onChange={handleChange}
-                    variant="employee"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -149,7 +147,6 @@ export default function EmployeeRegisterPage() {
                       placeholder="Create a strong password"
                       value={formData.password}
                       onChange={handleChange}
-                      variant="employee"
                       icon={
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -203,7 +200,6 @@ export default function EmployeeRegisterPage() {
                     placeholder="Re-enter your password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    variant="employee"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -221,7 +217,6 @@ export default function EmployeeRegisterPage() {
                     placeholder="e.g., Software Engineer, Marketing Manager"
                     value={formData.title}
                     onChange={handleChange}
-                    variant="employee"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -237,7 +232,6 @@ export default function EmployeeRegisterPage() {
                     placeholder="City, Country"
                     value={formData.location}
                     onChange={handleChange}
-                    variant="employee"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -251,14 +245,14 @@ export default function EmployeeRegisterPage() {
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-5 h-5 mt-0.5 rounded border-slate-300 text-employee-600 focus:ring-employee-500"
+                      className="w-5 h-5 mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                       required
                     />
                     <span className="text-sm text-slate-600">
                       I agree to Jobly&apos;s{' '}
-                      <Link href="/terms" className="text-employee-600 hover:underline">Terms of Service</Link>
+                      <Link href="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
                       {' '}and{' '}
-                      <Link href="/privacy" className="text-employee-600 hover:underline">Privacy Policy</Link>
+                      <Link href="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
                     </span>
                   </label>
                 </>
@@ -272,7 +266,6 @@ export default function EmployeeRegisterPage() {
                 )}
                 <Button
                   type="submit"
-                  variant="employee"
                   fullWidth={step === 1}
                   size="lg"
                   isLoading={isLoading}
@@ -320,7 +313,7 @@ export default function EmployeeRegisterPage() {
           {/* Login link */}
           <p className="text-center text-slate-600">
             Already have an account?{' '}
-            <Link href="/auth/employee/login" className="text-employee-600 hover:text-employee-700 font-semibold">
+            <Link href="/auth/employee/login" className="text-primary-600 hover:text-primary-700 font-semibold">
               Sign in instead
             </Link>
           </p>

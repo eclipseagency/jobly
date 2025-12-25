@@ -64,7 +64,7 @@ export default function EmployerRegisterPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-slate-50 overflow-y-auto">
         <div className="w-full max-w-md py-8 animate-slide-up">
           {/* Mobile back link */}
-          <Link href="/auth" className="lg:hidden inline-flex items-center gap-2 mb-8 text-slate-600 hover:text-employer-600 transition-colors">
+          <Link href="/auth" className="lg:hidden inline-flex items-center gap-2 mb-8 text-slate-600 hover:text-primary-600 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -73,7 +73,7 @@ export default function EmployerRegisterPage() {
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-employer-500 to-employer-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-employer-500/25">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-primary-500/25">
               J
             </div>
             <div>
@@ -84,8 +84,8 @@ export default function EmployerRegisterPage() {
 
           {/* Progress indicator */}
           <div className="flex gap-2 mb-8">
-            <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-employer-500' : 'bg-slate-200'}`} />
-            <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-employer-500' : 'bg-slate-200'}`} />
+            <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-primary-500' : 'bg-slate-200'}`} />
+            <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-primary-500' : 'bg-slate-200'}`} />
           </div>
 
           <Card variant="elevated" className="mb-6">
@@ -99,7 +99,6 @@ export default function EmployerRegisterPage() {
                     placeholder="John Doe"
                     value={formData.fullName}
                     onChange={handleChange}
-                    variant="employer"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -115,7 +114,6 @@ export default function EmployerRegisterPage() {
                     placeholder="you@company.com"
                     value={formData.email}
                     onChange={handleChange}
-                    variant="employer"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -132,7 +130,6 @@ export default function EmployerRegisterPage() {
                       placeholder="Create a secure password"
                       value={formData.password}
                       onChange={handleChange}
-                      variant="employer"
                       icon={
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -186,7 +183,6 @@ export default function EmployerRegisterPage() {
                     placeholder="Re-enter your password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    variant="employer"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -204,7 +200,6 @@ export default function EmployerRegisterPage() {
                     placeholder="Your Company Inc."
                     value={formData.companyName}
                     onChange={handleChange}
-                    variant="employer"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -226,7 +221,7 @@ export default function EmployerRegisterPage() {
                         name="companySize"
                         value={formData.companySize}
                         onChange={handleChange}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-white border-2 border-slate-200 text-slate-800 transition-all duration-200 focus:outline-none focus:ring-4 focus:border-employer-500 focus:ring-employer-500/20 appearance-none cursor-pointer"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-white border-2 border-slate-200 text-slate-800 transition-all duration-200 focus:outline-none focus:ring-4 focus:border-primary-500 focus:ring-primary-500/20 appearance-none cursor-pointer"
                         required
                       >
                         <option value="">Select company size</option>
@@ -253,7 +248,7 @@ export default function EmployerRegisterPage() {
                         name="industry"
                         value={formData.industry}
                         onChange={handleChange}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-white border-2 border-slate-200 text-slate-800 transition-all duration-200 focus:outline-none focus:ring-4 focus:border-employer-500 focus:ring-employer-500/20 appearance-none cursor-pointer"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-white border-2 border-slate-200 text-slate-800 transition-all duration-200 focus:outline-none focus:ring-4 focus:border-primary-500 focus:ring-primary-500/20 appearance-none cursor-pointer"
                         required
                       >
                         <option value="">Select industry</option>
@@ -274,7 +269,6 @@ export default function EmployerRegisterPage() {
                     placeholder="https://www.yourcompany.com"
                     value={formData.website}
                     onChange={handleChange}
-                    variant="employer"
                     icon={
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
@@ -286,14 +280,14 @@ export default function EmployerRegisterPage() {
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="w-5 h-5 mt-0.5 rounded border-slate-300 text-employer-600 focus:ring-employer-500"
+                      className="w-5 h-5 mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                       required
                     />
                     <span className="text-sm text-slate-600">
                       I agree to Jobly&apos;s{' '}
-                      <Link href="/terms" className="text-employer-600 hover:underline">Terms of Service</Link>,{' '}
-                      <Link href="/privacy" className="text-employer-600 hover:underline">Privacy Policy</Link>, and{' '}
-                      <Link href="/employer-terms" className="text-employer-600 hover:underline">Employer Agreement</Link>
+                      <Link href="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>,{' '}
+                      <Link href="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>, and{' '}
+                      <Link href="/employer-terms" className="text-primary-600 hover:underline">Employer Agreement</Link>
                     </span>
                   </label>
                 </>
@@ -307,7 +301,6 @@ export default function EmployerRegisterPage() {
                 )}
                 <Button
                   type="submit"
-                  variant="employer"
                   fullWidth={step === 1}
                   size="lg"
                   isLoading={isLoading}
@@ -355,7 +348,7 @@ export default function EmployerRegisterPage() {
           {/* Login link */}
           <p className="text-center text-slate-600">
             Already have an employer account?{' '}
-            <Link href="/auth/employer/login" className="text-employer-600 hover:text-employer-700 font-semibold">
+            <Link href="/auth/employer/login" className="text-primary-600 hover:text-primary-700 font-semibold">
               Sign in instead
             </Link>
           </p>
@@ -363,7 +356,7 @@ export default function EmployerRegisterPage() {
       </div>
 
       {/* Right Panel - Decorative */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-employer-600 to-employer-800 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 to-primary-800 relative overflow-hidden">
         {/* Abstract shapes */}
         <div className="absolute inset-0">
           <div className="absolute top-10 right-10 w-60 h-60 border border-white/10 rounded-3xl rotate-12 animate-float" />
