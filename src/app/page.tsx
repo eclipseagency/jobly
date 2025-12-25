@@ -1,7 +1,23 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function Home() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (locationQuery) params.set('location', locationQuery);
+    router.push(`/dashboard/jobs${params.toString() ? `?${params.toString()}` : ''}`);
+  };
+
   return (
     <div className="min-h-screen bg-white w-full">
       {/* Navigation */}
@@ -39,91 +55,126 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="py-16 md:py-24 w-full">
+      {/* Hero Section - 2 Column */}
+      <section className="py-12 md:py-20 w-full">
         <div className="container-center">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 tracking-tight">
-              Find your next job in the Philippines
-            </h1>
-            <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
-              Connect with top employers and discover opportunities that match your skills.
-              Join thousands of professionals building their careers.
-            </p>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column */}
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
+                Find your dream job in the Philippines and beyond.
+              </h1>
+              <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+                Connect with top employers, showcase your skills, and take the next step in your career journey.
+              </p>
 
-            {/* Search Box */}
-            <div className="mt-10 max-w-2xl mx-auto">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1">
+              {/* Search Box */}
+              <form onSubmit={handleSearch} className="mt-8">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
                     placeholder="Job title or keyword"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
                   />
-                </div>
-                <div className="flex-1">
                   <input
                     type="text"
                     placeholder="Location"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
                   />
+                  <button
+                    type="submit"
+                    className="shrink-0 px-6 py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors text-center whitespace-nowrap"
+                  >
+                    Search Jobs
+                  </button>
                 </div>
-                <button className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors">
-                  Search
-                </button>
+              </form>
+
+              {/* Feature Bullets */}
+              <div className="mt-6 flex flex-wrap gap-4">
+                {[
+                  { icon: '✓', text: 'Verified Employers' },
+                  { icon: '✓', text: 'Smart Matching' },
+                  { icon: '✓', text: 'Free for Seekers' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
+                    <span className="w-5 h-5 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-xs font-bold">
+                      {item.icon}
+                    </span>
+                    {item.text}
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-sm text-slate-500">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-slate-900">50k+</span>
-                <span>Active Jobs</span>
-              </div>
-              <div className="hidden sm:block w-px h-8 bg-slate-200" />
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-slate-900">20k+</span>
-                <span>Companies</span>
-              </div>
-              <div className="hidden sm:block w-px h-8 bg-slate-200" />
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-slate-900">100k+</span>
-                <span>Job Seekers</span>
+            {/* Right Column - Image Placeholder */}
+            <div className="hidden lg:block">
+              <div className="relative w-full h-[420px] rounded-3xl bg-gradient-to-br from-primary-100 via-slate-100 to-primary-50 overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-2xl bg-white/60 backdrop-blur flex items-center justify-center shadow-lg">
+                      <svg className="w-12 h-12 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-slate-500 text-sm font-medium">Your career starts here</p>
+                  </div>
+                </div>
+                {/* Decorative elements */}
+                <div className="absolute top-8 right-8 w-16 h-16 rounded-2xl bg-white/40 backdrop-blur-sm" />
+                <div className="absolute bottom-12 left-8 w-20 h-20 rounded-full bg-primary-200/50" />
+                <div className="absolute top-1/3 left-12 w-12 h-12 rounded-xl bg-white/30" />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-16 md:py-24 bg-slate-50 w-full">
+      {/* How JOBLY Works */}
+      <section className="py-16 md:py-20 bg-slate-50 w-full">
         <div className="container-center">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900">How it works</h2>
-            <p className="mt-3 text-slate-600">Get started in three simple steps</p>
+            <h2 className="text-3xl font-bold text-slate-900">How JOBLY Works</h2>
+            <p className="mt-3 text-slate-600">Land your dream job in three simple steps</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                step: '01',
-                title: 'Create your profile',
-                description: 'Sign up and build your professional profile. Add your experience, skills, and upload your resume.',
+                icon: (
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                ),
+                title: 'Search & Filter',
+                description: 'Browse thousands of job listings. Filter by location, salary, job type, and experience level to find the perfect match.',
               },
               {
-                step: '02',
-                title: 'Search and apply',
-                description: 'Browse thousands of jobs. Filter by location, salary, and job type to find your perfect match.',
+                icon: (
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                ),
+                title: 'Easy Apply',
+                description: 'Apply to jobs with one click using your saved profile. Track all your applications in one convenient dashboard.',
               },
               {
-                step: '03',
-                title: 'Get hired',
-                description: 'Connect with employers, schedule interviews, and land your dream job.',
+                icon: (
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                ),
+                title: 'Get Hired',
+                description: 'Connect directly with employers, schedule interviews, and receive job offers. Start your new career journey today.',
               },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 text-primary-600 font-semibold text-sm mb-4">
-                  {item.step}
+            ].map((item, i) => (
+              <div key={i} className="bg-white p-8 rounded-2xl border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all">
+                <div className="w-14 h-14 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center mb-5">
+                  {item.icon}
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
                 <p className="text-slate-600 text-sm leading-relaxed">{item.description}</p>
@@ -133,121 +184,50 @@ export default function Home() {
         </div>
       </section>
 
-      {/* For Job Seekers & Employers */}
-      <section className="py-16 md:py-24 w-full">
+      {/* Stats Strip - Dark */}
+      <section className="py-12 bg-slate-900 w-full">
         <div className="container-center">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Job Seekers */}
-            <div className="p-8 border border-slate-200 rounded-xl hover:border-primary-200 transition-colors">
-              <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600 mb-6">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: '50k+', label: 'Live Jobs' },
+              { value: '20k+', label: 'Companies' },
+              { value: '100k+', label: 'Candidates' },
+              { value: '15+', label: 'Countries' },
+            ].map((stat, i) => (
+              <div key={i}>
+                <div className="text-3xl md:text-4xl font-bold text-white">{stat.value}</div>
+                <div className="text-slate-400 text-sm mt-1">{stat.label}</div>
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">For Job Seekers</h3>
-              <p className="text-slate-600 mb-6 leading-relaxed">
-                Create your profile, upload your resume, and start applying to jobs.
-                Track your applications and get notified when employers respond.
-              </p>
-              <ul className="space-y-2 mb-6 text-sm text-slate-600">
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Free to use
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  One-click applications
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Job alerts
-                </li>
-              </ul>
-              <Link
-                href="/auth/employee/register"
-                className="inline-flex items-center text-primary-600 font-medium text-sm hover:text-primary-700"
-              >
-                Create account
-                <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-
-            {/* Employers */}
-            <div className="p-8 border border-slate-200 rounded-xl hover:border-slate-300 transition-colors">
-              <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 mb-6">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">For Employers</h3>
-              <p className="text-slate-600 mb-6 leading-relaxed">
-                Post jobs and reach qualified candidates. Manage applications,
-                schedule interviews, and hire the right people for your team.
-              </p>
-              <ul className="space-y-2 mb-6 text-sm text-slate-600">
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Post unlimited jobs
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Applicant tracking
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Team collaboration
-                </li>
-              </ul>
-              <Link
-                href="/auth/employer/register"
-                className="inline-flex items-center text-slate-700 font-medium text-sm hover:text-primary-600"
-              >
-                Post a job
-                <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 md:py-24 bg-slate-900 w-full">
-        <div className="container-center text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to find your next opportunity?
-          </h2>
-          <p className="text-slate-400 mb-8 max-w-xl mx-auto">
-            Join thousands of professionals who have found their dream jobs through Jobly.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/auth/employee/register"
-              className="w-full sm:w-auto px-6 py-3 bg-white text-slate-900 font-medium rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Create account
-            </Link>
-            <Link
-              href="/dashboard/jobs"
-              className="w-full sm:w-auto px-6 py-3 border border-slate-700 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors"
-            >
-              Browse jobs
-            </Link>
+      {/* Final CTA Section */}
+      <section className="py-16 md:py-24 w-full">
+        <div className="container-center">
+          <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-3xl p-10 md:p-16 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Ready to start your career journey?
+            </h2>
+            <p className="text-primary-100 mb-8 max-w-xl mx-auto">
+              Join thousands of professionals who have found their dream jobs through JOBLY.
+              Create your free account today.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/auth/employee/register"
+                className="w-full sm:w-auto px-8 py-3.5 bg-white text-primary-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
+              >
+                Create Free Account
+              </Link>
+              <Link
+                href="/auth/employer/register"
+                className="w-full sm:w-auto px-8 py-3.5 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
+              >
+                Post a Job
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -261,7 +241,7 @@ export default function Home() {
                 <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
               </div>
               <p className="text-sm text-slate-500">
-                Connecting talent with opportunity across the Philippines.
+                Connecting talent with opportunity across the Philippines and beyond.
               </p>
             </div>
 
@@ -288,14 +268,14 @@ export default function Home() {
               <ul className="space-y-2 text-sm text-slate-500">
                 <li><Link href="#" className="hover:text-slate-900">About</Link></li>
                 <li><Link href="#" className="hover:text-slate-900">Contact</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Privacy</Link></li>
+                <li><Link href="/privacy" className="hover:text-slate-900">Privacy</Link></li>
               </ul>
             </div>
           </div>
 
           <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-slate-500">
-              {new Date().getFullYear()} Jobly. All rights reserved.
+              © {new Date().getFullYear()} Jobly. All rights reserved.
             </p>
             <p className="text-sm text-slate-500">
               Made in the Philippines

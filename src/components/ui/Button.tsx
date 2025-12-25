@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'employee' | 'employer' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   isLoading?: boolean;
@@ -39,18 +39,6 @@ export function Button({
       bg-slate-100 hover:bg-slate-200
       text-slate-700
       focus:ring-slate-400
-    `,
-    employee: `
-      bg-gradient-to-r from-employee-500 to-employee-600
-      hover:from-employee-600 hover:to-employee-700
-      text-white shadow-lg shadow-employee-500/25
-      focus:ring-employee-500
-    `,
-    employer: `
-      bg-gradient-to-r from-employer-500 to-employer-600
-      hover:from-employer-600 hover:to-employer-700
-      text-white shadow-lg shadow-employer-500/25
-      focus:ring-employer-500
     `,
     outline: `
       border-2 border-slate-300 hover:border-slate-400

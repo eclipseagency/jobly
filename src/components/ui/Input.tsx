@@ -6,17 +6,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   icon?: React.ReactNode;
-  variant?: 'default' | 'employee' | 'employer';
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, icon, variant = 'default', className = '', ...props }, ref) => {
-    const focusColors = {
-      default: 'focus:border-primary-500 focus:ring-primary-500/20',
-      employee: 'focus:border-employee-500 focus:ring-employee-500/20',
-      employer: 'focus:border-employer-500 focus:ring-employer-500/20',
-    };
-
+  ({ label, error, icon, className = '', ...props }, ref) => {
     return (
       <div className="w-full">
         {label && (
@@ -38,7 +31,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               text-slate-800 placeholder-slate-400
               transition-all duration-200
               focus:outline-none focus:ring-4
-              ${focusColors[variant]}
+              focus:border-primary-500 focus:ring-primary-500/20
               ${icon ? 'pl-12' : ''}
               ${error ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : ''}
               ${className}
