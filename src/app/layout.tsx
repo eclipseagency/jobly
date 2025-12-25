@@ -106,6 +106,284 @@ export default function RootLayout({
           </nav>
         </header>
         {children}
+        <footer
+          style={{
+            backgroundColor: "#1f2937",
+            color: "white",
+            padding: "4rem 2rem 2rem",
+          }}
+        >
+          <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+            {/* Footer Content */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                gap: "3rem",
+                marginBottom: "3rem",
+              }}
+            >
+              {/* Company Info */}
+              <div>
+                <h3
+                  style={{
+                    fontSize: "1.5rem",
+                    fontWeight: "bold",
+                    marginBottom: "1rem",
+                    color: "#60a5fa",
+                  }}
+                >
+                  Jobly
+                </h3>
+                <p style={{ color: "#d1d5db", lineHeight: "1.6", marginBottom: "1rem" }}>
+                  Your trusted partner in finding the perfect career opportunity.
+                  Connecting talented professionals with leading companies across
+                  the Philippines.
+                </p>
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
+                  <a
+                    href="#"
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      backgroundColor: "#374151",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textDecoration: "none",
+                      fontSize: "1.2rem",
+                    }}
+                  >
+                    📘
+                  </a>
+                  <a
+                    href="#"
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      backgroundColor: "#374151",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textDecoration: "none",
+                      fontSize: "1.2rem",
+                    }}
+                  >
+                    🐦
+                  </a>
+                  <a
+                    href="#"
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      backgroundColor: "#374151",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textDecoration: "none",
+                      fontSize: "1.2rem",
+                    }}
+                  >
+                    💼
+                  </a>
+                </div>
+              </div>
+
+              {/* For Job Seekers */}
+              <div>
+                <h4
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: "600",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  For Job Seekers
+                </h4>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="/"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Browse Jobs
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="/register"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Create Profile
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="#"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Career Resources
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="#"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Resume Tips
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* For Employers */}
+              <div>
+                <h4
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: "600",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  For Employers
+                </h4>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="/employers"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Post a Job
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="/employers"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Pricing
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="#"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Employer Dashboard
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="#"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Hiring Solutions
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Company */}
+              <div>
+                <h4
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: "600",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  Company
+                </h4>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="/about"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      About Us
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="#"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Contact
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="#"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Privacy Policy
+                    </a>
+                  </li>
+                  <li style={{ marginBottom: "0.75rem" }}>
+                    <a
+                      href="#"
+                      style={{
+                        color: "#d1d5db",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Terms of Service
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer Bottom */}
+            <div
+              style={{
+                borderTop: "1px solid #374151",
+                paddingTop: "2rem",
+                textAlign: "center",
+                color: "#9ca3af",
+                fontSize: "0.9rem",
+              }}
+            >
+              <p>© 2024 Jobly. All rights reserved. Made with ❤️ in the Philippines.</p>
+            </div>
+          </div>
+        </footer>
       </body>
     </html>
   );
