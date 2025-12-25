@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const skillOptions = [
@@ -18,7 +19,10 @@ const benefitOptions = [
 ];
 
 export default function PostNewJobPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     department: '',
@@ -88,6 +92,22 @@ export default function PostNewJobPage() {
     { number: 3, title: 'Skills & Benefits' },
     { number: 4, title: 'Review' },
   ];
+
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setIsPublishing(false);
+    router.push('/employer/jobs?published=true');
+  };
+
+  const handleSaveDraft = async () => {
+    setIsSaving(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSaving(false);
+    router.push('/employer/jobs?draft=true');
+  };
 
   return (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto">
@@ -606,11 +626,19 @@ export default function PostNewJobPage() {
             </button>
           ) : (
             <div className="flex gap-3">
-              <button className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
-                Save as Draft
+              <button
+                onClick={handleSaveDraft}
+                disabled={isSaving || isPublishing}
+                className="px-5 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? 'Saving...' : 'Save as Draft'}
               </button>
-              <button className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors">
-                Publish Job
+              <button
+                onClick={handlePublish}
+                disabled={isPublishing || isSaving}
+                className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPublishing ? 'Publishing...' : 'Publish Job'}
               </button>
             </div>
           )}
