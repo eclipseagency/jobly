@@ -1,7 +1,23 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function Home() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (locationQuery) params.set('location', locationQuery);
+    router.push(`/dashboard/jobs${params.toString() ? `?${params.toString()}` : ''}`);
+  };
+
   return (
     <div className="min-h-screen bg-white w-full">
       {/* Navigation */}
@@ -53,26 +69,30 @@ export default function Home() {
               </p>
 
               {/* Search Box */}
-              <div className="mt-8">
+              <form onSubmit={handleSearch} className="mt-8">
                 <div className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
                     placeholder="Job title or keyword"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
                   />
                   <input
                     type="text"
                     placeholder="Location"
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
                     className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
                   />
-                  <Link
-                    href="/dashboard/jobs"
+                  <button
+                    type="submit"
                     className="shrink-0 px-6 py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors text-center whitespace-nowrap"
                   >
                     Search Jobs
-                  </Link>
+                  </button>
                 </div>
-              </div>
+              </form>
 
               {/* Feature Bullets */}
               <div className="mt-6 flex flex-wrap gap-4">
@@ -248,7 +268,7 @@ export default function Home() {
               <ul className="space-y-2 text-sm text-slate-500">
                 <li><Link href="#" className="hover:text-slate-900">About</Link></li>
                 <li><Link href="#" className="hover:text-slate-900">Contact</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Privacy</Link></li>
+                <li><Link href="/privacy" className="hover:text-slate-900">Privacy</Link></li>
               </ul>
             </div>
           </div>

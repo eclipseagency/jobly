@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -482,7 +483,8 @@ const formatSalary = (min: number, max: number) => {
   return `${formatNum(min)} - ${formatNum(max)}/mo`;
 };
 
-export default function FindJobsPage() {
+function FindJobsContent() {
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -491,6 +493,14 @@ export default function FindJobsPage() {
   const [sortBy, setSortBy] = useState('relevance');
   const [currentPage, setCurrentPage] = useState(1);
   const jobsPerPage = 10;
+
+  // Read query params on initial load
+  useEffect(() => {
+    const q = searchParams.get('q');
+    const location = searchParams.get('location');
+    if (q) setSearchQuery(q);
+    if (location) setLocationQuery(location);
+  }, [searchParams]);
 
   const [filters, setFilters] = useState({
     jobType: [] as string[],
@@ -1053,5 +1063,20 @@ export default function FindJobsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function FindJobsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading jobs...</p>
+        </div>
+      </div>
+    }>
+      <FindJobsContent />
+    </Suspense>
   );
 }
