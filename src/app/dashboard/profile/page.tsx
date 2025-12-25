@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Modal } from '@/components/ui/Modal';
 
 // Icons
 const Icons = {
@@ -287,6 +288,159 @@ export default function ProfilePage() {
     },
   ]);
 
+  // Modal states
+  const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showBioModal, setShowBioModal] = useState(false);
+  const [showLinksModal, setShowLinksModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showReferenceModal, setShowReferenceModal] = useState(false);
+  const [showExperienceModal, setShowExperienceModal] = useState(false);
+  const [showEducationModal, setShowEducationModal] = useState(false);
+  const [showCertificationModal, setShowCertificationModal] = useState(false);
+  const [showSkillModal, setShowSkillModal] = useState(false);
+  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+  const [showLocationsModal, setShowLocationsModal] = useState(false);
+  const [showIndustriesModal, setShowIndustriesModal] = useState(false);
+
+  // Edit form states
+  const [editingProfile, setEditingProfile] = useState({ ...profile });
+  const [editingLanguage, setEditingLanguage] = useState<{ id?: number; language: string; proficiency: string } | null>(null);
+  const [editingReference, setEditingReference] = useState<typeof references[0] | null>(null);
+  const [editingExperience, setEditingExperience] = useState<typeof experience[0] | null>(null);
+  const [editingEducation, setEditingEducation] = useState<typeof education[0] | null>(null);
+  const [editingCertification, setEditingCertification] = useState<typeof certifications[0] | null>(null);
+  const [editingSkill, setEditingSkill] = useState<typeof skills[0] | null>(null);
+
+  // Save handlers
+  const saveBasicInfo = () => {
+    setProfile({ ...profile, ...editingProfile });
+    setShowBasicInfoModal(false);
+  };
+
+  const saveAddress = () => {
+    setProfile({ ...profile, address: editingProfile.address, city: editingProfile.city, province: editingProfile.province, postalCode: editingProfile.postalCode, country: editingProfile.country });
+    setShowAddressModal(false);
+  };
+
+  const saveBio = () => {
+    setProfile({ ...profile, bio: editingProfile.bio, title: editingProfile.title });
+    setShowBioModal(false);
+  };
+
+  const saveLinks = () => {
+    setProfile({ ...profile, linkedinUrl: editingProfile.linkedinUrl, githubUrl: editingProfile.githubUrl, portfolioUrl: editingProfile.portfolioUrl, websiteUrl: editingProfile.websiteUrl });
+    setShowLinksModal(false);
+  };
+
+  const saveLanguage = () => {
+    if (!editingLanguage) return;
+    if (editingLanguage.id) {
+      setLanguages(languages.map(l => l.id === editingLanguage.id ? editingLanguage as typeof l : l));
+    } else {
+      setLanguages([...languages, { ...editingLanguage, id: Date.now() }]);
+    }
+    setShowLanguageModal(false);
+    setEditingLanguage(null);
+  };
+
+  const deleteLanguage = (id: number) => {
+    setLanguages(languages.filter(l => l.id !== id));
+  };
+
+  const saveReference = () => {
+    if (!editingReference) return;
+    if (editingReference.id) {
+      setReferences(references.map(r => r.id === editingReference.id ? editingReference : r));
+    } else {
+      setReferences([...references, { ...editingReference, id: Date.now() }]);
+    }
+    setShowReferenceModal(false);
+    setEditingReference(null);
+  };
+
+  const deleteReference = (id: number) => {
+    setReferences(references.filter(r => r.id !== id));
+  };
+
+  const saveExperience = () => {
+    if (!editingExperience) return;
+    if (experience.find(e => e.id === editingExperience.id)) {
+      setExperience(experience.map(e => e.id === editingExperience.id ? editingExperience : e));
+    } else {
+      setExperience([...experience, { ...editingExperience, id: Date.now() }]);
+    }
+    setShowExperienceModal(false);
+    setEditingExperience(null);
+  };
+
+  const deleteExperience = (id: number) => {
+    setExperience(experience.filter(e => e.id !== id));
+  };
+
+  const saveEducation = () => {
+    if (!editingEducation) return;
+    if (education.find(e => e.id === editingEducation.id)) {
+      setEducation(education.map(e => e.id === editingEducation.id ? editingEducation : e));
+    } else {
+      setEducation([...education, { ...editingEducation, id: Date.now() }]);
+    }
+    setShowEducationModal(false);
+    setEditingEducation(null);
+  };
+
+  const deleteEducation = (id: number) => {
+    setEducation(education.filter(e => e.id !== id));
+  };
+
+  const saveCertification = () => {
+    if (!editingCertification) return;
+    if (certifications.find(c => c.id === editingCertification.id)) {
+      setCertifications(certifications.map(c => c.id === editingCertification.id ? editingCertification : c));
+    } else {
+      setCertifications([...certifications, { ...editingCertification, id: Date.now() }]);
+    }
+    setShowCertificationModal(false);
+    setEditingCertification(null);
+  };
+
+  const deleteCertification = (id: number) => {
+    setCertifications(certifications.filter(c => c.id !== id));
+  };
+
+  const saveSkill = () => {
+    if (!editingSkill) return;
+    const existingIndex = skills.findIndex(s => s.name === editingSkill.name);
+    if (existingIndex >= 0) {
+      const newSkills = [...skills];
+      newSkills[existingIndex] = editingSkill;
+      setSkills(newSkills);
+    } else {
+      setSkills([...skills, editingSkill]);
+    }
+    setShowSkillModal(false);
+    setEditingSkill(null);
+  };
+
+  const deleteSkill = (name: string) => {
+    setSkills(skills.filter(s => s.name !== name));
+  };
+
+  const savePreferences = () => {
+    setProfile({ ...profile, expectedSalary: editingProfile.expectedSalary, preferredJobType: editingProfile.preferredJobType, preferredWorkSetup: editingProfile.preferredWorkSetup, availableFrom: editingProfile.availableFrom, willingToRelocate: editingProfile.willingToRelocate, openToOffers: editingProfile.openToOffers });
+    setShowPreferencesModal(false);
+  };
+
+  const saveLocations = () => {
+    setProfile({ ...profile, preferredLocations: editingProfile.preferredLocations });
+    setShowLocationsModal(false);
+  };
+
+  const saveIndustries = () => {
+    setProfile({ ...profile, preferredIndustries: editingProfile.preferredIndustries });
+    setShowIndustriesModal(false);
+  };
+
   // Profile completion percentage
   const calculateCompletion = () => {
     let completed = 0;
@@ -419,7 +573,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">Basic Information</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingProfile({ ...profile }); setShowBasicInfoModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.edit} Edit
                 </button>
               </div>
@@ -459,7 +613,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">Address</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingProfile({ ...profile }); setShowAddressModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.edit} Edit
                 </button>
               </div>
@@ -491,7 +645,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-900">About Me</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingProfile({ ...profile }); setShowBioModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.edit} Edit
                 </button>
               </div>
@@ -502,7 +656,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">Social & Professional Links</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingProfile({ ...profile }); setShowLinksModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.edit} Edit
                 </button>
               </div>
@@ -550,15 +704,17 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-900">Languages</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingLanguage({ language: '', proficiency: 'Basic' }); setShowLanguageModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.plus} Add
                 </button>
               </div>
               <div className="flex flex-wrap gap-3">
                 {languages.map((lang) => (
-                  <div key={lang.id} className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg">
+                  <div key={lang.id} className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg group">
                     <span className="font-medium text-slate-900">{lang.language}</span>
                     <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-600 rounded-full">{lang.proficiency}</span>
+                    <button onClick={() => { setEditingLanguage(lang); setShowLanguageModal(true); }} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-primary-600 ml-1">{Icons.edit}</button>
+                    <button onClick={() => deleteLanguage(lang.id)} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600">{Icons.trash}</button>
                   </div>
                 ))}
               </div>
@@ -568,7 +724,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-900">Professional References</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingReference({ id: 0, name: '', position: '', company: '', email: '', phone: '', relationship: '' }); setShowReferenceModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.plus} Add
                 </button>
               </div>
@@ -581,7 +737,10 @@ export default function ProfilePage() {
                         <p className="text-sm text-slate-500">{ref.position} at {ref.company}</p>
                         <p className="text-xs text-slate-400 mt-1">{ref.relationship}</p>
                       </div>
-                      <button className="text-slate-400 hover:text-slate-600">{Icons.edit}</button>
+                      <div className="flex gap-1">
+                        <button onClick={() => { setEditingReference(ref); setShowReferenceModal(true); }} className="text-slate-400 hover:text-primary-600">{Icons.edit}</button>
+                        <button onClick={() => deleteReference(ref.id)} className="text-slate-400 hover:text-red-600">{Icons.trash}</button>
+                      </div>
                     </div>
                     <div className="mt-3 space-y-1 text-sm text-slate-600">
                       <p className="flex items-center gap-2">{Icons.email} {ref.email}</p>
@@ -600,7 +759,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">Work Experience</h2>
-                <button className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                <button onClick={() => { setEditingExperience({ id: 0, jobTitle: '', company: '', location: '', locationType: 'onsite', employmentType: 'full-time', startDate: '', endDate: null, isCurrent: false, description: '', achievements: [], skills: [] }); setShowExperienceModal(true); }} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
                   {Icons.plus} Add Experience
                 </button>
               </div>
@@ -629,8 +788,8 @@ export default function ProfilePage() {
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-lg transition-colors">{Icons.edit}</button>
-                          <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-colors">{Icons.trash}</button>
+                          <button onClick={() => { setEditingExperience(exp); setShowExperienceModal(true); }} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-lg transition-colors">{Icons.edit}</button>
+                          <button onClick={() => deleteExperience(exp.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-colors">{Icons.trash}</button>
                         </div>
                       </div>
                       <p className="text-slate-600 text-sm mb-3">{exp.description}</p>
@@ -669,7 +828,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">Education</h2>
-                <button className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                <button onClick={() => { setEditingEducation({ id: 0, school: '', degree: '', fieldOfStudy: '', startDate: '', endDate: '', isCurrent: false, grade: '', activities: '', achievements: [] }); setShowEducationModal(true); }} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
                   {Icons.plus} Add Education
                 </button>
               </div>
@@ -699,8 +858,8 @@ export default function ProfilePage() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-lg transition-colors">{Icons.edit}</button>
-                        <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-colors">{Icons.trash}</button>
+                        <button onClick={() => { setEditingEducation(edu); setShowEducationModal(true); }} className="p-2 text-slate-400 hover:text-primary-600 hover:bg-white rounded-lg transition-colors">{Icons.edit}</button>
+                        <button onClick={() => deleteEducation(edu.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-colors">{Icons.trash}</button>
                       </div>
                     </div>
                   </div>
@@ -712,7 +871,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">Certifications & Licenses</h2>
-                <button className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                <button onClick={() => { setEditingCertification({ id: 0, name: '', issuingOrg: '', issueDate: '', expiryDate: null, hasNoExpiry: false, credentialId: '', credentialUrl: '' }); setShowCertificationModal(true); }} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
                   {Icons.plus} Add Certification
                 </button>
               </div>
@@ -742,7 +901,10 @@ export default function ProfilePage() {
                           )}
                         </div>
                       </div>
-                      <button className="p-1 text-slate-400 hover:text-primary-600">{Icons.edit}</button>
+                      <div className="flex flex-col gap-1">
+                        <button onClick={() => { setEditingCertification(cert); setShowCertificationModal(true); }} className="p-1 text-slate-400 hover:text-primary-600">{Icons.edit}</button>
+                        <button onClick={() => deleteCertification(cert.id)} className="p-1 text-slate-400 hover:text-red-600">{Icons.trash}</button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -756,7 +918,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-slate-900">Skills & Expertise</h2>
-              <button className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+              <button onClick={() => { setEditingSkill({ name: '', level: 'Basic', years: 1 }); setShowSkillModal(true); }} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
                 {Icons.plus} Add Skill
               </button>
             </div>
@@ -765,7 +927,10 @@ export default function ProfilePage() {
                 <div key={index} className="bg-slate-50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-slate-900">{skill.name}</h3>
-                    <button className="text-slate-400 hover:text-primary-600">{Icons.edit}</button>
+                    <div className="flex gap-1">
+                      <button onClick={() => { setEditingSkill(skill); setShowSkillModal(true); }} className="text-slate-400 hover:text-primary-600">{Icons.edit}</button>
+                      <button onClick={() => deleteSkill(skill.name)} className="text-slate-400 hover:text-red-600">{Icons.trash}</button>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${
@@ -901,7 +1066,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-slate-900">Job Preferences</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingProfile({ ...profile }); setShowPreferencesModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.edit} Edit
                 </button>
               </div>
@@ -940,7 +1105,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-900">Preferred Locations</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingProfile({ ...profile }); setShowLocationsModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.edit} Edit
                 </button>
               </div>
@@ -954,7 +1119,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-900">Preferred Industries</h2>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                <button onClick={() => { setEditingProfile({ ...profile }); setShowIndustriesModal(true); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                   {Icons.edit} Edit
                 </button>
               </div>
@@ -995,6 +1160,456 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Basic Info Modal */}
+      <Modal isOpen={showBasicInfoModal} onClose={() => setShowBasicInfoModal(false)} title="Edit Basic Information" size="lg">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">First Name</label>
+            <input type="text" value={editingProfile.firstName} onChange={(e) => setEditingProfile({ ...editingProfile, firstName: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Last Name</label>
+            <input type="text" value={editingProfile.lastName} onChange={(e) => setEditingProfile({ ...editingProfile, lastName: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input type="email" value={editingProfile.email} onChange={(e) => setEditingProfile({ ...editingProfile, email: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+            <input type="tel" value={editingProfile.phone} onChange={(e) => setEditingProfile({ ...editingProfile, phone: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+            <input type="date" value={editingProfile.dateOfBirth} onChange={(e) => setEditingProfile({ ...editingProfile, dateOfBirth: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Gender</label>
+            <select value={editingProfile.gender} onChange={(e) => setEditingProfile({ ...editingProfile, gender: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nationality</label>
+            <input type="text" value={editingProfile.nationality} onChange={(e) => setEditingProfile({ ...editingProfile, nationality: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setShowBasicInfoModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button onClick={saveBasicInfo} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save Changes</button>
+        </div>
+      </Modal>
+
+      {/* Address Modal */}
+      <Modal isOpen={showAddressModal} onClose={() => setShowAddressModal(false)} title="Edit Address">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Street Address</label>
+            <input type="text" value={editingProfile.address} onChange={(e) => setEditingProfile({ ...editingProfile, address: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">City</label>
+              <input type="text" value={editingProfile.city} onChange={(e) => setEditingProfile({ ...editingProfile, city: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Province</label>
+              <input type="text" value={editingProfile.province} onChange={(e) => setEditingProfile({ ...editingProfile, province: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Postal Code</label>
+              <input type="text" value={editingProfile.postalCode} onChange={(e) => setEditingProfile({ ...editingProfile, postalCode: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
+              <input type="text" value={editingProfile.country} onChange={(e) => setEditingProfile({ ...editingProfile, country: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setShowAddressModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button onClick={saveAddress} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save Changes</button>
+        </div>
+      </Modal>
+
+      {/* Bio Modal */}
+      <Modal isOpen={showBioModal} onClose={() => setShowBioModal(false)} title="Edit About Me" size="lg">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Professional Title</label>
+            <input type="text" value={editingProfile.title} onChange={(e) => setEditingProfile({ ...editingProfile, title: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Bio</label>
+            <textarea value={editingProfile.bio} onChange={(e) => setEditingProfile({ ...editingProfile, bio: e.target.value })} rows={5} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setShowBioModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button onClick={saveBio} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save Changes</button>
+        </div>
+      </Modal>
+
+      {/* Links Modal */}
+      <Modal isOpen={showLinksModal} onClose={() => setShowLinksModal(false)} title="Edit Social Links">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">LinkedIn URL</label>
+            <input type="url" value={editingProfile.linkedinUrl} onChange={(e) => setEditingProfile({ ...editingProfile, linkedinUrl: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">GitHub URL</label>
+            <input type="url" value={editingProfile.githubUrl} onChange={(e) => setEditingProfile({ ...editingProfile, githubUrl: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Portfolio URL</label>
+            <input type="url" value={editingProfile.portfolioUrl} onChange={(e) => setEditingProfile({ ...editingProfile, portfolioUrl: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Website URL</label>
+            <input type="url" value={editingProfile.websiteUrl} onChange={(e) => setEditingProfile({ ...editingProfile, websiteUrl: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setShowLinksModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button onClick={saveLinks} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save Changes</button>
+        </div>
+      </Modal>
+
+      {/* Language Modal */}
+      <Modal isOpen={showLanguageModal} onClose={() => setShowLanguageModal(false)} title={editingLanguage?.id ? 'Edit Language' : 'Add Language'} size="sm">
+        {editingLanguage && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
+              <input type="text" value={editingLanguage.language} onChange={(e) => setEditingLanguage({ ...editingLanguage, language: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Proficiency</label>
+              <select value={editingLanguage.proficiency} onChange={(e) => setEditingLanguage({ ...editingLanguage, proficiency: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <option value="Basic">Basic</option>
+                <option value="Conversational">Conversational</option>
+                <option value="Fluent">Fluent</option>
+                <option value="Native">Native</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowLanguageModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+              <button onClick={saveLanguage} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Reference Modal */}
+      <Modal isOpen={showReferenceModal} onClose={() => setShowReferenceModal(false)} title={editingReference?.id ? 'Edit Reference' : 'Add Reference'}>
+        {editingReference && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+              <input type="text" value={editingReference.name} onChange={(e) => setEditingReference({ ...editingReference, name: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Position</label>
+                <input type="text" value={editingReference.position} onChange={(e) => setEditingReference({ ...editingReference, position: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Company</label>
+                <input type="text" value={editingReference.company} onChange={(e) => setEditingReference({ ...editingReference, company: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input type="email" value={editingReference.email} onChange={(e) => setEditingReference({ ...editingReference, email: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                <input type="tel" value={editingReference.phone} onChange={(e) => setEditingReference({ ...editingReference, phone: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Relationship</label>
+              <input type="text" value={editingReference.relationship} onChange={(e) => setEditingReference({ ...editingReference, relationship: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="e.g., Direct Manager, Former Colleague" />
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowReferenceModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+              <button onClick={saveReference} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Experience Modal */}
+      <Modal isOpen={showExperienceModal} onClose={() => setShowExperienceModal(false)} title={editingExperience?.id ? 'Edit Experience' : 'Add Experience'} size="lg">
+        {editingExperience && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Job Title</label>
+              <input type="text" value={editingExperience.jobTitle} onChange={(e) => setEditingExperience({ ...editingExperience, jobTitle: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Company</label>
+                <input type="text" value={editingExperience.company} onChange={(e) => setEditingExperience({ ...editingExperience, company: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                <input type="text" value={editingExperience.location} onChange={(e) => setEditingExperience({ ...editingExperience, location: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Employment Type</label>
+                <select value={editingExperience.employmentType} onChange={(e) => setEditingExperience({ ...editingExperience, employmentType: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                  <option value="full-time">Full-time</option>
+                  <option value="part-time">Part-time</option>
+                  <option value="contract">Contract</option>
+                  <option value="freelance">Freelance</option>
+                  <option value="internship">Internship</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Work Setup</label>
+                <select value={editingExperience.locationType} onChange={(e) => setEditingExperience({ ...editingExperience, locationType: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                  <option value="onsite">On-site</option>
+                  <option value="remote">Remote</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                <input type="month" value={editingExperience.startDate} onChange={(e) => setEditingExperience({ ...editingExperience, startDate: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+                <input type="month" value={editingExperience.endDate || ''} onChange={(e) => setEditingExperience({ ...editingExperience, endDate: e.target.value || null })} disabled={editingExperience.isCurrent} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-slate-100" />
+              </div>
+            </div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={editingExperience.isCurrent} onChange={(e) => setEditingExperience({ ...editingExperience, isCurrent: e.target.checked, endDate: e.target.checked ? null : editingExperience.endDate })} className="w-4 h-4 text-primary-600 rounded" />
+              <span className="text-sm text-slate-700">I currently work here</span>
+            </label>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <textarea value={editingExperience.description} onChange={(e) => setEditingExperience({ ...editingExperience, description: e.target.value })} rows={3} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowExperienceModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+              <button onClick={saveExperience} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Education Modal */}
+      <Modal isOpen={showEducationModal} onClose={() => setShowEducationModal(false)} title={editingEducation?.id ? 'Edit Education' : 'Add Education'} size="lg">
+        {editingEducation && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">School/University</label>
+              <input type="text" value={editingEducation.school} onChange={(e) => setEditingEducation({ ...editingEducation, school: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Degree</label>
+                <select value={editingEducation.degree} onChange={(e) => setEditingEducation({ ...editingEducation, degree: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                  <option value="">Select degree</option>
+                  <option value="High School">High School</option>
+                  <option value="Associate's Degree">Associate&apos;s Degree</option>
+                  <option value="Bachelor's Degree">Bachelor&apos;s Degree</option>
+                  <option value="Master's Degree">Master&apos;s Degree</option>
+                  <option value="Doctorate">Doctorate</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Field of Study</label>
+                <input type="text" value={editingEducation.fieldOfStudy} onChange={(e) => setEditingEducation({ ...editingEducation, fieldOfStudy: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                <input type="month" value={editingEducation.startDate} onChange={(e) => setEditingEducation({ ...editingEducation, startDate: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+                <input type="month" value={editingEducation.endDate || ''} onChange={(e) => setEditingEducation({ ...editingEducation, endDate: e.target.value })} disabled={editingEducation.isCurrent} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-slate-100" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Grade/GPA</label>
+              <input type="text" value={editingEducation.grade} onChange={(e) => setEditingEducation({ ...editingEducation, grade: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Activities & Societies</label>
+              <input type="text" value={editingEducation.activities} onChange={(e) => setEditingEducation({ ...editingEducation, activities: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowEducationModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+              <button onClick={saveEducation} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Certification Modal */}
+      <Modal isOpen={showCertificationModal} onClose={() => setShowCertificationModal(false)} title={editingCertification?.id ? 'Edit Certification' : 'Add Certification'}>
+        {editingCertification && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Certification Name</label>
+              <input type="text" value={editingCertification.name} onChange={(e) => setEditingCertification({ ...editingCertification, name: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Issuing Organization</label>
+              <input type="text" value={editingCertification.issuingOrg} onChange={(e) => setEditingCertification({ ...editingCertification, issuingOrg: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Issue Date</label>
+                <input type="month" value={editingCertification.issueDate} onChange={(e) => setEditingCertification({ ...editingCertification, issueDate: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Expiry Date</label>
+                <input type="month" value={editingCertification.expiryDate || ''} onChange={(e) => setEditingCertification({ ...editingCertification, expiryDate: e.target.value || null })} disabled={editingCertification.hasNoExpiry} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-slate-100" />
+              </div>
+            </div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={editingCertification.hasNoExpiry} onChange={(e) => setEditingCertification({ ...editingCertification, hasNoExpiry: e.target.checked, expiryDate: e.target.checked ? null : editingCertification.expiryDate })} className="w-4 h-4 text-primary-600 rounded" />
+              <span className="text-sm text-slate-700">This credential does not expire</span>
+            </label>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Credential ID</label>
+              <input type="text" value={editingCertification.credentialId} onChange={(e) => setEditingCertification({ ...editingCertification, credentialId: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Credential URL</label>
+              <input type="url" value={editingCertification.credentialUrl} onChange={(e) => setEditingCertification({ ...editingCertification, credentialUrl: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowCertificationModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+              <button onClick={saveCertification} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Skill Modal */}
+      <Modal isOpen={showSkillModal} onClose={() => setShowSkillModal(false)} title={editingSkill?.name ? 'Edit Skill' : 'Add Skill'} size="sm">
+        {editingSkill && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Skill Name</label>
+              <input type="text" value={editingSkill.name} onChange={(e) => setEditingSkill({ ...editingSkill, name: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Proficiency Level</label>
+              <select value={editingSkill.level} onChange={(e) => setEditingSkill({ ...editingSkill, level: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <option value="Basic">Basic</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+                <option value="Expert">Expert</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Years of Experience</label>
+              <input type="number" min="0" value={editingSkill.years} onChange={(e) => setEditingSkill({ ...editingSkill, years: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setShowSkillModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+              <button onClick={saveSkill} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Preferences Modal */}
+      <Modal isOpen={showPreferencesModal} onClose={() => setShowPreferencesModal(false)} title="Edit Job Preferences" size="lg">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Expected Salary (PHP/month)</label>
+            <input type="text" value={editingProfile.expectedSalary} onChange={(e) => setEditingProfile({ ...editingProfile, expectedSalary: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="e.g., 80,000 - 120,000" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Job Type</label>
+              <select value={editingProfile.preferredJobType} onChange={(e) => setEditingProfile({ ...editingProfile, preferredJobType: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+                <option value="contract">Contract</option>
+                <option value="freelance">Freelance</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Work Setup</label>
+              <select value={editingProfile.preferredWorkSetup} onChange={(e) => setEditingProfile({ ...editingProfile, preferredWorkSetup: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <option value="onsite">On-site</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Available From</label>
+            <input type="date" value={editingProfile.availableFrom} onChange={(e) => setEditingProfile({ ...editingProfile, availableFrom: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+          </div>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={editingProfile.willingToRelocate} onChange={(e) => setEditingProfile({ ...editingProfile, willingToRelocate: e.target.checked })} className="w-4 h-4 text-primary-600 rounded" />
+              <span className="text-sm text-slate-700">Willing to relocate</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={editingProfile.openToOffers} onChange={(e) => setEditingProfile({ ...editingProfile, openToOffers: e.target.checked })} className="w-4 h-4 text-primary-600 rounded" />
+              <span className="text-sm text-slate-700">Open to offers</span>
+            </label>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setShowPreferencesModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button onClick={savePreferences} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save Changes</button>
+        </div>
+      </Modal>
+
+      {/* Locations Modal */}
+      <Modal isOpen={showLocationsModal} onClose={() => setShowLocationsModal(false)} title="Edit Preferred Locations">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">Enter locations separated by comma</p>
+          <input type="text" value={editingProfile.preferredLocations.join(', ')} onChange={(e) => setEditingProfile({ ...editingProfile, preferredLocations: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="e.g., Makati City, BGC, Ortigas" />
+          <div className="flex flex-wrap gap-2">
+            {editingProfile.preferredLocations.map((loc, i) => (
+              <span key={i} className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm rounded-lg">{loc}</span>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setShowLocationsModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button onClick={saveLocations} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save Changes</button>
+        </div>
+      </Modal>
+
+      {/* Industries Modal */}
+      <Modal isOpen={showIndustriesModal} onClose={() => setShowIndustriesModal(false)} title="Edit Preferred Industries">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">Enter industries separated by comma</p>
+          <input type="text" value={editingProfile.preferredIndustries.join(', ')} onChange={(e) => setEditingProfile({ ...editingProfile, preferredIndustries: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="e.g., Technology, Finance, E-commerce" />
+          <div className="flex flex-wrap gap-2">
+            {editingProfile.preferredIndustries.map((ind, i) => (
+              <span key={i} className="px-3 py-1.5 bg-primary-50 text-primary-700 text-sm rounded-lg">{ind}</span>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setShowIndustriesModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button onClick={saveIndustries} className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Save Changes</button>
+        </div>
+      </Modal>
     </div>
   );
 }
