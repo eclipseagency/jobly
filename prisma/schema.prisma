@@ -24,9 +24,39 @@ model Tenant {
   slug        String   @unique
   description String?
   logo        String?
+  coverImage  String?
   website     String?
   industry    String?
   size        String?  // e.g., "1-10", "11-50", "51-200", "201-500", "500+"
+  foundedYear Int?
+
+  // Contact Information
+  email       String?
+  phone       String?
+
+  // Location
+  address     String?
+  city        String?
+  province    String?
+  postalCode  String?
+  country     String?  @default("Philippines")
+
+  // Social Links
+  linkedinUrl  String?
+  facebookUrl  String?
+  twitterUrl   String?
+  instagramUrl String?
+
+  // Company Culture
+  mission      String?
+  vision       String?
+  benefits     String[]  // Company benefits/perks
+  culture      String?   // Company culture description
+
+  // Verification
+  isVerified   Boolean  @default(false)
+  verifiedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
