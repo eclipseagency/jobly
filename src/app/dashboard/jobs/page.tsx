@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { LocationDropdown } from '@/components/ui/LocationDropdown';
 
 const jobs = [
   {
@@ -613,19 +614,12 @@ function FindJobsContent() {
                 className="w-full pl-12 pr-4 py-3.5 rounded-xl border-0 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
-            <div className="flex-1 lg:max-w-xs relative">
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Location"
-                value={locationQuery}
-                onChange={(e) => { setLocationQuery(e.target.value); setCurrentPage(1); }}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl border-0 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
+            <LocationDropdown
+              value={locationQuery}
+              onChange={(value) => { setLocationQuery(value); setCurrentPage(1); }}
+              placeholder="Select location"
+              className="flex-1 lg:max-w-xs"
+            />
             <button className="px-8 py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors shrink-0">
               Search Jobs
             </button>
