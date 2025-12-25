@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { LocationDropdown } from '@/components/ui/LocationDropdown';
 
 export default function Home() {
   const router = useRouter();
@@ -71,19 +72,23 @@ export default function Home() {
               {/* Search Box */}
               <form onSubmit={handleSearch} className="mt-8">
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    placeholder="Job title or keyword"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Location"
+                  <div className="relative w-full sm:w-auto sm:flex-1">
+                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Job title or keyword"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                    />
+                  </div>
+                  <LocationDropdown
                     value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
-                    className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                    onChange={setLocationQuery}
+                    placeholder="Select location"
+                    className="w-full sm:w-auto sm:flex-1"
                   />
                   <button
                     type="submit"
