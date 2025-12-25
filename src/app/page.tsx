@@ -58,18 +58,18 @@ export default function Home() {
                   <input
                     type="text"
                     placeholder="Job title or keyword"
-                    className="flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                    className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
                   />
                   <input
                     type="text"
                     placeholder="Location"
-                    className="flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                    className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
                   />
                   <Link
                     href="/dashboard/jobs"
-                    className="px-8 py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors text-center"
+                    className="shrink-0 px-6 py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors text-center whitespace-nowrap"
                   >
-                    Search
+                    Search Jobs
                   </Link>
                 </div>
               </div>
