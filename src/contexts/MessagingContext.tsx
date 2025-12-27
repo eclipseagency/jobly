@@ -39,7 +39,7 @@ interface MessagingContextType {
   markAsRead: (conversationId: string) => void;
   getConversationMessages: (conversationId: string) => Message[];
   getUserConversations: () => Conversation[];
-  startConversation: (employerId: string, employerName: string, jobId: string, jobTitle: string) => string;
+  startConversation: (otherPartyId: string, otherPartyName: string, jobId: string, jobTitle: string) => string;
 }
 
 const MessagingContext = createContext<MessagingContextType | undefined>(undefined);
@@ -364,18 +364,26 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       .sort((a, b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
   };
 
-  const startConversation = (employerId: string, employerName: string, jobId: string, jobTitle: string) => {
+  const startConversation = (otherPartyId: string, otherPartyName: string, jobId: string, jobTitle: string) => {
+    // Determine roles based on current user type
+    const isEmployer = currentUserType === 'employer';
+
+    const jobseekerId = isEmployer ? otherPartyId : currentUserId;
+    const jobseekerName = isEmployer ? otherPartyName : 'Alex Morgan';
+    const employerId = isEmployer ? currentUserId : otherPartyId;
+    const employerName = isEmployer ? 'TechCorp Inc.' : otherPartyName;
+
     // Check if conversation already exists
     const existing = conversations.find(
-      c => c.jobseekerId === currentUserId && c.employerId === employerId && c.jobId === jobId
+      c => c.jobseekerId === jobseekerId && c.employerId === employerId && c.jobId === jobId
     );
     if (existing) return existing.id;
 
     const newConversation: Conversation = {
       id: `conv-${Date.now()}`,
-      jobseekerId: currentUserId,
-      jobseekerName: 'Alex Morgan', // In real app, get from user context
-      jobseekerAvatar: 'AM',
+      jobseekerId,
+      jobseekerName,
+      jobseekerAvatar: jobseekerName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
       employerId,
       employerName,
       employerAvatar: employerName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
