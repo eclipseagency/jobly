@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useMessaging } from '@/contexts/MessagingContext';
 
 interface Applicant {
   id: string;
@@ -20,6 +21,11 @@ interface Applicant {
   resumeUrl: string;
   phone?: string;
   summary?: string;
+  interviewDate?: string;
+  interviewTime?: string;
+  interviewType?: 'video' | 'phone' | 'onsite';
+  offerSalary?: string;
+  offerStartDate?: string;
 }
 
 const initialApplicants: Applicant[] = [
@@ -79,6 +85,9 @@ const initialApplicants: Applicant[] = [
     currentRole: 'Senior Designer at Canva',
     resumeUrl: '#',
     summary: 'Award-winning designer focused on creating intuitive user experiences. Strong advocate for user-centered design.',
+    interviewDate: '2024-12-28',
+    interviewTime: '14:00',
+    interviewType: 'video',
   },
   {
     id: '4',
@@ -153,6 +162,8 @@ const initialApplicants: Applicant[] = [
     currentRole: 'Design Lead at Meta',
     resumeUrl: '#',
     summary: 'Design leader with international experience. Built and scaled design systems for Fortune 500 companies.',
+    offerSalary: '₱150,000/month',
+    offerStartDate: 'January 15, 2025',
   },
   {
     id: '8',
@@ -184,6 +195,7 @@ const jobOptions = [
 const statusOptions: Array<'All' | Applicant['status']> = ['All', 'New', 'Reviewed', 'Shortlisted', 'Interview', 'Hired', 'Rejected'];
 
 export default function ApplicantsPage() {
+  const { sendMessage, startConversation } = useMessaging();
   const [applicants, setApplicants] = useState<Applicant[]>(initialApplicants);
   const [selectedJob, setSelectedJob] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState<'All' | Applicant['status']>('All');
@@ -191,6 +203,23 @@ export default function ApplicantsPage() {
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
   const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
+
+  // Modal states
+  const [showInterviewModal, setShowInterviewModal] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+
+  // Form states
+  const [interviewDate, setInterviewDate] = useState('');
+  const [interviewTime, setInterviewTime] = useState('');
+  const [interviewType, setInterviewType] = useState<'video' | 'phone' | 'onsite'>('video');
+  const [interviewNotes, setInterviewNotes] = useState('');
+  const [messageText, setMessageText] = useState('');
+  const [offerSalary, setOfferSalary] = useState('');
+  const [offerStartDate, setOfferStartDate] = useState('');
+  const [offerBenefits, setOfferBenefits] = useState('');
+  const [offerNotes, setOfferNotes] = useState('');
 
   const filteredApplicants = applicants.filter(applicant => {
     const matchesJob = selectedJob === 'all' || applicant.jobId === selectedJob;
@@ -245,12 +274,12 @@ export default function ApplicantsPage() {
     setShowModal(true);
   };
 
-  const updateApplicantStatus = (applicantId: string, newStatus: Applicant['status']) => {
+  const updateApplicantStatus = (applicantId: string, newStatus: Applicant['status'], updates?: Partial<Applicant>) => {
     setApplicants(prev => prev.map(app =>
-      app.id === applicantId ? { ...app, status: newStatus } : app
+      app.id === applicantId ? { ...app, status: newStatus, ...updates } : app
     ));
     if (selectedApplicant?.id === applicantId) {
-      setSelectedApplicant(prev => prev ? { ...prev, status: newStatus } : null);
+      setSelectedApplicant(prev => prev ? { ...prev, status: newStatus, ...updates } : null);
     }
   };
 
@@ -258,21 +287,129 @@ export default function ApplicantsPage() {
     updateApplicantStatus(applicant.id, 'Shortlisted');
   };
 
-  const handleScheduleInterview = (applicant: Applicant) => {
-    updateApplicantStatus(applicant.id, 'Interview');
-    alert(`Interview scheduled with ${applicant.name}. They will receive an email notification.`);
+  const openInterviewModal = (applicant: Applicant) => {
+    setSelectedApplicant(applicant);
+    setInterviewDate('');
+    setInterviewTime('');
+    setInterviewType('video');
+    setInterviewNotes('');
+    setShowInterviewModal(true);
+  };
+
+  const handleScheduleInterview = () => {
+    if (selectedApplicant && interviewDate && interviewTime) {
+      updateApplicantStatus(selectedApplicant.id, 'Interview', {
+        interviewDate,
+        interviewTime,
+        interviewType,
+      });
+
+      // Send message to applicant
+      const formattedDate = new Date(interviewDate).toLocaleDateString('en-PH', {
+        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+      });
+      const interviewTypeText = interviewType === 'video' ? 'Video Call' : interviewType === 'phone' ? 'Phone Call' : 'On-site';
+
+      const conversationId = startConversation(
+        selectedApplicant.id,
+        selectedApplicant.name,
+        'emp1',
+        'TechCorp Inc.',
+        selectedApplicant.job
+      );
+
+      sendMessage(
+        conversationId,
+        `Hello ${selectedApplicant.name.split(' ')[0]},\n\nWe're pleased to invite you for an interview for the ${selectedApplicant.job} position.\n\n📅 Date: ${formattedDate}\n⏰ Time: ${interviewTime}\n📍 Type: ${interviewTypeText}\n\n${interviewNotes ? `Additional Notes: ${interviewNotes}\n\n` : ''}Please confirm your availability. We look forward to speaking with you!\n\nBest regards,\nTechCorp Inc. Hiring Team`,
+        'employer'
+      );
+
+      setShowInterviewModal(false);
+      setShowModal(false);
+    }
+  };
+
+  const openMessageModal = (applicant: Applicant) => {
+    setSelectedApplicant(applicant);
+    setMessageText('');
+    setShowMessageModal(true);
+  };
+
+  const handleSendMessage = () => {
+    if (selectedApplicant && messageText.trim()) {
+      const conversationId = startConversation(
+        selectedApplicant.id,
+        selectedApplicant.name,
+        'emp1',
+        'TechCorp Inc.',
+        selectedApplicant.job
+      );
+
+      sendMessage(conversationId, messageText, 'employer');
+      setShowMessageModal(false);
+      setMessageText('');
+    }
+  };
+
+  const openResumeModal = (applicant: Applicant) => {
+    setSelectedApplicant(applicant);
+    setShowResumeModal(true);
+  };
+
+  const openOfferModal = (applicant: Applicant) => {
+    setSelectedApplicant(applicant);
+    setOfferSalary('');
+    setOfferStartDate('');
+    setOfferBenefits('');
+    setOfferNotes('');
+    setShowOfferModal(true);
+  };
+
+  const handleSendOffer = () => {
+    if (selectedApplicant && offerSalary && offerStartDate) {
+      updateApplicantStatus(selectedApplicant.id, 'Hired', {
+        offerSalary,
+        offerStartDate,
+      });
+
+      // Send offer message
+      const conversationId = startConversation(
+        selectedApplicant.id,
+        selectedApplicant.name,
+        'emp1',
+        'TechCorp Inc.',
+        selectedApplicant.job
+      );
+
+      sendMessage(
+        conversationId,
+        `Dear ${selectedApplicant.name},\n\n🎉 Congratulations! We are pleased to offer you the position of ${selectedApplicant.job} at TechCorp Inc.\n\n💰 Salary: ${offerSalary}\n📅 Start Date: ${offerStartDate}\n${offerBenefits ? `✨ Benefits: ${offerBenefits}\n` : ''}\n${offerNotes ? `${offerNotes}\n\n` : '\n'}Please review this offer and let us know your decision. We're excited to potentially have you join our team!\n\nBest regards,\nTechCorp Inc. HR Team`,
+        'employer'
+      );
+
+      setShowOfferModal(false);
+      setShowModal(false);
+    }
   };
 
   const handleReject = (applicant: Applicant) => {
     if (confirm(`Are you sure you want to reject ${applicant.name}'s application?`)) {
       updateApplicantStatus(applicant.id, 'Rejected');
-    }
-  };
 
-  const handleHire = (applicant: Applicant) => {
-    if (confirm(`Confirm hiring ${applicant.name}?`)) {
-      updateApplicantStatus(applicant.id, 'Hired');
-      alert(`Congratulations! ${applicant.name} has been marked as hired. They will receive an offer email.`);
+      // Send rejection message
+      const conversationId = startConversation(
+        applicant.id,
+        applicant.name,
+        'emp1',
+        'TechCorp Inc.',
+        applicant.job
+      );
+
+      sendMessage(
+        conversationId,
+        `Dear ${applicant.name},\n\nThank you for your interest in the ${applicant.job} position at TechCorp Inc. and for taking the time to apply.\n\nAfter careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs.\n\nWe appreciate your interest in our company and wish you the best in your job search.\n\nBest regards,\nTechCorp Inc. HR Team`,
+        'employer'
+      );
     }
   };
 
@@ -305,6 +442,29 @@ export default function ApplicantsPage() {
             <p className="text-slate-700 text-sm">{applicant.summary}</p>
           </div>
         )}
+
+        {/* Interview Info */}
+        {applicant.status === 'Interview' && applicant.interviewDate && (
+          <div className="p-3 bg-purple-50 border border-purple-100 rounded-lg">
+            <p className="text-xs font-medium text-purple-600 uppercase tracking-wider mb-2">Scheduled Interview</p>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-1 text-purple-700">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {new Date(applicant.interviewDate).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+              <span className="flex items-center gap-1 text-purple-700">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {applicant.interviewTime}
+              </span>
+              <span className="text-purple-600 capitalize">{applicant.interviewType}</span>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Applied For</p>
@@ -354,27 +514,45 @@ export default function ApplicantsPage() {
           <>
             {applicant.status !== 'Interview' && (
               <button
-                onClick={() => handleScheduleInterview(applicant)}
-                className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+                onClick={() => openInterviewModal(applicant)}
+                className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
               >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
                 Schedule Interview
               </button>
             )}
             {applicant.status === 'Interview' && (
               <button
-                onClick={() => handleHire(applicant)}
-                className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                onClick={() => openOfferModal(applicant)}
+                className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
               >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                </svg>
                 Send Offer
               </button>
             )}
           </>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <button className="py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">
+          <button
+            onClick={() => openResumeModal(applicant)}
+            className="py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm flex items-center justify-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
             View Resume
           </button>
-          <button className="py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">
+          <button
+            onClick={() => openMessageModal(applicant)}
+            className="py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm flex items-center justify-center gap-1"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
             Send Message
           </button>
         </div>
@@ -399,12 +577,12 @@ export default function ApplicantsPage() {
           </div>
         )}
         {applicant.status === 'Hired' && (
-          <div className="text-center py-2 text-green-600 font-medium text-sm">
+          <div className="text-center py-2 text-green-600 font-medium text-sm bg-green-50 rounded-lg">
             This candidate has been hired
           </div>
         )}
         {applicant.status === 'Rejected' && (
-          <div className="text-center py-2 text-slate-500 font-medium text-sm">
+          <div className="text-center py-2 text-slate-500 font-medium text-sm bg-slate-50 rounded-lg">
             This application has been rejected
           </div>
         )}
@@ -596,7 +774,7 @@ export default function ApplicantsPage() {
                         <span className="text-sm text-slate-400 hidden sm:inline">{applicant.experience} exp</span>
                         <span className="text-sm text-slate-400">{formatDate(applicant.appliedAt)}</span>
                       </div>
-                      <div className="flex flex-wrap gap-1.5 mt-2 hidden md:flex">
+                      <div className="hidden md:flex flex-wrap gap-1.5 mt-2">
                         {applicant.skills.slice(0, 3).map((skill, i) => (
                           <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded">
                             {skill}
@@ -665,6 +843,292 @@ export default function ApplicantsPage() {
             </div>
             <div className="overflow-y-auto max-h-[calc(90vh-60px)]">
               <ApplicantDetailContent applicant={selectedApplicant} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Interview Modal */}
+      {showInterviewModal && selectedApplicant && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-100">
+              <h3 className="text-lg font-semibold text-slate-900">Schedule Interview</h3>
+              <p className="text-sm text-slate-500 mt-1">with {selectedApplicant.name}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={interviewDate}
+                  onChange={(e) => setInterviewDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Time *</label>
+                <input
+                  type="time"
+                  value={interviewTime}
+                  onChange={(e) => setInterviewTime(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Interview Type</label>
+                <select
+                  value={interviewType}
+                  onChange={(e) => setInterviewType(e.target.value as 'video' | 'phone' | 'onsite')}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                >
+                  <option value="video">Video Call</option>
+                  <option value="phone">Phone Call</option>
+                  <option value="onsite">On-site</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Additional Notes</label>
+                <textarea
+                  value={interviewNotes}
+                  onChange={(e) => setInterviewNotes(e.target.value)}
+                  placeholder="Any instructions or details for the candidate..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setShowInterviewModal(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleScheduleInterview}
+                disabled={!interviewDate || !interviewTime}
+                className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-slate-300 text-white font-medium rounded-lg"
+              >
+                Schedule & Notify
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Message Modal */}
+      {showMessageModal && selectedApplicant && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-100">
+              <h3 className="text-lg font-semibold text-slate-900">Send Message</h3>
+              <p className="text-sm text-slate-500 mt-1">to {selectedApplicant.name}</p>
+            </div>
+            <div className="p-6">
+              <textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Type your message here..."
+                rows={6}
+                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => setMessageText(`Hi ${selectedApplicant.name.split(' ')[0]},\n\nThank you for your application. We would like to learn more about your experience.\n\nBest regards,\nTechCorp Inc.`)}
+                  className="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200"
+                >
+                  Quick: Follow up
+                </button>
+                <button
+                  onClick={() => setMessageText(`Hi ${selectedApplicant.name.split(' ')[0]},\n\nCould you please provide additional documents or portfolio samples?\n\nThank you,\nTechCorp Inc.`)}
+                  className="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200"
+                >
+                  Quick: Request docs
+                </button>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setShowMessageModal(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendMessage}
+                disabled={!messageText.trim()}
+                className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-slate-300 text-white font-medium rounded-lg"
+              >
+                Send Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Resume Modal */}
+      {showResumeModal && selectedApplicant && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden max-h-[90vh]">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">{selectedApplicant.name}&apos;s Resume</h3>
+                <p className="text-sm text-slate-500 mt-1">{selectedApplicant.job} Application</p>
+              </div>
+              <button
+                onClick={() => setShowResumeModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {/* Resume Content */}
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-100 to-slate-100 flex items-center justify-center text-primary-600 font-bold text-2xl">
+                    {selectedApplicant.avatar}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">{selectedApplicant.name}</h2>
+                    <p className="text-lg text-slate-600">{selectedApplicant.currentRole}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                        {selectedApplicant.location}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        {selectedApplicant.email}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedApplicant.summary && (
+                  <div>
+                    <h3 className="font-semibold text-slate-900 mb-2">Professional Summary</h3>
+                    <p className="text-slate-600">{selectedApplicant.summary}</p>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-2">Experience</h3>
+                  <div className="border-l-2 border-slate-200 pl-4 space-y-4">
+                    <div>
+                      <p className="font-medium text-slate-900">{selectedApplicant.currentRole}</p>
+                      <p className="text-sm text-slate-500">{selectedApplicant.experience} of experience</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-2">Education</h3>
+                  <p className="text-slate-600">{selectedApplicant.education}</p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-2">Skills</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedApplicant.skills.map((skill, i) => (
+                      <span key={i} className="px-3 py-1.5 bg-primary-50 text-primary-700 text-sm rounded-lg">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setShowResumeModal(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50"
+              >
+                Close
+              </button>
+              <button className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Offer Modal */}
+      {showOfferModal && selectedApplicant && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-100">
+              <h3 className="text-lg font-semibold text-slate-900">Send Job Offer</h3>
+              <p className="text-sm text-slate-500 mt-1">to {selectedApplicant.name} for {selectedApplicant.job}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Salary Offer *</label>
+                <input
+                  type="text"
+                  value={offerSalary}
+                  onChange={(e) => setOfferSalary(e.target.value)}
+                  placeholder="e.g., ₱80,000 - ₱100,000/month"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Proposed Start Date *</label>
+                <input
+                  type="date"
+                  value={offerStartDate}
+                  onChange={(e) => setOfferStartDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Benefits Package</label>
+                <input
+                  type="text"
+                  value={offerBenefits}
+                  onChange={(e) => setOfferBenefits(e.target.value)}
+                  placeholder="e.g., HMO, 15 VL, WFH allowance"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Additional Notes</label>
+                <textarea
+                  value={offerNotes}
+                  onChange={(e) => setOfferNotes(e.target.value)}
+                  placeholder="Any additional terms or information..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setShowOfferModal(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendOffer}
+                disabled={!offerSalary || !offerStartDate}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-medium rounded-lg"
+              >
+                Send Offer
+              </button>
             </div>
           </div>
         </div>

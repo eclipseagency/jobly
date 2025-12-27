@@ -121,6 +121,7 @@ export function EmployerSidebar({ isOpen, onClose }: EmployerSidebarProps) {
           <div className="px-3 pt-4">
             <Link
               href="/employer/jobs/new"
+              onClick={onClose}
               className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
