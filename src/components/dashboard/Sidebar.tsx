@@ -101,7 +101,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-slate-100">
-            <Link href="/">
+            <Link href="/dashboard">
               <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
             </Link>
             <button

@@ -103,7 +103,7 @@ export function EmployerSidebar({ isOpen, onClose }: EmployerSidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-slate-100">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/employer/dashboard" className="flex items-center gap-2">
               <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
               <span className="text-xs font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Employer</span>
             </Link>
