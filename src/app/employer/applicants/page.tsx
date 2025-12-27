@@ -313,15 +313,13 @@ export default function ApplicantsPage() {
       const conversationId = startConversation(
         selectedApplicant.id,
         selectedApplicant.name,
-        'emp1',
-        'TechCorp Inc.',
+        `job-${selectedApplicant.id}`,
         selectedApplicant.job
       );
 
       sendMessage(
         conversationId,
-        `Hello ${selectedApplicant.name.split(' ')[0]},\n\nWe're pleased to invite you for an interview for the ${selectedApplicant.job} position.\n\n📅 Date: ${formattedDate}\n⏰ Time: ${interviewTime}\n📍 Type: ${interviewTypeText}\n\n${interviewNotes ? `Additional Notes: ${interviewNotes}\n\n` : ''}Please confirm your availability. We look forward to speaking with you!\n\nBest regards,\nTechCorp Inc. Hiring Team`,
-        'employer'
+        `Hello ${selectedApplicant.name.split(' ')[0]},\n\nWe're pleased to invite you for an interview for the ${selectedApplicant.job} position.\n\n📅 Date: ${formattedDate}\n⏰ Time: ${interviewTime}\n📍 Type: ${interviewTypeText}\n\n${interviewNotes ? `Additional Notes: ${interviewNotes}\n\n` : ''}Please confirm your availability. We look forward to speaking with you!\n\nBest regards,\nTechCorp Inc. Hiring Team`
       );
 
       setShowInterviewModal(false);
@@ -340,12 +338,11 @@ export default function ApplicantsPage() {
       const conversationId = startConversation(
         selectedApplicant.id,
         selectedApplicant.name,
-        'emp1',
-        'TechCorp Inc.',
+        `job-${selectedApplicant.id}`,
         selectedApplicant.job
       );
 
-      sendMessage(conversationId, messageText, 'employer');
+      sendMessage(conversationId, messageText);
       setShowMessageModal(false);
       setMessageText('');
     }
@@ -376,15 +373,13 @@ export default function ApplicantsPage() {
       const conversationId = startConversation(
         selectedApplicant.id,
         selectedApplicant.name,
-        'emp1',
-        'TechCorp Inc.',
+        `job-${selectedApplicant.id}`,
         selectedApplicant.job
       );
 
       sendMessage(
         conversationId,
-        `Dear ${selectedApplicant.name},\n\n🎉 Congratulations! We are pleased to offer you the position of ${selectedApplicant.job} at TechCorp Inc.\n\n💰 Salary: ${offerSalary}\n📅 Start Date: ${offerStartDate}\n${offerBenefits ? `✨ Benefits: ${offerBenefits}\n` : ''}\n${offerNotes ? `${offerNotes}\n\n` : '\n'}Please review this offer and let us know your decision. We're excited to potentially have you join our team!\n\nBest regards,\nTechCorp Inc. HR Team`,
-        'employer'
+        `Dear ${selectedApplicant.name},\n\n🎉 Congratulations! We are pleased to offer you the position of ${selectedApplicant.job} at TechCorp Inc.\n\n💰 Salary: ${offerSalary}\n📅 Start Date: ${offerStartDate}\n${offerBenefits ? `✨ Benefits: ${offerBenefits}\n` : ''}\n${offerNotes ? `${offerNotes}\n\n` : '\n'}Please review this offer and let us know your decision. We're excited to potentially have you join our team!\n\nBest regards,\nTechCorp Inc. HR Team`
       );
 
       setShowOfferModal(false);
@@ -400,15 +395,13 @@ export default function ApplicantsPage() {
       const conversationId = startConversation(
         applicant.id,
         applicant.name,
-        'emp1',
-        'TechCorp Inc.',
+        `job-${applicant.id}`,
         applicant.job
       );
 
       sendMessage(
         conversationId,
-        `Dear ${applicant.name},\n\nThank you for your interest in the ${applicant.job} position at TechCorp Inc. and for taking the time to apply.\n\nAfter careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs.\n\nWe appreciate your interest in our company and wish you the best in your job search.\n\nBest regards,\nTechCorp Inc. HR Team`,
-        'employer'
+        `Dear ${applicant.name},\n\nThank you for your interest in the ${applicant.job} position at TechCorp Inc. and for taking the time to apply.\n\nAfter careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs.\n\nWe appreciate your interest in our company and wish you the best in your job search.\n\nBest regards,\nTechCorp Inc. HR Team`
       );
     }
   };

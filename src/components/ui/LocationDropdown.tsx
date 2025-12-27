@@ -3,10 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 
 const philippineLocations = [
-  // Special Options
-  { value: 'Remote', label: 'Remote', region: 'Work Setup' },
-  { value: 'Hybrid', label: 'Hybrid', region: 'Work Setup' },
-
   // NCR - Metro Manila
   { value: 'Metro Manila', label: 'Metro Manila (All)', region: 'NCR' },
   { value: 'BGC, Taguig', label: 'BGC, Taguig', region: 'NCR' },
