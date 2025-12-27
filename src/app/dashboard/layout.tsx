@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Sidebar } from '@/components/dashboard/Sidebar';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { login } = useAuth();
+
+  // Auto-login as job seeker when accessing this dashboard
+  useEffect(() => {
+    login('jobseeker');
+  }, [login]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -29,7 +36,7 @@ export default function DashboardLayout({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <Link href="/" className="ml-3">
+          <Link href="/dashboard" className="ml-3">
             <Image src="/logo.svg" alt="Jobly" width={80} height={22} />
           </Link>
           <div className="ml-auto flex items-center gap-2">

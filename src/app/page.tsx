@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { LocationDropdown } from '@/components/ui/LocationDropdown';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
   const router = useRouter();
+  const { isLoggedIn, userType, getDashboardPath, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
 
@@ -33,24 +35,49 @@ export default function Home() {
               <Link href="/dashboard/jobs" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
                 Find Jobs
               </Link>
-              <Link href="/auth/employer/login" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
-                For Employers
-              </Link>
+              {isLoggedIn && userType === 'employer' ? (
+                <Link href="/employer/dashboard" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
+                  Employer Dashboard
+                </Link>
+              ) : (
+                <Link href="/auth/employer/login" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
+                  For Employers
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
-              <Link
-                href="/auth"
-                className="hidden sm:inline-flex text-slate-600 hover:text-slate-900 text-sm font-medium"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth"
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Get Started
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <button
+                    onClick={logout}
+                    className="hidden sm:inline-flex text-slate-600 hover:text-slate-900 text-sm font-medium"
+                  >
+                    Sign out
+                  </button>
+                  <Link
+                    href={getDashboardPath()}
+                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    {userType === 'employer' ? 'My Dashboard' : 'My Dashboard'}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth"
+                    className="hidden sm:inline-flex text-slate-600 hover:text-slate-900 text-sm font-medium"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth"
+                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -292,32 +319,33 @@ export default function Home() {
       {/* Mobile Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-50">
         <div className="flex items-center justify-around py-2">
-          {[
-            { label: 'Home', href: '/', icon: (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            )},
-            { label: 'Jobs', href: '/dashboard/jobs', icon: (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            )},
-            { label: 'Account', href: '/auth', icon: (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            )},
-          ].map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500 hover:text-primary-600"
-            >
-              {item.icon}
-              <span className="text-xs">{item.label}</span>
-            </Link>
-          ))}
+          <Link
+            href="/"
+            className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500 hover:text-primary-600"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span className="text-xs">Home</span>
+          </Link>
+          <Link
+            href="/dashboard/jobs"
+            className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500 hover:text-primary-600"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="text-xs">Jobs</span>
+          </Link>
+          <Link
+            href={isLoggedIn ? getDashboardPath() : '/auth'}
+            className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500 hover:text-primary-600"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span className="text-xs">{isLoggedIn ? 'Dashboard' : 'Account'}</span>
+          </Link>
         </div>
       </div>
       <div className="h-16 md:hidden" />

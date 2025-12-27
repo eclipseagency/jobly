@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { MessagingProvider } from "@/contexts/MessagingContext";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Jobly - Find Your Dream Job in the Philippines",
@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="w-full">
       <body className="antialiased w-full min-h-screen">
-        <MessagingProvider>{children}</MessagingProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
