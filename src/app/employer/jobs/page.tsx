@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -146,7 +146,7 @@ const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-export default function ManageJobsPage() {
+function ManageJobsContent() {
   const searchParams = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -463,5 +463,13 @@ export default function ManageJobsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ManageJobsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 lg:p-8 max-w-7xl mx-auto"><div className="animate-pulse bg-slate-200 h-8 w-48 rounded mb-4"></div></div>}>
+      <ManageJobsContent />
+    </Suspense>
   );
 }
