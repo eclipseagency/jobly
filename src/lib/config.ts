@@ -1,12 +1,11 @@
 // Application configuration
-// Set DEMO_MODE to false when connecting to a real backend
 
 export const config = {
   // When true, the app shows demo data. Set to false for production with real API
-  DEMO_MODE: true,
+  DEMO_MODE: false,
 
-  // API base URL - update this when you have a real backend
-  API_BASE_URL: process.env.NEXT_PUBLIC_API_URL || '',
+  // API base URL - uses Next.js API routes by default
+  API_BASE_URL: process.env.NEXT_PUBLIC_API_URL || '/api',
 
   // App info
   APP_NAME: 'Jobly',
