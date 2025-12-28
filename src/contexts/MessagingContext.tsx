@@ -44,206 +44,7 @@ interface MessagingContextType {
 
 const MessagingContext = createContext<MessagingContextType | undefined>(undefined);
 
-// Sample data for demo
-const initialConversations: Conversation[] = [
-  {
-    id: 'conv-1',
-    jobseekerId: 'jobseeker-1',
-    jobseekerName: 'Alex Morgan',
-    jobseekerAvatar: 'AM',
-    employerId: 'employer-1',
-    employerName: 'TechFlow Solutions',
-    employerAvatar: 'TS',
-    jobTitle: 'Senior Frontend Developer',
-    jobId: 'job-1',
-    lastMessage: 'Thank you for your application. We would like to schedule an interview...',
-    lastMessageTime: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    unreadByJobseeker: 1,
-    unreadByEmployer: 0,
-    status: 'active',
-  },
-  {
-    id: 'conv-2',
-    jobseekerId: 'jobseeker-1',
-    jobseekerName: 'Alex Morgan',
-    jobseekerAvatar: 'AM',
-    employerId: 'employer-2',
-    employerName: 'StartUp Hub PH',
-    employerAvatar: 'SH',
-    jobTitle: 'Full Stack Engineer',
-    jobId: 'job-2',
-    lastMessage: 'Your interview is confirmed for tomorrow at 2 PM.',
-    lastMessageTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    unreadByJobseeker: 1,
-    unreadByEmployer: 0,
-    status: 'active',
-  },
-  {
-    id: 'conv-3',
-    jobseekerId: 'jobseeker-2',
-    jobseekerName: 'Maria Santos',
-    jobseekerAvatar: 'MS',
-    employerId: 'employer-1',
-    employerName: 'TechFlow Solutions',
-    employerAvatar: 'TS',
-    jobTitle: 'UI/UX Designer',
-    jobId: 'job-3',
-    lastMessage: 'I have attached my portfolio as requested.',
-    lastMessageTime: new Date(Date.now() - 3 * 60 * 60 * 1000),
-    unreadByJobseeker: 0,
-    unreadByEmployer: 2,
-    status: 'active',
-  },
-  {
-    id: 'conv-4',
-    jobseekerId: 'jobseeker-3',
-    jobseekerName: 'John Cruz',
-    jobseekerAvatar: 'JC',
-    employerId: 'employer-1',
-    employerName: 'TechFlow Solutions',
-    employerAvatar: 'TS',
-    jobTitle: 'Backend Developer',
-    jobId: 'job-4',
-    lastMessage: 'I am available for the interview on Monday.',
-    lastMessageTime: new Date(Date.now() - 1 * 60 * 60 * 1000),
-    unreadByJobseeker: 0,
-    unreadByEmployer: 0,
-    status: 'active',
-  },
-];
-
-const initialMessages: Message[] = [
-  // Conversation 1 - TechFlow with Alex
-  {
-    id: 'msg-1',
-    conversationId: 'conv-1',
-    senderId: 'employer-1',
-    senderType: 'employer',
-    text: 'Hello! Thank you for applying to the Senior Frontend Developer position at TechFlow Solutions.',
-    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-2',
-    conversationId: 'conv-1',
-    senderId: 'employer-1',
-    senderType: 'employer',
-    text: 'We have reviewed your application and are impressed with your experience. We would like to schedule an interview with you.',
-    timestamp: new Date(Date.now() - 3.5 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-3',
-    conversationId: 'conv-1',
-    senderId: 'jobseeker-1',
-    senderType: 'jobseeker',
-    text: 'Thank you for considering my application! I would be happy to schedule an interview. What times work best for you?',
-    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-4',
-    conversationId: 'conv-1',
-    senderId: 'employer-1',
-    senderType: 'employer',
-    text: 'Great! How about tomorrow at 2:00 PM? The interview will be via Google Meet.',
-    timestamp: new Date(Date.now() - 2.5 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-5',
-    conversationId: 'conv-1',
-    senderId: 'employer-1',
-    senderType: 'employer',
-    text: 'Thank you for your application. We would like to schedule an interview with you this week.',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    read: false,
-  },
-  // Conversation 2 - StartUp Hub with Alex
-  {
-    id: 'msg-6',
-    conversationId: 'conv-2',
-    senderId: 'employer-2',
-    senderType: 'employer',
-    text: 'Hi Alex! We received your application for the Full Stack Engineer position.',
-    timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-7',
-    conversationId: 'conv-2',
-    senderId: 'jobseeker-1',
-    senderType: 'jobseeker',
-    text: 'Thank you for getting back to me! I am very interested in this role.',
-    timestamp: new Date(Date.now() - 36 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-8',
-    conversationId: 'conv-2',
-    senderId: 'employer-2',
-    senderType: 'employer',
-    text: 'Your interview is confirmed for tomorrow at 2 PM.',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    read: false,
-  },
-  // Conversation 3 - TechFlow with Maria
-  {
-    id: 'msg-9',
-    conversationId: 'conv-3',
-    senderId: 'employer-1',
-    senderType: 'employer',
-    text: 'Hello Maria! Thank you for applying to the UI/UX Designer position.',
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-10',
-    conversationId: 'conv-3',
-    senderId: 'employer-1',
-    senderType: 'employer',
-    text: 'Could you please share your portfolio with us?',
-    timestamp: new Date(Date.now() - 4.5 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-11',
-    conversationId: 'conv-3',
-    senderId: 'jobseeker-2',
-    senderType: 'jobseeker',
-    text: 'Of course! Here is my portfolio: www.mariasantos.design',
-    timestamp: new Date(Date.now() - 3.5 * 60 * 60 * 1000),
-    read: false,
-  },
-  {
-    id: 'msg-12',
-    conversationId: 'conv-3',
-    senderId: 'jobseeker-2',
-    senderType: 'jobseeker',
-    text: 'I have attached my portfolio as requested.',
-    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-    read: false,
-  },
-  // Conversation 4 - TechFlow with John
-  {
-    id: 'msg-13',
-    conversationId: 'conv-4',
-    senderId: 'employer-1',
-    senderType: 'employer',
-    text: 'Hi John! We are reviewing applications for the Backend Developer role.',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    read: true,
-  },
-  {
-    id: 'msg-14',
-    conversationId: 'conv-4',
-    senderId: 'jobseeker-3',
-    senderType: 'jobseeker',
-    text: 'I am available for the interview on Monday.',
-    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
-    read: true,
-  },
-];
+// Initial empty state for production - data will be loaded from API or created at runtime
 
 export function MessagingProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -257,23 +58,29 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     const savedMessages = localStorage.getItem('jobly_messages');
 
     if (savedConversations) {
-      const parsed = JSON.parse(savedConversations);
-      setConversations(parsed.map((c: Conversation) => ({
-        ...c,
-        lastMessageTime: new Date(c.lastMessageTime),
-      })));
-    } else {
-      setConversations(initialConversations);
+      try {
+        const parsed = JSON.parse(savedConversations);
+        setConversations(parsed.map((c: Conversation) => ({
+          ...c,
+          lastMessageTime: new Date(c.lastMessageTime),
+        })));
+      } catch (error) {
+        console.error('Failed to parse conversations:', error);
+        setConversations([]);
+      }
     }
 
     if (savedMessages) {
-      const parsed = JSON.parse(savedMessages);
-      setMessages(parsed.map((m: Message) => ({
-        ...m,
-        timestamp: new Date(m.timestamp),
-      })));
-    } else {
-      setMessages(initialMessages);
+      try {
+        const parsed = JSON.parse(savedMessages);
+        setMessages(parsed.map((m: Message) => ({
+          ...m,
+          timestamp: new Date(m.timestamp),
+        })));
+      } catch (error) {
+        console.error('Failed to parse messages:', error);
+        setMessages([]);
+      }
     }
   }, []);
 

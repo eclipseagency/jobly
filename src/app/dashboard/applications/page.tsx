@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { jobSeekerAPI, Application as APIApplication } from '@/lib/api';
 
 interface ApplicationTimeline {
   date: string;
@@ -31,111 +33,34 @@ interface Application {
   };
 }
 
-const initialApplications: Application[] = [
-  {
-    id: '1',
-    title: 'Senior Frontend Developer',
-    company: 'TechFlow Solutions',
-    companyAvatar: 'TS',
-    location: 'Makati City',
-    salary: '₱80,000 - ₱120,000/month',
-    type: 'Full-time',
-    status: 'in_review',
-    statusLabel: 'In Review',
-    appliedAt: 'Dec 21, 2024',
-    description: 'We are looking for an experienced Frontend Developer to join our growing team. You will work on cutting-edge web applications using React and TypeScript.',
-    requirements: ['5+ years of React experience', 'TypeScript proficiency', 'Strong CSS skills', 'Experience with Next.js'],
+function mapAPIApplication(app: APIApplication): Application {
+  const statusLabels: Record<string, string> = {
+    'applied': 'Applied',
+    'in_review': 'In Review',
+    'interview': 'Interview Scheduled',
+    'offer': 'Offer Received',
+    'rejected': 'Not Selected',
+    'withdrawn': 'Withdrawn',
+  };
+
+  return {
+    id: app.id,
+    title: app.title,
+    company: app.company,
+    companyAvatar: app.companyAvatar,
+    location: app.location,
+    salary: app.salary,
+    type: app.type as Application['type'],
+    status: app.status,
+    statusLabel: app.statusLabel || statusLabels[app.status] || 'Applied',
+    appliedAt: app.appliedAt,
+    description: app.description,
+    requirements: app.requirements,
     timeline: [
-      { date: 'Dec 21, 2024', event: 'Application Submitted', description: 'Your application was received' },
-      { date: 'Dec 22, 2024', event: 'Application Viewed', description: 'Employer viewed your profile' },
-      { date: 'Dec 23, 2024', event: 'Under Review', description: 'Your application is being reviewed by the hiring team' },
+      { date: app.appliedAt, event: 'Application Submitted', description: 'Your application was received' },
     ],
-  },
-  {
-    id: '2',
-    title: 'Full Stack Developer',
-    company: 'StartUp Hub PH',
-    companyAvatar: 'SH',
-    location: 'BGC, Taguig',
-    salary: '₱70,000 - ₱100,000/month',
-    type: 'Full-time',
-    status: 'interview',
-    statusLabel: 'Interview Scheduled',
-    appliedAt: 'Dec 18, 2024',
-    interviewDate: 'Dec 28, 2024 at 2:00 PM',
-    description: 'Join our dynamic startup and help build innovative solutions. We work with Node.js, React, and PostgreSQL.',
-    requirements: ['3+ years full-stack experience', 'Node.js and React', 'Database design skills', 'API development'],
-    timeline: [
-      { date: 'Dec 18, 2024', event: 'Application Submitted', description: 'Your application was received' },
-      { date: 'Dec 19, 2024', event: 'Application Viewed', description: 'Employer viewed your profile' },
-      { date: 'Dec 20, 2024', event: 'Shortlisted', description: 'You have been shortlisted for interview' },
-      { date: 'Dec 21, 2024', event: 'Interview Scheduled', description: 'Video interview on Dec 28 at 2:00 PM' },
-    ],
-  },
-  {
-    id: '3',
-    title: 'UX/UI Designer',
-    company: 'Creative Minds Agency',
-    companyAvatar: 'CM',
-    location: 'Remote',
-    salary: '₱60,000 - ₱90,000/month',
-    type: 'Remote',
-    status: 'applied',
-    statusLabel: 'Applied',
-    appliedAt: 'Dec 16, 2024',
-    description: 'Design beautiful user experiences for web and mobile applications. Work with a talented team of designers and developers.',
-    requirements: ['Figma expertise', 'UI/UX portfolio', 'User research experience', 'Prototyping skills'],
-    timeline: [
-      { date: 'Dec 16, 2024', event: 'Application Submitted', description: 'Your application was received' },
-    ],
-  },
-  {
-    id: '4',
-    title: 'React Developer',
-    company: 'Digital Ventures',
-    companyAvatar: 'DV',
-    location: 'Cebu City',
-    salary: '₱55,000 - ₱75,000/month',
-    type: 'Full-time',
-    status: 'rejected',
-    statusLabel: 'Not Selected',
-    appliedAt: 'Dec 10, 2024',
-    description: 'Build modern web applications with React. Join our team in beautiful Cebu City.',
-    requirements: ['2+ years React experience', 'JavaScript/TypeScript', 'REST API integration', 'Git version control'],
-    timeline: [
-      { date: 'Dec 10, 2024', event: 'Application Submitted', description: 'Your application was received' },
-      { date: 'Dec 12, 2024', event: 'Application Viewed', description: 'Employer viewed your profile' },
-      { date: 'Dec 15, 2024', event: 'Not Selected', description: 'The employer has decided to move forward with other candidates' },
-    ],
-  },
-  {
-    id: '5',
-    title: 'Mobile App Developer',
-    company: 'AppWorks Studio',
-    companyAvatar: 'AW',
-    location: 'Remote',
-    salary: '₱90,000 - ₱130,000/month',
-    type: 'Remote',
-    status: 'offer',
-    statusLabel: 'Offer Received',
-    appliedAt: 'Dec 5, 2024',
-    description: 'Develop cross-platform mobile applications using React Native. Work remotely with a distributed team.',
-    requirements: ['React Native experience', 'iOS/Android development', 'App Store deployment', 'Mobile UI/UX'],
-    timeline: [
-      { date: 'Dec 5, 2024', event: 'Application Submitted', description: 'Your application was received' },
-      { date: 'Dec 7, 2024', event: 'Application Viewed', description: 'Employer viewed your profile' },
-      { date: 'Dec 9, 2024', event: 'Interview Scheduled', description: 'Video interview scheduled' },
-      { date: 'Dec 12, 2024', event: 'Interview Completed', description: 'Technical interview completed successfully' },
-      { date: 'Dec 18, 2024', event: 'Offer Extended', description: 'Congratulations! You received a job offer' },
-    ],
-    offerDetails: {
-      salary: '₱110,000/month',
-      startDate: 'January 6, 2025',
-      benefits: ['HMO for you and 2 dependents', '15 vacation days', 'Work from home setup allowance', 'Annual bonus'],
-      expiresAt: 'Dec 30, 2024',
-    },
-  },
-];
+  };
+}
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -161,13 +86,29 @@ const getTimelineIcon = (event: string) => {
 };
 
 export default function ApplicationsPage() {
-  const [applications, setApplications] = useState<Application[]>(initialApplications);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [withdrawReason, setWithdrawReason] = useState('');
+
+  useEffect(() => {
+    async function loadApplications() {
+      try {
+        const data = await jobSeekerAPI.getApplications();
+        setApplications(data.map(mapAPIApplication));
+      } catch (error) {
+        console.error('Failed to load applications:', error);
+        setApplications([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadApplications();
+  }, []);
 
   const filteredApps = filter === 'all'
     ? applications.filter(app => app.status !== 'withdrawn')
@@ -259,6 +200,60 @@ export default function ApplicationsPage() {
       setSelectedApp(null);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 bg-slate-200 rounded mb-2"></div>
+          <div className="h-4 w-64 bg-slate-200 rounded mb-8"></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-20 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isEmpty = applications.length === 0;
+
+  if (isEmpty) {
+    return (
+      <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">My Applications</h1>
+          <p className="text-slate-500 mt-1">Track and manage your job applications</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">No Applications Yet</h2>
+          <p className="text-slate-500 mb-6 max-w-md mx-auto">
+            Start applying to jobs to track your applications here. Your application history and status updates will appear on this page.
+          </p>
+          <Link
+            href="/dashboard/jobs"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            Browse Jobs
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto">

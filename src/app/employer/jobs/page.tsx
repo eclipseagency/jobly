@@ -3,8 +3,46 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { employerAPI, JobPosting } from '@/lib/api';
 
-const jobsData = [
+interface Job {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  workSetup: string;
+  salaryMin: number;
+  salaryMax: number;
+  applicants: number;
+  newApplicants: number;
+  views: number;
+  posted: string;
+  expires: string;
+  status: string;
+}
+
+function mapAPIJob(job: JobPosting): Job {
+  return {
+    id: job.id,
+    title: job.title,
+    department: job.department,
+    location: job.location,
+    type: job.type,
+    workSetup: job.workSetup,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    applicants: job.applicants,
+    newApplicants: 0,
+    views: job.views,
+    posted: job.posted,
+    expires: job.expires,
+    status: job.status,
+  };
+}
+
+// Demo data - will be replaced by API
+const demoJobsData: Job[] = [
   {
     id: '1',
     title: 'Senior Frontend Developer',
@@ -135,8 +173,6 @@ const jobsData = [
   },
 ];
 
-type Job = typeof jobsData[0];
-
 const formatSalary = (min: number, max: number) => {
   const format = (n: number) => `₱${(n / 1000).toFixed(0)}k`;
   return `${format(min)} - ${format(max)}`;
@@ -148,11 +184,35 @@ const formatDate = (dateStr: string) => {
 
 function ManageJobsContent() {
   const searchParams = useSearchParams();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
+
+  // Fetch jobs from API
+  useEffect(() => {
+    async function loadJobs() {
+      try {
+        const data = await employerAPI.getJobPostings();
+        if (data.length > 0) {
+          setJobs(data.map(mapAPIJob));
+        } else {
+          // Fallback to demo data for now - remove in production
+          setJobs(demoJobsData);
+        }
+      } catch (error) {
+        console.error('Failed to load jobs:', error);
+        // Fallback to demo data for now - remove in production
+        setJobs(demoJobsData);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadJobs();
+  }, []);
 
   // Handle success notifications from post job page
   useEffect(() => {
@@ -174,7 +234,7 @@ function ManageJobsContent() {
     }
   }, [notification]);
 
-  const filteredJobs = jobsData.filter(job => {
+  const filteredJobs = jobs.filter(job => {
     const matchesStatus = statusFilter === 'all' || job.status.toLowerCase() === statusFilter;
     const matchesSearch = !searchQuery ||
       job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -205,6 +265,23 @@ function ManageJobsContent() {
       default: return 'bg-slate-100 text-slate-600';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 bg-slate-200 rounded mb-2"></div>
+          <div className="h-4 w-64 bg-slate-200 rounded mb-8"></div>
+          <div className="h-16 bg-slate-200 rounded-xl mb-6"></div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-20 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
