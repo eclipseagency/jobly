@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
+import { jobSeekerAPI, Interview as APIInterview } from '@/lib/api';
 
 interface Interview {
   id: string;
@@ -21,81 +23,49 @@ interface Interview {
   interviewerRole?: string;
 }
 
-const initialInterviews: Interview[] = [
-  {
-    id: '1',
-    title: 'Senior Frontend Developer',
-    company: 'TechFlow Solutions',
-    companyAvatar: 'TS',
-    date: '2024-12-26',
-    time: '14:00',
-    type: 'video',
-    platform: 'Google Meet',
-    meetingLink: 'https://meet.google.com/abc-defg-hij',
-    status: 'upcoming',
-    interviewerName: 'Maria Santos',
-    interviewerRole: 'Engineering Manager',
-    notes: 'Technical interview focusing on React and TypeScript',
-  },
-  {
-    id: '2',
-    title: 'Full Stack Engineer',
-    company: 'StartUp Hub PH',
-    companyAvatar: 'SH',
-    date: '2024-12-28',
-    time: '10:00',
-    type: 'onsite',
-    location: 'Unit 1205, One Bonifacio High Street, BGC, Taguig',
-    status: 'upcoming',
-    interviewerName: 'John Cruz',
-    interviewerRole: 'CTO',
-    notes: 'Final interview with the founding team',
-  },
-  {
-    id: '3',
-    title: 'React Developer',
-    company: 'Digital Ventures',
-    companyAvatar: 'DV',
-    date: '2024-12-15',
-    time: '15:00',
-    type: 'video',
-    platform: 'Zoom',
-    status: 'completed',
-    result: 'Passed',
-  },
-  {
-    id: '4',
-    title: 'Frontend Engineer',
-    company: 'AppWorks Studio',
-    companyAvatar: 'AS',
-    date: '2024-12-10',
-    time: '11:00',
-    type: 'phone',
-    status: 'completed',
-    result: 'Not selected',
-  },
-  {
-    id: '5',
-    title: 'UI Developer',
-    company: 'Creative Labs',
-    companyAvatar: 'CL',
-    date: '2024-12-20',
-    time: '09:00',
-    type: 'video',
-    platform: 'Microsoft Teams',
-    status: 'completed',
-    result: 'Pending',
-  },
-];
+function mapAPIInterview(interview: APIInterview): Interview {
+  return {
+    id: interview.id,
+    title: interview.title,
+    company: interview.company,
+    companyAvatar: interview.companyAvatar,
+    date: interview.date,
+    time: interview.time,
+    type: interview.type,
+    platform: interview.platform,
+    location: interview.location,
+    meetingLink: interview.meetingLink,
+    status: interview.status,
+    notes: interview.notes,
+    interviewerName: interview.interviewerName,
+    interviewerRole: interview.interviewerRole,
+  };
+}
 
 export default function InterviewsPage() {
-  const [interviews, setInterviews] = useState<Interview[]>(initialInterviews);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState({ date: '', time: '' });
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
+
+  useEffect(() => {
+    async function loadInterviews() {
+      try {
+        const data = await jobSeekerAPI.getInterviews();
+        setInterviews(data.map(mapAPIInterview));
+      } catch (error) {
+        console.error('Failed to load interviews:', error);
+        setInterviews([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadInterviews();
+  }, []);
 
   const upcomingInterviews = interviews.filter((i) => i.status === 'upcoming');
   const pastInterviews = interviews.filter((i) => i.status === 'completed' || i.status === 'cancelled');
@@ -189,6 +159,60 @@ export default function InterviewsPage() {
     setSelectedInterview(interview);
     setShowCancelModal(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 bg-slate-200 rounded mb-2"></div>
+          <div className="h-4 w-64 bg-slate-200 rounded mb-8"></div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-20 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-28 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isEmpty = interviews.length === 0;
+
+  if (isEmpty) {
+    return (
+      <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">Interviews</h1>
+          <p className="text-slate-500 mt-1">Manage your scheduled interviews</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">No Interviews Scheduled</h2>
+          <p className="text-slate-500 mb-6 max-w-md mx-auto">
+            When employers invite you for interviews, they will appear here. Keep applying to increase your chances!
+          </p>
+          <Link
+            href="/dashboard/applications"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            View Applications
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto">

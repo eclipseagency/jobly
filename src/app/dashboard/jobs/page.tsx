@@ -5,8 +5,52 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { LocationDropdown } from '@/components/ui/LocationDropdown';
+import { jobSeekerAPI, Job as APIJob } from '@/lib/api';
 
-const jobs = [
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  companyLogo: string;
+  location: string;
+  type: string;
+  workSetup: string;
+  salaryMin: number;
+  salaryMax: number;
+  posted: string;
+  applicants: number;
+  description: string;
+  responsibilities: string[];
+  requirements: string[];
+  benefits: string[];
+  skills: string[];
+  experience: string;
+}
+
+function mapAPIJob(job: APIJob): Job {
+  return {
+    id: job.id,
+    title: job.title,
+    company: job.company,
+    companyLogo: job.companyLogo || job.company.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+    location: job.location,
+    type: job.type,
+    workSetup: job.workSetup,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    posted: job.posted,
+    applicants: job.applicants,
+    description: job.description,
+    responsibilities: job.responsibilities,
+    requirements: job.requirements,
+    benefits: job.benefits,
+    skills: job.skills,
+    experience: job.experience,
+  };
+}
+
+// Demo data will be removed in production - API will return empty array
+const demoJobs: Job[] = [
   {
     id: '1',
     title: 'Senior Frontend Developer',
@@ -474,8 +518,6 @@ const jobs = [
   },
 ];
 
-type Job = typeof jobs[0];
-
 const formatSalary = (min: number, max: number) => {
   const formatNum = (n: number) => {
     if (n >= 1000) return `₱${(n / 1000).toFixed(0)}k`;
@@ -486,6 +528,8 @@ const formatSalary = (min: number, max: number) => {
 
 function FindJobsContent() {
   const searchParams = useSearchParams();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -494,6 +538,28 @@ function FindJobsContent() {
   const [sortBy, setSortBy] = useState('relevance');
   const [currentPage, setCurrentPage] = useState(1);
   const jobsPerPage = 10;
+
+  // Fetch jobs from API
+  useEffect(() => {
+    async function loadJobs() {
+      try {
+        const data = await jobSeekerAPI.getJobs();
+        if (data.length > 0) {
+          setJobs(data.map(mapAPIJob));
+        } else {
+          // Fallback to demo data for now - remove in production
+          setJobs(demoJobs);
+        }
+      } catch (error) {
+        console.error('Failed to load jobs:', error);
+        // Fallback to demo data for now - remove in production
+        setJobs(demoJobs);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadJobs();
+  }, []);
 
   // Read query params on initial load
   useEffect(() => {

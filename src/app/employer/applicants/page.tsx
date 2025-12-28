@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useMessaging } from '@/contexts/MessagingContext';
+import { employerAPI, Applicant as APIApplicant } from '@/lib/api';
 
 interface Applicant {
   id: string;
@@ -28,181 +30,62 @@ interface Applicant {
   offerStartDate?: string;
 }
 
-const initialApplicants: Applicant[] = [
-  {
-    id: '1',
-    name: 'Maria Santos',
-    email: 'maria.santos@email.com',
-    phone: '+63 917 123 4567',
-    avatar: 'MS',
-    job: 'Senior Frontend Developer',
-    jobId: '1',
-    appliedAt: '2024-12-23T10:30:00',
-    status: 'New',
-    matchScore: 92,
-    experience: '6 years',
-    location: 'Makati City',
-    skills: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS'],
-    education: 'BS Computer Science, UP Diliman',
-    currentRole: 'Frontend Developer at Accenture',
-    resumeUrl: '#',
-    summary: 'Passionate frontend developer with expertise in modern React ecosystems. Led multiple successful projects and mentored junior developers.',
-  },
-  {
-    id: '2',
-    name: 'John Reyes',
-    email: 'john.reyes@email.com',
-    phone: '+63 918 234 5678',
-    avatar: 'JR',
-    job: 'Full Stack Engineer',
-    jobId: '2',
-    appliedAt: '2024-12-23T08:15:00',
-    status: 'Reviewed',
-    matchScore: 88,
-    experience: '4 years',
-    location: 'BGC, Taguig',
-    skills: ['Node.js', 'React', 'PostgreSQL', 'AWS'],
-    education: 'BS Information Technology, DLSU',
-    currentRole: 'Software Engineer at Grab',
-    resumeUrl: '#',
-    summary: 'Full stack developer experienced in building scalable applications. Strong background in cloud infrastructure.',
-  },
-  {
-    id: '3',
-    name: 'Ana Cruz',
-    email: 'ana.cruz@email.com',
-    phone: '+63 919 345 6789',
-    avatar: 'AC',
-    job: 'Product Designer',
-    jobId: '3',
-    appliedAt: '2024-12-22T14:20:00',
-    status: 'Interview',
-    matchScore: 95,
-    experience: '5 years',
-    location: 'Remote',
-    skills: ['Figma', 'UI/UX Design', 'Prototyping', 'User Research'],
-    education: 'BA Multimedia Arts, UST',
-    currentRole: 'Senior Designer at Canva',
-    resumeUrl: '#',
-    summary: 'Award-winning designer focused on creating intuitive user experiences. Strong advocate for user-centered design.',
-    interviewDate: '2024-12-28',
-    interviewTime: '14:00',
-    interviewType: 'video',
-  },
-  {
-    id: '4',
-    name: 'Miguel Lopez',
-    email: 'miguel.lopez@email.com',
-    phone: '+63 920 456 7890',
-    avatar: 'ML',
-    job: 'DevOps Engineer',
-    jobId: '4',
-    appliedAt: '2024-12-22T11:45:00',
-    status: 'New',
-    matchScore: 85,
-    experience: '3 years',
-    location: 'Cebu City',
-    skills: ['AWS', 'Docker', 'Kubernetes', 'Terraform'],
-    education: 'BS Computer Engineering, USC',
-    currentRole: 'DevOps Engineer at Accenture',
-    resumeUrl: '#',
-    summary: 'Infrastructure specialist with a focus on automation and CI/CD pipelines.',
-  },
-  {
-    id: '5',
-    name: 'Sarah Garcia',
-    email: 'sarah.garcia@email.com',
-    phone: '+63 921 567 8901',
-    avatar: 'SG',
-    job: 'Senior Frontend Developer',
-    jobId: '1',
-    appliedAt: '2024-12-21T16:30:00',
-    status: 'Shortlisted',
-    matchScore: 90,
-    experience: '7 years',
-    location: 'Makati City',
-    skills: ['React', 'Vue.js', 'TypeScript', 'GraphQL'],
-    education: 'BS Computer Science, Ateneo',
-    currentRole: 'Lead Developer at GCash',
-    resumeUrl: '#',
-    summary: 'Technical lead with experience managing frontend teams. Passionate about code quality and performance.',
-  },
-  {
-    id: '6',
-    name: 'Paolo Mendoza',
-    email: 'paolo.mendoza@email.com',
-    avatar: 'PM',
-    job: 'Full Stack Engineer',
-    jobId: '2',
-    appliedAt: '2024-12-21T09:00:00',
-    status: 'Rejected',
-    matchScore: 65,
-    experience: '2 years',
-    location: 'Quezon City',
-    skills: ['JavaScript', 'PHP', 'MySQL'],
-    education: 'BS Information Systems, PUP',
-    currentRole: 'Junior Developer at Startup',
-    resumeUrl: '#',
-  },
-  {
-    id: '7',
-    name: 'Lisa Tan',
-    email: 'lisa.tan@email.com',
-    phone: '+63 922 678 9012',
-    avatar: 'LT',
-    job: 'Product Designer',
-    jobId: '3',
-    appliedAt: '2024-12-20T13:15:00',
-    status: 'Hired',
-    matchScore: 98,
-    experience: '8 years',
-    location: 'BGC, Taguig',
-    skills: ['Figma', 'Sketch', 'Design Systems', 'User Research'],
-    education: 'MA Design, Parsons School of Design',
-    currentRole: 'Design Lead at Meta',
-    resumeUrl: '#',
-    summary: 'Design leader with international experience. Built and scaled design systems for Fortune 500 companies.',
-    offerSalary: '₱150,000/month',
-    offerStartDate: 'January 15, 2025',
-  },
-  {
-    id: '8',
-    name: 'Carlos Villanueva',
-    email: 'carlos.v@email.com',
-    avatar: 'CV',
-    job: 'Senior Frontend Developer',
-    jobId: '1',
-    appliedAt: '2024-12-20T10:45:00',
-    status: 'New',
-    matchScore: 78,
-    experience: '4 years',
-    location: 'Pasig City',
-    skills: ['React', 'JavaScript', 'CSS', 'HTML'],
-    education: 'BS Computer Science, Mapua',
-    currentRole: 'Frontend Developer at IBM',
-    resumeUrl: '#',
-  },
-];
-
-const jobOptions = [
-  { id: 'all', title: 'All Jobs' },
-  { id: '1', title: 'Senior Frontend Developer' },
-  { id: '2', title: 'Full Stack Engineer' },
-  { id: '3', title: 'Product Designer' },
-  { id: '4', title: 'DevOps Engineer' },
-];
+function mapAPIApplicant(app: APIApplicant): Applicant {
+  return {
+    id: app.id,
+    name: app.name,
+    email: app.email,
+    phone: app.phone,
+    avatar: app.avatar || app.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+    job: app.title,
+    jobId: app.jobId,
+    appliedAt: app.appliedAt,
+    status: app.status,
+    matchScore: app.matchScore || 0,
+    experience: app.experience,
+    location: app.location,
+    skills: app.skills,
+    education: 'Not provided',
+    currentRole: app.title,
+    resumeUrl: app.resumeUrl || '#',
+  };
+}
 
 const statusOptions: Array<'All' | Applicant['status']> = ['All', 'New', 'Reviewed', 'Shortlisted', 'Interview', 'Hired', 'Rejected'];
 
 export default function ApplicantsPage() {
   const { sendMessage, startConversation } = useMessaging();
-  const [applicants, setApplicants] = useState<Applicant[]>(initialApplicants);
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [jobOptions, setJobOptions] = useState<Array<{id: string; title: string}>>([{ id: 'all', title: 'All Jobs' }]);
   const [selectedJob, setSelectedJob] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState<'All' | Applicant['status']>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
   const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [applicantsData, jobsData] = await Promise.all([
+          employerAPI.getApplicants(),
+          employerAPI.getJobPostings(),
+        ]);
+        setApplicants(applicantsData.map(mapAPIApplicant));
+        setJobOptions([
+          { id: 'all', title: 'All Jobs' },
+          ...jobsData.map(j => ({ id: j.id, title: j.title }))
+        ]);
+      } catch (error) {
+        console.error('Failed to load applicants:', error);
+        setApplicants([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   // Modal states
   const [showInterviewModal, setShowInterviewModal] = useState(false);
@@ -582,6 +465,60 @@ export default function ApplicantsPage() {
       </div>
     </>
   );
+
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 bg-slate-200 rounded mb-2"></div>
+          <div className="h-4 w-64 bg-slate-200 rounded mb-8"></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-20 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-28 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isEmpty = applicants.length === 0;
+
+  if (isEmpty) {
+    return (
+      <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">Applicants</h1>
+          <p className="text-slate-600 mt-1">Review and manage job applications</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">No Applicants Yet</h2>
+          <p className="text-slate-500 mb-6 max-w-md mx-auto">
+            When candidates apply to your job postings, they will appear here. Post a job to start receiving applications.
+          </p>
+          <Link
+            href="/employer/jobs/new"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Post a Job
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
