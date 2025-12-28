@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Icons
 const Icons = {
@@ -121,172 +122,142 @@ const tabs = [
 ];
 
 export default function ProfilePage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
   const [isEditing, setIsEditing] = useState(false);
 
-  // Sample profile data - in production this would come from API/database
+  // Parse user name into first and last name
+  const nameParts = (user?.name || '').split(' ');
+  const defaultFirstName = nameParts[0] || '';
+  const defaultLastName = nameParts.slice(1).join(' ') || '';
+
+  // Profile data initialized with user's actual data
   const [profile, setProfile] = useState({
-    // Personal Info
-    firstName: 'Alex',
-    lastName: 'Morgan',
-    email: 'alex.morgan@example.com',
-    phone: '+63 912 345 6789',
-    dateOfBirth: '1995-06-15',
-    gender: 'Male',
+    // Personal Info - populated from auth context
+    firstName: defaultFirstName,
+    lastName: defaultLastName,
+    email: user?.email || '',
+    phone: '',
+    dateOfBirth: '',
+    gender: '',
     nationality: 'Filipino',
-    address: '123 Ayala Avenue',
-    city: 'Makati City',
-    province: 'Metro Manila',
-    postalCode: '1226',
+    address: '',
+    city: '',
+    province: '',
+    postalCode: '',
     country: 'Philippines',
 
     // Professional Info
-    title: 'Senior Frontend Developer',
-    bio: 'Passionate frontend developer with 5+ years of experience building responsive and user-friendly web applications. Specialized in React, TypeScript, and modern CSS frameworks. I love creating elegant solutions to complex problems and am always eager to learn new technologies.',
-    yearsOfExp: 5,
+    title: '',
+    bio: '',
+    yearsOfExp: 0,
 
     // Links
-    linkedinUrl: 'https://linkedin.com/in/alexmorgan',
-    githubUrl: 'https://github.com/alexmorgan',
-    portfolioUrl: 'https://alexmorgan.dev',
+    linkedinUrl: '',
+    githubUrl: '',
+    portfolioUrl: '',
     websiteUrl: '',
 
     // Job Preferences
-    expectedSalary: '80,000 - 120,000',
+    expectedSalary: '',
     preferredJobType: 'full-time',
     preferredWorkSetup: 'hybrid',
-    availableFrom: '2024-02-01',
-    willingToRelocate: true,
+    availableFrom: '',
+    willingToRelocate: false,
     openToOffers: true,
-    preferredLocations: ['Makati City', 'BGC', 'Ortigas'],
-    preferredIndustries: ['Technology', 'Finance', 'E-commerce'],
+    preferredLocations: [] as string[],
+    preferredIndustries: [] as string[],
   });
 
-  const [skills, setSkills] = useState([
-    { name: 'React', level: 'Expert', years: 4 },
-    { name: 'TypeScript', level: 'Expert', years: 3 },
-    { name: 'Next.js', level: 'Advanced', years: 2 },
-    { name: 'Tailwind CSS', level: 'Expert', years: 3 },
-    { name: 'Node.js', level: 'Intermediate', years: 2 },
-    { name: 'GraphQL', level: 'Intermediate', years: 1 },
-    { name: 'PostgreSQL', level: 'Intermediate', years: 2 },
-    { name: 'Git', level: 'Advanced', years: 5 },
-    { name: 'Figma', level: 'Intermediate', years: 2 },
-    { name: 'AWS', level: 'Basic', years: 1 },
-  ]);
+  // Update profile when user changes
+  useEffect(() => {
+    if (user) {
+      const nameParts = (user.name || '').split(' ');
+      setProfile(prev => ({
+        ...prev,
+        firstName: nameParts[0] || prev.firstName,
+        lastName: nameParts.slice(1).join(' ') || prev.lastName,
+        email: user.email || prev.email,
+      }));
+    }
+  }, [user]);
 
-  const [experience, setExperience] = useState([
-    {
-      id: 1,
-      jobTitle: 'Senior Frontend Developer',
-      company: 'Tech Solutions Inc.',
-      location: 'Makati City, Philippines',
-      locationType: 'hybrid',
-      employmentType: 'full-time',
-      startDate: '2022-01',
-      endDate: null,
-      isCurrent: true,
-      description: 'Lead frontend development for multiple client projects. Mentor junior developers and establish coding standards.',
-      achievements: [
-        'Led the migration of legacy jQuery codebase to React, improving performance by 40%',
-        'Implemented CI/CD pipeline reducing deployment time by 60%',
-        'Mentored 3 junior developers who were promoted within the year',
-      ],
-      skills: ['React', 'TypeScript', 'Next.js', 'AWS'],
-    },
-    {
-      id: 2,
-      jobTitle: 'Frontend Developer',
-      company: 'Digital Agency PH',
-      location: 'BGC, Taguig, Philippines',
-      locationType: 'onsite',
-      employmentType: 'full-time',
-      startDate: '2019-03',
-      endDate: '2021-12',
-      isCurrent: false,
-      description: 'Developed responsive web applications for e-commerce and fintech clients.',
-      achievements: [
-        'Built e-commerce platform serving 50,000+ monthly users',
-        'Reduced page load time by 50% through optimization',
-        'Received "Developer of the Year" award in 2020',
-      ],
-      skills: ['React', 'JavaScript', 'CSS', 'Node.js'],
-    },
-  ]);
+  const [skills, setSkills] = useState<Array<{ name: string; level: string; years: number }>>([]);
 
-  const [education, setEducation] = useState([
-    {
-      id: 1,
-      school: 'University of the Philippines',
-      degree: "Bachelor's Degree",
-      fieldOfStudy: 'Computer Science',
-      startDate: '2015-06',
-      endDate: '2019-05',
-      isCurrent: false,
-      grade: '1.5 (Cum Laude)',
-      activities: 'Computer Science Society, Hackathon Club',
-      achievements: ['Cum Laude', 'Best Thesis Award', 'Dean\'s List 2017-2019'],
-    },
-  ]);
+  interface ExperienceItem {
+    id: number;
+    jobTitle: string;
+    company: string;
+    location: string;
+    locationType: string;
+    employmentType: string;
+    startDate: string;
+    endDate: string | null;
+    isCurrent: boolean;
+    description: string;
+    achievements: string[];
+    skills: string[];
+  }
 
-  const [certifications, setCertifications] = useState([
-    {
-      id: 1,
-      name: 'AWS Certified Developer - Associate',
-      issuingOrg: 'Amazon Web Services',
-      issueDate: '2023-06',
-      expiryDate: '2026-06',
-      hasNoExpiry: false,
-      credentialId: 'AWS-DEV-12345',
-      credentialUrl: 'https://aws.amazon.com/verification/12345',
-    },
-    {
-      id: 2,
-      name: 'Meta Frontend Developer Professional Certificate',
-      issuingOrg: 'Meta',
-      issueDate: '2023-01',
-      expiryDate: null,
-      hasNoExpiry: true,
-      credentialId: 'META-FE-67890',
-      credentialUrl: 'https://coursera.org/verify/67890',
-    },
-  ]);
+  interface EducationItem {
+    id: number;
+    school: string;
+    degree: string;
+    fieldOfStudy: string;
+    startDate: string;
+    endDate: string;
+    isCurrent: boolean;
+    grade: string;
+    activities: string;
+    achievements: string[];
+  }
 
-  const [languages, setLanguages] = useState([
-    { id: 1, language: 'English', proficiency: 'Fluent' },
-    { id: 2, language: 'Filipino', proficiency: 'Native' },
-    { id: 3, language: 'Japanese', proficiency: 'Basic' },
-  ]);
+  interface CertificationItem {
+    id: number;
+    name: string;
+    issuingOrg: string;
+    issueDate: string;
+    expiryDate: string | null;
+    hasNoExpiry: boolean;
+    credentialId: string;
+    credentialUrl: string;
+  }
 
-  const [documents, setDocuments] = useState({
-    resume: { name: 'Alex_Morgan_Resume_2024.pdf', uploadedAt: '2024-01-15', size: '245 KB' },
-    coverLetter: { name: 'Cover_Letter_Template.pdf', uploadedAt: '2024-01-10', size: '128 KB' },
-    certificates: [
-      { name: 'AWS_Certificate.pdf', uploadedAt: '2023-06-20', size: '512 KB' },
-      { name: 'Meta_Certificate.pdf', uploadedAt: '2023-01-15', size: '489 KB' },
-    ],
+  interface DocumentFile {
+    name: string;
+    uploadedAt: string;
+    size: string;
+  }
+
+  const [experience, setExperience] = useState<ExperienceItem[]>([]);
+
+  const [education, setEducation] = useState<EducationItem[]>([]);
+
+  const [certifications, setCertifications] = useState<CertificationItem[]>([]);
+
+  const [languages, setLanguages] = useState<Array<{ id: number; language: string; proficiency: string }>>([]);
+
+  const [documents, setDocuments] = useState<{
+    resume: DocumentFile | null;
+    coverLetter: DocumentFile | null;
+    certificates: DocumentFile[];
+  }>({
+    resume: null,
+    coverLetter: null,
+    certificates: [],
   });
 
-  const [references, setReferences] = useState([
-    {
-      id: 1,
-      name: 'Maria Santos',
-      position: 'Engineering Manager',
-      company: 'Tech Solutions Inc.',
-      email: 'maria.santos@techsolutions.com',
-      phone: '+63 917 123 4567',
-      relationship: 'Direct Manager',
-    },
-    {
-      id: 2,
-      name: 'John Cruz',
-      position: 'Senior Developer',
-      company: 'Digital Agency PH',
-      email: 'john.cruz@digitalph.com',
-      phone: '+63 918 234 5678',
-      relationship: 'Former Colleague',
-    },
-  ]);
+  interface ReferenceItem {
+    id: number;
+    name: string;
+    position: string;
+    company: string;
+    email: string;
+    phone: string;
+    relationship: string;
+  }
+
+  const [references, setReferences] = useState<ReferenceItem[]>([]);
 
   // Modal states
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
@@ -306,11 +277,11 @@ export default function ProfilePage() {
   // Edit form states
   const [editingProfile, setEditingProfile] = useState({ ...profile });
   const [editingLanguage, setEditingLanguage] = useState<{ id?: number; language: string; proficiency: string } | null>(null);
-  const [editingReference, setEditingReference] = useState<typeof references[0] | null>(null);
-  const [editingExperience, setEditingExperience] = useState<typeof experience[0] | null>(null);
-  const [editingEducation, setEditingEducation] = useState<typeof education[0] | null>(null);
-  const [editingCertification, setEditingCertification] = useState<typeof certifications[0] | null>(null);
-  const [editingSkill, setEditingSkill] = useState<typeof skills[0] | null>(null);
+  const [editingReference, setEditingReference] = useState<ReferenceItem | null>(null);
+  const [editingExperience, setEditingExperience] = useState<ExperienceItem | null>(null);
+  const [editingEducation, setEditingEducation] = useState<EducationItem | null>(null);
+  const [editingCertification, setEditingCertification] = useState<CertificationItem | null>(null);
+  const [editingSkill, setEditingSkill] = useState<{ name: string; level: string; years: number } | null>(null);
 
   // Save handlers
   const saveBasicInfo = () => {
