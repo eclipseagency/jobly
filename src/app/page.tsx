@@ -274,9 +274,9 @@ export default function Home() {
             <div>
               <h4 className="font-medium text-slate-900 mb-4 text-sm">For Job Seekers</h4>
               <ul className="space-y-2 text-sm text-slate-500">
-                <li><Link href="/dashboard/jobs" className="hover:text-slate-900">Browse Jobs</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Career Advice</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Resume Tips</Link></li>
+                <li><Link href="/jobs" className="hover:text-slate-900">Browse Jobs</Link></li>
+                <li><Link href="/blog" className="hover:text-slate-900">Career Advice</Link></li>
+                <li><Link href="/blog/how-to-write-winning-resume-philippines" className="hover:text-slate-900">Resume Tips</Link></li>
               </ul>
             </div>
 
@@ -284,16 +284,16 @@ export default function Home() {
               <h4 className="font-medium text-slate-900 mb-4 text-sm">For Employers</h4>
               <ul className="space-y-2 text-sm text-slate-500">
                 <li><Link href="/auth/employer/register" className="hover:text-slate-900">Post a Job</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Pricing</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Resources</Link></li>
+                <li><Link href="/pricing" className="hover:text-slate-900">Pricing</Link></li>
+                <li><Link href="/resources" className="hover:text-slate-900">Resources</Link></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-medium text-slate-900 mb-4 text-sm">Company</h4>
               <ul className="space-y-2 text-sm text-slate-500">
-                <li><Link href="#" className="hover:text-slate-900">About</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Contact</Link></li>
+                <li><Link href="/about" className="hover:text-slate-900">About</Link></li>
+                <li><Link href="/contact" className="hover:text-slate-900">Contact</Link></li>
                 <li><Link href="/privacy" className="hover:text-slate-900">Privacy</Link></li>
               </ul>
             </div>
