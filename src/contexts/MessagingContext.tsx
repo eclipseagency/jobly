@@ -49,53 +49,20 @@ const MessagingContext = createContext<MessagingContextType | undefined>(undefin
 export function MessagingProvider({ children }: { children: ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string>('jobseeker-1');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [currentUserType, setCurrentUserType] = useState<'jobseeker' | 'employer'>('jobseeker');
 
-  // Load from localStorage on mount
+  // Clear any old demo data from localStorage on mount
   useEffect(() => {
-    const savedConversations = localStorage.getItem('jobly_conversations');
-    const savedMessages = localStorage.getItem('jobly_messages');
-
-    if (savedConversations) {
-      try {
-        const parsed = JSON.parse(savedConversations);
-        setConversations(parsed.map((c: Conversation) => ({
-          ...c,
-          lastMessageTime: new Date(c.lastMessageTime),
-        })));
-      } catch (error) {
-        console.error('Failed to parse conversations:', error);
-        setConversations([]);
-      }
-    }
-
-    if (savedMessages) {
-      try {
-        const parsed = JSON.parse(savedMessages);
-        setMessages(parsed.map((m: Message) => ({
-          ...m,
-          timestamp: new Date(m.timestamp),
-        })));
-      } catch (error) {
-        console.error('Failed to parse messages:', error);
-        setMessages([]);
-      }
-    }
+    localStorage.removeItem('jobly_conversations');
+    localStorage.removeItem('jobly_messages');
   }, []);
 
-  // Save to localStorage when data changes
-  useEffect(() => {
-    if (conversations.length > 0) {
-      localStorage.setItem('jobly_conversations', JSON.stringify(conversations));
-    }
-  }, [conversations]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('jobly_messages', JSON.stringify(messages));
-    }
-  }, [messages]);
+  // TODO: In production, load conversations and messages from API
+  // useEffect(() => {
+  //   messagingAPI.getConversations().then(setConversations);
+  //   messagingAPI.getMessages().then(setMessages);
+  // }, [currentUserId]);
 
   const setCurrentUser = (id: string, type: 'jobseeker' | 'employer') => {
     setCurrentUserId(id);
@@ -176,9 +143,9 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     const isEmployer = currentUserType === 'employer';
 
     const jobseekerId = isEmployer ? otherPartyId : currentUserId;
-    const jobseekerName = isEmployer ? otherPartyName : 'Alex Morgan';
+    const jobseekerName = isEmployer ? otherPartyName : 'Job Seeker';
     const employerId = isEmployer ? currentUserId : otherPartyId;
-    const employerName = isEmployer ? 'TechCorp Inc.' : otherPartyName;
+    const employerName = isEmployer ? 'Employer' : otherPartyName;
 
     // Check if conversation already exists
     const existing = conversations.find(
