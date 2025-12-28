@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { EmployerSidebar } from '@/components/employer/EmployerSidebar';
-import { useAuth } from '@/contexts/AuthContext';
-import { useMessaging } from '@/contexts/MessagingContext';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
 export default function EmployerLayout({
   children,
@@ -13,14 +12,42 @@ export default function EmployerLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { login } = useAuth();
-  const { setCurrentUser } = useMessaging();
+  const { user, isLoading, isAuthenticated } = useRequireAuth('employer');
 
-  // Auto-login as employer when accessing this dashboard
-  useEffect(() => {
-    login('employer');
-    setCurrentUser('employer-1', 'employer');
-  }, [login, setCurrentUser]);
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (redirect will happen)
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get company initials for avatar
+  const getInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const companyName = user.tenantName || user.name;
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -44,15 +71,14 @@ export default function EmployerLayout({
             <span className="text-xs font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Employer</span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
-            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors relative">
+            <Link href="/employer/messages" className="p-2 hover:bg-slate-100 rounded-lg transition-colors relative">
               <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary-600 rounded-full"></span>
-            </button>
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-bold">
-              TC
-            </div>
+            </Link>
+            <Link href="/employer/company" className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-bold">
+              {getInitials(companyName)}
+            </Link>
           </div>
         </header>
 
