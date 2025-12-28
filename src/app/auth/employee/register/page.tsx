@@ -142,6 +142,11 @@ export default function EmployeeRegisterPage() {
           </div>
 
           <Card variant="elevated" className="mb-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-5">
               {step === 1 ? (
                 <>
