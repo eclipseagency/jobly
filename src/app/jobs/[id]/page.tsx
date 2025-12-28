@@ -413,13 +413,14 @@ export default function JobDetailPage() {
                 <>
                   <button
                     onClick={handleApplyClick}
-                    className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors mb-3"
+                    disabled={authLoading}
+                    className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors mb-3 disabled:opacity-50"
                   >
-                    Apply Now
+                    {authLoading ? 'Loading...' : 'Apply Now'}
                   </button>
                   <button
                     onClick={handleSaveJob}
-                    disabled={saving || saved}
+                    disabled={saving || saved || authLoading}
                     className={`w-full px-6 py-3 border font-medium rounded-lg transition-colors ${
                       saved
                         ? 'border-green-200 bg-green-50 text-green-700'
