@@ -4,23 +4,37 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Input, Card } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EmployeeLoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
     setIsLoading(true);
-    // TODO: Implement actual authentication with backend
-    // For now, simulate login and redirect to job seeker dashboard
-    setTimeout(() => {
-      setIsLoading(false);
+
+    // Simulate API call - replace with real authentication
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      login('jobseeker');
       router.push('/dashboard');
-    }, 1500);
+    } catch {
+      setError('Invalid email or password');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -101,6 +115,11 @@ export default function EmployeeLoginPage() {
 
           <Card variant="elevated" className="mb-6">
             <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
               <Input
                 type="email"
                 label="Email Address"
