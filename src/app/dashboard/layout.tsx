@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMessaging } from '@/contexts/MessagingContext';
 
 export default function DashboardLayout({
   children,
@@ -13,11 +14,13 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { login } = useAuth();
+  const { setCurrentUser } = useMessaging();
 
   // Auto-login as job seeker when accessing this dashboard
   useEffect(() => {
     login('jobseeker');
-  }, [login]);
+    setCurrentUser('jobseeker-1', 'jobseeker');
+  }, [login, setCurrentUser]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
