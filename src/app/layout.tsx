@@ -106,7 +106,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION,
+    google: "google26cec3fd77cc819b",
   },
   alternates: {
     canonical: siteUrl,
