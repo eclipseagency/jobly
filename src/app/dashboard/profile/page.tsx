@@ -259,6 +259,45 @@ export default function ProfilePage() {
 
   const [references, setReferences] = useState<ReferenceItem[]>([]);
 
+  // Load profile data from localStorage on mount
+  useEffect(() => {
+    if (user?.id) {
+      try {
+        const savedProfile = localStorage.getItem(`jobly_profile_${user.id}`);
+        if (savedProfile) {
+          const parsed = JSON.parse(savedProfile);
+          if (parsed.profile) setProfile(prev => ({ ...prev, ...parsed.profile }));
+          if (parsed.skills) setSkills(parsed.skills);
+          if (parsed.experience) setExperience(parsed.experience);
+          if (parsed.education) setEducation(parsed.education);
+          if (parsed.certifications) setCertifications(parsed.certifications);
+          if (parsed.languages) setLanguages(parsed.languages);
+          if (parsed.documents) setDocuments(parsed.documents);
+          if (parsed.references) setReferences(parsed.references);
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+  }, [user?.id]);
+
+  // Save profile data to localStorage whenever it changes
+  useEffect(() => {
+    if (user?.id && profile.firstName) {
+      const dataToSave = {
+        profile,
+        skills,
+        experience,
+        education,
+        certifications,
+        languages,
+        documents,
+        references,
+      };
+      localStorage.setItem(`jobly_profile_${user.id}`, JSON.stringify(dataToSave));
+    }
+  }, [user?.id, profile, skills, experience, education, certifications, languages, documents, references]);
+
   // Modal states
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
