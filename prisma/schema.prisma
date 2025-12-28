@@ -125,6 +125,7 @@ model User {
   certifications  Certification[]
   languages       Language[]
   references      Reference[]
+  notifications   Notification[]
 
   @@index([tenantId])
   @@index([role])
@@ -302,4 +303,23 @@ model Reference {
 
   @@index([userId])
   @@map("references")
+}
+
+// User notifications
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String   // application_viewed, application_status, interview_scheduled, message_received, job_alert, offer_received, etc.
+  title     String
+  message   String
+  link      String?  // Optional link to relevant page
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
 }
