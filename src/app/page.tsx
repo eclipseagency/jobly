@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
   const router = useRouter();
-  const { isLoggedIn, userType, getDashboardPath, logout } = useAuth();
+  const { isLoggedIn, user, getDashboardPath, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
 
@@ -35,7 +35,7 @@ export default function Home() {
               <Link href="/dashboard/jobs" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
                 Find Jobs
               </Link>
-              {isLoggedIn && userType === 'employer' ? (
+              {isLoggedIn && user?.role === 'employer' ? (
                 <Link href="/employer/dashboard" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
                   Employer Dashboard
                 </Link>
@@ -59,7 +59,7 @@ export default function Home() {
                     href={getDashboardPath()}
                     className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
                   >
-                    {userType === 'employer' ? 'My Dashboard' : 'My Dashboard'}
+                    My Dashboard
                   </Link>
                 </>
               ) : (

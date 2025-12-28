@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function EmployerRegisterPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Step 1: Personal
@@ -43,8 +43,8 @@ export default function EmployerRegisterPage() {
         setError('Passwords do not match');
         return;
       }
-      if (formData.password.length < 6) {
-        setError('Password must be at least 6 characters');
+      if (formData.password.length < 8) {
+        setError('Password must be at least 8 characters');
         return;
       }
       setStep(2);
@@ -58,11 +58,20 @@ export default function EmployerRegisterPage() {
 
     setIsLoading(true);
 
-    // Simulate API call - replace with real registration
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      login('employer');
-      router.push('/employer/dashboard');
+      const result = await register({
+        email: formData.email,
+        password: formData.password,
+        name: formData.fullName,
+        role: 'employer',
+        companyName: formData.companyName,
+      });
+      if (result.success) {
+        router.push('/employer/dashboard');
+      } else {
+        setError(result.error || 'Registration failed. Please try again.');
+        setIsLoading(false);
+      }
     } catch {
       setError('Registration failed. Please try again.');
       setIsLoading(false);

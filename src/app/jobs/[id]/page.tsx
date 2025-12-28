@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface JobDetail {
   id: string;
@@ -56,12 +57,15 @@ function formatRelativeDate(dateString: string): string {
 export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, isLoggedIn, isLoading: authLoading } = useAuth();
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
   const [applied, setApplied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     async function fetchJob() {
@@ -85,14 +89,28 @@ export default function JobDetailPage() {
     }
   }, [params.id]);
 
+  const handleApplyClick = () => {
+    if (!isLoggedIn) {
+      // Redirect to login with return URL
+      router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
+      return;
+    }
+    setShowApplyModal(true);
+  };
+
   const handleApply = async () => {
+    if (!isLoggedIn || !user) {
+      router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
+      return;
+    }
+
     setApplying(true);
     try {
       const response = await fetch('/api/applications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': 'demo-user', // TODO: Get from auth
+          'x-user-id': user.id,
         },
         body: JSON.stringify({
           jobId: params.id,
@@ -112,6 +130,40 @@ export default function JobDetailPage() {
       alert('Failed to apply. Please try again.');
     } finally {
       setApplying(false);
+    }
+  };
+
+  const handleSaveJob = async () => {
+    if (!isLoggedIn || !user) {
+      router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch('/api/saved-jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
+        body: JSON.stringify({ jobId: params.id }),
+      });
+
+      if (response.ok) {
+        setSaved(true);
+      } else {
+        const data = await response.json();
+        if (data.error?.includes('already saved')) {
+          setSaved(true);
+        } else {
+          alert(data.error || 'Failed to save job');
+        }
+      }
+    } catch (error) {
+      console.error('Error saving job:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -213,18 +265,29 @@ export default function JobDetailPage() {
               <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
             </Link>
             <div className="flex items-center gap-3">
-              <Link
-                href="/auth/employee/login"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/employee/register"
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Get Started
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  My Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/employee/login"
+                    className="text-sm font-medium text-slate-600 hover:text-slate-900"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/auth/employee/register"
+                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -339,17 +402,31 @@ export default function JobDetailPage() {
                   </svg>
                   <p className="text-sm font-medium text-green-700">Application Submitted!</p>
                   <p className="text-xs text-slate-500 mt-1">Good luck with your application</p>
+                  <Link
+                    href="/dashboard/applications"
+                    className="inline-block mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    View My Applications
+                  </Link>
                 </div>
               ) : (
                 <>
                   <button
-                    onClick={() => setShowApplyModal(true)}
+                    onClick={handleApplyClick}
                     className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors mb-3"
                   >
                     Apply Now
                   </button>
-                  <button className="w-full px-6 py-3 border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
-                    Save Job
+                  <button
+                    onClick={handleSaveJob}
+                    disabled={saving || saved}
+                    className={`w-full px-6 py-3 border font-medium rounded-lg transition-colors ${
+                      saved
+                        ? 'border-green-200 bg-green-50 text-green-700'
+                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {saving ? 'Saving...' : saved ? 'Job Saved' : 'Save Job'}
                   </button>
                 </>
               )}
@@ -423,7 +500,7 @@ export default function JobDetailPage() {
       </main>
 
       {/* Apply Modal */}
-      {showApplyModal && (
+      {showApplyModal && isLoggedIn && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
@@ -443,15 +520,15 @@ export default function JobDetailPage() {
                 You&apos;re applying to <strong>{job.company.name}</strong> for the position of <strong>{job.title}</strong>.
               </p>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <div className="flex gap-3">
-                  <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div>
-                    <p className="text-sm text-amber-800 font-medium">Sign in to apply</p>
-                    <p className="text-sm text-amber-700 mt-1">
-                      Create an account or sign in to submit your application and track its status.
+                    <p className="text-sm text-green-800 font-medium">Logged in as {user?.name}</p>
+                    <p className="text-sm text-green-700 mt-0.5">
+                      Your profile will be attached to this application.
                     </p>
                   </div>
                 </div>
@@ -476,12 +553,13 @@ export default function JobDetailPage() {
               >
                 Cancel
               </button>
-              <Link
-                href={`/auth/employee/login?redirect=/jobs/${job.id}`}
-                className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors text-center"
+              <button
+                onClick={handleApply}
+                disabled={applying}
+                className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
               >
-                Sign In to Apply
-              </Link>
+                {applying ? 'Submitting...' : 'Submit Application'}
+              </button>
             </div>
           </div>
         </div>
