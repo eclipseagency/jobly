@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Input, Card } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EmployerRegisterPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Step 1: Personal
@@ -22,6 +24,7 @@ export default function EmployerRegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,17 +32,41 @@ export default function EmployerRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (step === 1) {
+      if (!formData.fullName || !formData.email || !formData.password) {
+        setError('Please fill in all required fields');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+      if (formData.password.length < 6) {
+        setError('Password must be at least 6 characters');
+        return;
+      }
       setStep(2);
       return;
     }
+
+    if (!formData.companyName || !formData.industry) {
+      setError('Please fill in company name and industry');
+      return;
+    }
+
     setIsLoading(true);
-    // TODO: Implement actual registration with backend
-    // For now, simulate registration and redirect to employer dashboard
-    setTimeout(() => {
+
+    // Simulate API call - replace with real registration
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      login('employer');
+      router.push('/employer/dashboard');
+    } catch {
+      setError('Registration failed. Please try again.');
       setIsLoading(false);
-      router.push('/employer');
-    }, 1500);
+    }
   };
 
   const companySizes = [

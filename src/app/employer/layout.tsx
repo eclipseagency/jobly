@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { EmployerSidebar } from '@/components/employer/EmployerSidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMessaging } from '@/contexts/MessagingContext';
 
 export default function EmployerLayout({
   children,
@@ -13,11 +14,13 @@ export default function EmployerLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { login } = useAuth();
+  const { setCurrentUser } = useMessaging();
 
   // Auto-login as employer when accessing this dashboard
   useEffect(() => {
     login('employer');
-  }, [login]);
+    setCurrentUser('employer-1', 'employer');
+  }, [login, setCurrentUser]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
