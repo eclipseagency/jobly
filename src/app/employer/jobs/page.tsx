@@ -41,137 +41,6 @@ function mapAPIJob(job: JobPosting): Job {
   };
 }
 
-// Demo data - will be replaced by API
-const demoJobsData: Job[] = [
-  {
-    id: '1',
-    title: 'Senior Frontend Developer',
-    department: 'Engineering',
-    location: 'BGC, Taguig',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 120000,
-    salaryMax: 180000,
-    applicants: 45,
-    newApplicants: 8,
-    views: 1240,
-    posted: '2024-12-20',
-    expires: '2025-01-20',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    title: 'Full Stack Engineer',
-    department: 'Engineering',
-    location: 'BGC, Taguig',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 100000,
-    salaryMax: 160000,
-    applicants: 38,
-    newApplicants: 5,
-    views: 980,
-    posted: '2024-12-18',
-    expires: '2025-01-18',
-    status: 'Active',
-  },
-  {
-    id: '3',
-    title: 'Product Designer',
-    department: 'Design',
-    location: 'Makati City',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 80000,
-    salaryMax: 120000,
-    applicants: 29,
-    newApplicants: 3,
-    views: 756,
-    posted: '2024-12-18',
-    expires: '2025-01-18',
-    status: 'Active',
-  },
-  {
-    id: '4',
-    title: 'DevOps Engineer',
-    department: 'Engineering',
-    location: 'Remote',
-    type: 'Full-time',
-    workSetup: 'Remote',
-    salaryMin: 90000,
-    salaryMax: 150000,
-    applicants: 22,
-    newApplicants: 4,
-    views: 543,
-    posted: '2024-12-10',
-    expires: '2025-01-10',
-    status: 'Active',
-  },
-  {
-    id: '5',
-    title: 'Technical Project Manager',
-    department: 'Operations',
-    location: 'BGC, Taguig',
-    type: 'Full-time',
-    workSetup: 'On-site',
-    salaryMin: 100000,
-    salaryMax: 150000,
-    applicants: 18,
-    newApplicants: 0,
-    views: 432,
-    posted: '2024-12-05',
-    expires: '2025-01-05',
-    status: 'Active',
-  },
-  {
-    id: '6',
-    title: 'Junior Software Developer',
-    department: 'Engineering',
-    location: 'Makati City',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 35000,
-    salaryMax: 50000,
-    applicants: 89,
-    newApplicants: 0,
-    views: 1567,
-    posted: '2024-11-15',
-    expires: '2024-12-15',
-    status: 'Closed',
-  },
-  {
-    id: '7',
-    title: 'QA Automation Engineer',
-    department: 'Engineering',
-    location: 'BGC, Taguig',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 60000,
-    salaryMax: 90000,
-    applicants: 34,
-    newApplicants: 0,
-    views: 678,
-    posted: '2024-11-20',
-    expires: '2024-12-20',
-    status: 'Paused',
-  },
-  {
-    id: '8',
-    title: 'Data Analyst',
-    department: 'Analytics',
-    location: 'Remote',
-    type: 'Full-time',
-    workSetup: 'Remote',
-    salaryMin: 55000,
-    salaryMax: 80000,
-    applicants: 56,
-    newApplicants: 0,
-    views: 890,
-    posted: '2024-11-10',
-    expires: '2024-12-10',
-    status: 'Closed',
-  },
-];
 
 const formatSalary = (min: number, max: number) => {
   const format = (n: number) => `₱${(n / 1000).toFixed(0)}k`;
@@ -200,13 +69,13 @@ function ManageJobsContent() {
         if (data.length > 0) {
           setJobs(data.map(mapAPIJob));
         } else {
-          // Fallback to demo data for now - remove in production
-          setJobs(demoJobsData);
+          // No jobs yet - show empty state
+          setJobs([]);
         }
       } catch (error) {
         console.error('Failed to load jobs:', error);
-        // Fallback to demo data for now - remove in production
-        setJobs(demoJobsData);
+        // API failed - show empty state
+        setJobs([]);
       } finally {
         setIsLoading(false);
       }
