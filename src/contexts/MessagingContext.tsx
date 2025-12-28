@@ -51,18 +51,50 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [currentUserType, setCurrentUserType] = useState<'jobseeker' | 'employer'>('jobseeker');
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Clear any old demo data from localStorage on mount
+  // Load conversations and messages from localStorage on mount
   useEffect(() => {
-    localStorage.removeItem('jobly_conversations');
-    localStorage.removeItem('jobly_messages');
+    try {
+      const savedConversations = localStorage.getItem('jobly_conversations');
+      const savedMessages = localStorage.getItem('jobly_messages');
+
+      if (savedConversations) {
+        const parsed = JSON.parse(savedConversations);
+        // Convert date strings back to Date objects
+        setConversations(parsed.map((conv: Conversation & { lastMessageTime: string }) => ({
+          ...conv,
+          lastMessageTime: new Date(conv.lastMessageTime),
+        })));
+      }
+
+      if (savedMessages) {
+        const parsed = JSON.parse(savedMessages);
+        // Convert date strings back to Date objects
+        setMessages(parsed.map((msg: Message & { timestamp: string }) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+    setIsLoaded(true);
   }, []);
 
-  // TODO: In production, load conversations and messages from API
-  // useEffect(() => {
-  //   messagingAPI.getConversations().then(setConversations);
-  //   messagingAPI.getMessages().then(setMessages);
-  // }, [currentUserId]);
+  // Save conversations to localStorage whenever they change
+  useEffect(() => {
+    if (isLoaded && conversations.length > 0) {
+      localStorage.setItem('jobly_conversations', JSON.stringify(conversations));
+    }
+  }, [conversations, isLoaded]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (isLoaded && messages.length > 0) {
+      localStorage.setItem('jobly_messages', JSON.stringify(messages));
+    }
+  }, [messages, isLoaded]);
 
   const setCurrentUser = (id: string, type: 'jobseeker' | 'employer') => {
     setCurrentUserId(id);
