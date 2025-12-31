@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { parseResume, getSkillCategory } from '@/lib/resume-parser';
 
 interface Resume {
   id: string;
@@ -9,6 +10,8 @@ interface Resume {
   size: string;
   uploadedAt: string;
   dataUrl?: string;
+  extractedSkills?: string[];
+  isParsing?: boolean;
 }
 
 export default function CVManagerPage() {
@@ -16,6 +19,8 @@ export default function CVManagerPage() {
   const [dragActive, setDragActive] = useState(false);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [expandedResume, setExpandedResume] = useState<string | null>(null);
+  const [addingSkills, setAddingSkills] = useState(false);
 
   // Load resumes from localStorage on mount
   useEffect(() => {
@@ -84,16 +89,49 @@ export default function CVManagerPage() {
     try {
       // Read file as data URL for localStorage storage
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        const resumeId = Date.now().toString();
+
+        // Create resume with parsing status
         const newResume: Resume = {
-          id: Date.now().toString(),
+          id: resumeId,
           name: file.name,
           size: formatFileSize(file.size),
           uploadedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          dataUrl: reader.result as string,
+          dataUrl,
+          isParsing: true,
+          extractedSkills: [],
         };
-        saveResumes([...resumes, newResume]);
+
+        const updatedResumes = [...resumes, newResume];
+        saveResumes(updatedResumes);
         setUploading(false);
+
+        // Parse resume to extract skills (async)
+        try {
+          const { skills } = await parseResume(dataUrl, file.name);
+          // Update resume with extracted skills
+          const finalResumes = updatedResumes.map(r =>
+            r.id === resumeId
+              ? { ...r, extractedSkills: skills, isParsing: false }
+              : r
+          );
+          saveResumes(finalResumes);
+
+          if (skills.length > 0) {
+            setExpandedResume(resumeId);
+          }
+        } catch (parseError) {
+          console.error('Error parsing resume:', parseError);
+          // Mark parsing as complete even on error
+          const finalResumes = updatedResumes.map(r =>
+            r.id === resumeId
+              ? { ...r, isParsing: false }
+              : r
+          );
+          saveResumes(finalResumes);
+        }
       };
       reader.onerror = () => {
         alert('Error reading file');
@@ -126,6 +164,52 @@ export default function CVManagerPage() {
       link.download = resume.name;
       link.click();
     }
+  };
+
+  const addSkillsToProfile = async (skills: string[]) => {
+    if (!user?.id || skills.length === 0) return;
+
+    setAddingSkills(true);
+    try {
+      // Load existing profile data
+      const savedProfile = localStorage.getItem(`jobly_profile_${user.id}`);
+      const profileData = savedProfile ? JSON.parse(savedProfile) : {};
+      const existingSkills: string[] = profileData.skills || [];
+
+      // Merge skills without duplicates
+      const mergedSkills = Array.from(new Set([...existingSkills, ...skills]));
+
+      // Save updated profile
+      const updatedProfile = {
+        ...profileData,
+        skills: mergedSkills,
+      };
+      localStorage.setItem(`jobly_profile_${user.id}`, JSON.stringify(updatedProfile));
+
+      alert(`Added ${skills.length - existingSkills.filter(s => skills.includes(s)).length} new skills to your profile!`);
+    } catch (error) {
+      console.error('Error adding skills to profile:', error);
+      alert('Error adding skills to profile');
+    } finally {
+      setAddingSkills(false);
+    }
+  };
+
+  const getCategoryColor = (category: string): string => {
+    const colors: Record<string, string> = {
+      programming: 'bg-blue-100 text-blue-700',
+      frameworks: 'bg-purple-100 text-purple-700',
+      databases: 'bg-green-100 text-green-700',
+      cloud: 'bg-orange-100 text-orange-700',
+      tools: 'bg-slate-100 text-slate-700',
+      data: 'bg-cyan-100 text-cyan-700',
+      soft: 'bg-pink-100 text-pink-700',
+      design: 'bg-rose-100 text-rose-700',
+      marketing: 'bg-amber-100 text-amber-700',
+      industry: 'bg-teal-100 text-teal-700',
+      other: 'bg-gray-100 text-gray-700',
+    };
+    return colors[category] || colors.other;
   };
 
   return (
@@ -188,40 +272,137 @@ export default function CVManagerPage() {
         ) : (
           <div className="divide-y divide-slate-100">
             {resumes.map((resume) => (
-              <div key={resume.id} className="p-5 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-slate-900 truncate">{resume.name}</h3>
-                  <p className="text-sm text-slate-500">{resume.size} - Uploaded {resume.uploadedAt}</p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => handleDownload(resume)}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
-                    title="Download"
-                  >
+              <div key={resume.id} className="p-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(resume.id)}
-                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-slate-900 truncate">{resume.name}</h3>
+                    <p className="text-sm text-slate-500">
+                      {resume.size} - Uploaded {resume.uploadedAt}
+                      {resume.isParsing && (
+                        <span className="ml-2 text-primary-600">
+                          <svg className="inline w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Extracting skills...
+                        </span>
+                      )}
+                      {!resume.isParsing && resume.extractedSkills && resume.extractedSkills.length > 0 && (
+                        <span className="ml-2 text-green-600">
+                          {resume.extractedSkills.length} skills found
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {resume.extractedSkills && resume.extractedSkills.length > 0 && (
+                      <button
+                        onClick={() => setExpandedResume(expandedResume === resume.id ? null : resume.id)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          expandedResume === resume.id
+                            ? 'text-primary-600 bg-primary-50'
+                            : 'text-slate-400 hover:text-primary-600 hover:bg-primary-50'
+                        }`}
+                        title="View skills"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDownload(resume)}
+                      className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                      title="Download"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(resume.id)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Expanded Skills View */}
+                {expandedResume === resume.id && resume.extractedSkills && resume.extractedSkills.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-slate-700">Extracted Skills</h4>
+                      <button
+                        onClick={() => addSkillsToProfile(resume.extractedSkills || [])}
+                        disabled={addingSkills}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {addingSkills ? (
+                          <>
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Adding...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Add to Profile
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {resume.extractedSkills.map((skill, index) => {
+                        const category = getSkillCategory(skill);
+                        return (
+                          <span
+                            key={index}
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(category)}`}
+                          >
+                            {skill}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500">
+                      Skills are categorized by type: Programming, Frameworks, Databases, Cloud, Tools, Data/AI, Soft Skills, Design, Marketing, Industry
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
+      </div>
+
+      {/* Skill Extraction Info */}
+      <div className="mt-6 bg-primary-50 rounded-lg p-5 border border-primary-100">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600 flex-shrink-0">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-medium text-primary-900 mb-1">Automatic Skill Extraction</h3>
+            <p className="text-sm text-primary-700">
+              When you upload a PDF resume, we automatically extract skills from it. Click the lightbulb icon to view extracted skills and add them to your profile with one click!
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Tips */}
@@ -250,7 +431,7 @@ export default function CVManagerPage() {
             <svg className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            PDF format is preferred by most employers
+            PDF format is preferred for automatic skill extraction
           </li>
         </ul>
       </div>
