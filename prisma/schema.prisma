@@ -24,9 +24,39 @@ model Tenant {
   slug        String   @unique
   description String?
   logo        String?
+  coverImage  String?
   website     String?
   industry    String?
   size        String?  // e.g., "1-10", "11-50", "51-200", "201-500", "500+"
+  foundedYear Int?
+
+  // Contact Information
+  email       String?
+  phone       String?
+
+  // Location
+  address     String?
+  city        String?
+  province    String?
+  postalCode  String?
+  country     String?  @default("Philippines")
+
+  // Social Links
+  linkedinUrl  String?
+  facebookUrl  String?
+  twitterUrl   String?
+  instagramUrl String?
+
+  // Company Culture
+  mission      String?
+  vision       String?
+  benefits     String[]  // Company benefits/perks
+  culture      String?   // Company culture description
+
+  // Verification
+  isVerified   Boolean  @default(false)
+  verifiedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -53,7 +83,27 @@ model User {
   resumeUrl     String?
   linkedinUrl   String?
   portfolioUrl  String?
+  githubUrl     String?
+  websiteUrl    String?
   yearsOfExp    Int?
+
+  // Additional personal info
+  dateOfBirth   DateTime?
+  gender        String?
+  nationality   String?
+  address       String?
+  city          String?
+  province      String?
+  postalCode    String?
+  country       String?   @default("Philippines")
+
+  // Job preferences
+  expectedSalary      String?
+  preferredJobType    String?   // full-time, part-time, contract, freelance
+  preferredWorkSetup  String?   // remote, onsite, hybrid
+  availableFrom       DateTime?
+  willingToRelocate   Boolean   @default(false)
+  openToOffers        Boolean   @default(true)
 
   // Common fields
   tenantId      String?
@@ -68,8 +118,14 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  applications  Application[]
-  savedJobs     SavedJob[]
+  applications    Application[]
+  savedJobs       SavedJob[]
+  workExperiences WorkExperience[]
+  educations      Education[]
+  certifications  Certification[]
+  languages       Language[]
+  references      Reference[]
+  notifications   Notification[]
 
   @@index([tenantId])
   @@index([role])
@@ -138,4 +194,132 @@ model SavedJob {
   @@unique([userId, jobId])
   @@index([userId])
   @@map("saved_jobs")
+}
+
+// Work Experience for employee profiles
+model WorkExperience {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobTitle        String
+  company         String
+  companyLogo     String?
+  location        String?
+  locationType    String?   // remote, onsite, hybrid
+  employmentType  String?   // full-time, part-time, contract, internship, freelance
+  startDate       DateTime
+  endDate         DateTime?
+  isCurrent       Boolean   @default(false)
+  description     String?
+  achievements    String[]
+  skills          String[]  // Skills used in this role
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("work_experiences")
+}
+
+// Education for employee profiles
+model Education {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  school          String
+  schoolLogo      String?
+  degree          String    // Bachelor's, Master's, PhD, etc.
+  fieldOfStudy    String
+  startDate       DateTime
+  endDate         DateTime?
+  isCurrent       Boolean   @default(false)
+  grade           String?   // GPA or equivalent
+  activities      String?   // Extracurricular activities
+  description     String?
+  achievements    String[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("educations")
+}
+
+// Certifications and licenses
+model Certification {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name              String
+  issuingOrg        String
+  issuingOrgLogo    String?
+  issueDate         DateTime
+  expiryDate        DateTime?
+  hasNoExpiry       Boolean   @default(false)
+  credentialId      String?
+  credentialUrl     String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("certifications")
+}
+
+// Languages spoken
+model Language {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  language        String
+  proficiency     String   // Native, Fluent, Advanced, Intermediate, Basic
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@map("languages")
+}
+
+// Professional references
+model Reference {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name            String
+  position        String
+  company         String
+  email           String?
+  phone           String?
+  relationship    String   // Former Manager, Colleague, Client, etc.
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@map("references")
+}
+
+// User notifications
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String   // application_viewed, application_status, interview_scheduled, message_received, job_alert, offer_received, etc.
+  title     String
+  message   String
+  link      String?  // Optional link to relevant page
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
 }

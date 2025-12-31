@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 const menuItems = [
   {
     label: 'Dashboard',
-    href: '/employer',
+    href: '/employer/dashboard',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -31,7 +31,6 @@ const menuItems = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
-    badge: 12,
   },
   {
     label: 'Messages',
@@ -41,7 +40,6 @@ const menuItems = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
       </svg>
     ),
-    badge: 5,
   },
   {
     label: 'Company Profile',
@@ -103,7 +101,7 @@ export function EmployerSidebar({ isOpen, onClose }: EmployerSidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-6 border-b border-slate-100">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/employer/dashboard" className="flex items-center gap-2">
               <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
               <span className="text-xs font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Employer</span>
             </Link>
@@ -121,6 +119,7 @@ export function EmployerSidebar({ isOpen, onClose }: EmployerSidebarProps) {
           <div className="px-3 pt-4">
             <Link
               href="/employer/jobs/new"
+              onClick={onClose}
               className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -134,7 +133,7 @@ export function EmployerSidebar({ isOpen, onClose }: EmployerSidebarProps) {
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {menuItems.map((item) => {
               const isActive = pathname === item.href ||
-                (item.href !== '/employer' && pathname.startsWith(item.href));
+                (item.href !== '/employer/dashboard' && pathname.startsWith(item.href));
 
               return (
                 <Link
@@ -151,31 +150,28 @@ export function EmployerSidebar({ isOpen, onClose }: EmployerSidebarProps) {
                 >
                   {item.icon}
                   <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-primary-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Company Profile */}
+          {/* Company Profile - TODO: Replace with actual company data from auth */}
           <div className="p-3 border-t border-slate-100">
             <Link
               href="/employer/company"
               className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors"
             >
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-sm">
-                TC
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 truncate">TechCorp Inc.</p>
-                <p className="text-xs text-slate-500 truncate">Premium Plan</p>
+                <p className="text-sm font-medium text-slate-900 truncate">Company Profile</p>
+                <p className="text-xs text-slate-500 truncate">Manage your company</p>
               </div>
               <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
           </div>

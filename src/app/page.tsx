@@ -4,9 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { LocationDropdown } from '@/components/ui/LocationDropdown';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
   const router = useRouter();
+  const { isLoggedIn, user, getDashboardPath, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
 
@@ -32,24 +35,49 @@ export default function Home() {
               <Link href="/dashboard/jobs" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
                 Find Jobs
               </Link>
-              <Link href="/auth/employer/login" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
-                For Employers
-              </Link>
+              {isLoggedIn && user?.role === 'employer' ? (
+                <Link href="/employer/dashboard" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
+                  Employer Dashboard
+                </Link>
+              ) : (
+                <Link href="/auth/employer/login" className="text-slate-600 hover:text-slate-900 text-sm font-medium">
+                  For Employers
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
-              <Link
-                href="/auth"
-                className="hidden sm:inline-flex text-slate-600 hover:text-slate-900 text-sm font-medium"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth"
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Get Started
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <button
+                    onClick={logout}
+                    className="hidden sm:inline-flex text-slate-600 hover:text-slate-900 text-sm font-medium"
+                  >
+                    Sign out
+                  </button>
+                  <Link
+                    href={getDashboardPath()}
+                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    My Dashboard
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth"
+                    className="hidden sm:inline-flex text-slate-600 hover:text-slate-900 text-sm font-medium"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth"
+                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -71,19 +99,23 @@ export default function Home() {
               {/* Search Box */}
               <form onSubmit={handleSearch} className="mt-8">
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    placeholder="Job title or keyword"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Location"
+                  <div className="relative w-full sm:w-auto sm:flex-1">
+                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Job title or keyword"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                    />
+                  </div>
+                  <LocationDropdown
                     value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
-                    className="w-full sm:w-auto sm:flex-1 px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                    onChange={setLocationQuery}
+                    placeholder="Select location"
+                    className="w-full sm:w-auto sm:flex-1"
                   />
                   <button
                     type="submit"
@@ -111,23 +143,17 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Column - Image Placeholder */}
+            {/* Right Column - Hero Image */}
             <div className="hidden lg:block">
-              <div className="relative w-full h-[420px] rounded-3xl bg-gradient-to-br from-primary-100 via-slate-100 to-primary-50 overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-2xl bg-white/60 backdrop-blur flex items-center justify-center shadow-lg">
-                      <svg className="w-12 h-12 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <p className="text-slate-500 text-sm font-medium">Your career starts here</p>
-                  </div>
-                </div>
-                {/* Decorative elements */}
-                <div className="absolute top-8 right-8 w-16 h-16 rounded-2xl bg-white/40 backdrop-blur-sm" />
-                <div className="absolute bottom-12 left-8 w-20 h-20 rounded-full bg-primary-200/50" />
-                <div className="absolute top-1/3 left-12 w-12 h-12 rounded-xl bg-white/30" />
+              <div className="relative w-full h-[420px] rounded-3xl overflow-hidden shadow-2xl">
+                <Image
+                  src="/hero-team.jpg"
+                  alt="Professional team in BGC, Philippines"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent" />
               </div>
             </div>
           </div>
@@ -248,9 +274,9 @@ export default function Home() {
             <div>
               <h4 className="font-medium text-slate-900 mb-4 text-sm">For Job Seekers</h4>
               <ul className="space-y-2 text-sm text-slate-500">
-                <li><Link href="/dashboard/jobs" className="hover:text-slate-900">Browse Jobs</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Career Advice</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Resume Tips</Link></li>
+                <li><Link href="/jobs" className="hover:text-slate-900">Browse Jobs</Link></li>
+                <li><Link href="/blog" className="hover:text-slate-900">Career Advice</Link></li>
+                <li><Link href="/blog/how-to-write-winning-resume-philippines" className="hover:text-slate-900">Resume Tips</Link></li>
               </ul>
             </div>
 
@@ -258,16 +284,16 @@ export default function Home() {
               <h4 className="font-medium text-slate-900 mb-4 text-sm">For Employers</h4>
               <ul className="space-y-2 text-sm text-slate-500">
                 <li><Link href="/auth/employer/register" className="hover:text-slate-900">Post a Job</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Pricing</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Resources</Link></li>
+                <li><Link href="/pricing" className="hover:text-slate-900">Pricing</Link></li>
+                <li><Link href="/resources" className="hover:text-slate-900">Resources</Link></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-medium text-slate-900 mb-4 text-sm">Company</h4>
               <ul className="space-y-2 text-sm text-slate-500">
-                <li><Link href="#" className="hover:text-slate-900">About</Link></li>
-                <li><Link href="#" className="hover:text-slate-900">Contact</Link></li>
+                <li><Link href="/about" className="hover:text-slate-900">About</Link></li>
+                <li><Link href="/contact" className="hover:text-slate-900">Contact</Link></li>
                 <li><Link href="/privacy" className="hover:text-slate-900">Privacy</Link></li>
               </ul>
             </div>
@@ -287,32 +313,33 @@ export default function Home() {
       {/* Mobile Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-50">
         <div className="flex items-center justify-around py-2">
-          {[
-            { label: 'Home', href: '/', icon: (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            )},
-            { label: 'Jobs', href: '/dashboard/jobs', icon: (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            )},
-            { label: 'Account', href: '/auth', icon: (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            )},
-          ].map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500 hover:text-primary-600"
-            >
-              {item.icon}
-              <span className="text-xs">{item.label}</span>
-            </Link>
-          ))}
+          <Link
+            href="/"
+            className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500 hover:text-primary-600"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span className="text-xs">Home</span>
+          </Link>
+          <Link
+            href="/dashboard/jobs"
+            className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500 hover:text-primary-600"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="text-xs">Jobs</span>
+          </Link>
+          <Link
+            href={isLoggedIn ? getDashboardPath() : '/auth'}
+            className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500 hover:text-primary-600"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span className="text-xs">{isLoggedIn ? 'Dashboard' : 'Account'}</span>
+          </Link>
         </div>
       </div>
       <div className="h-16 md:hidden" />

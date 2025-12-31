@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Input, Card } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EmployerRegisterPage() {
   const router = useRouter();
+  const { register } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Step 1: Personal
@@ -22,6 +24,7 @@ export default function EmployerRegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,17 +32,50 @@ export default function EmployerRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (step === 1) {
+      if (!formData.fullName || !formData.email || !formData.password) {
+        setError('Please fill in all required fields');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+      if (formData.password.length < 8) {
+        setError('Password must be at least 8 characters');
+        return;
+      }
       setStep(2);
       return;
     }
+
+    if (!formData.companyName || !formData.industry) {
+      setError('Please fill in company name and industry');
+      return;
+    }
+
     setIsLoading(true);
-    // TODO: Implement actual registration with backend
-    // For now, simulate registration and redirect to employer dashboard
-    setTimeout(() => {
+
+    try {
+      const result = await register({
+        email: formData.email,
+        password: formData.password,
+        name: formData.fullName,
+        role: 'employer',
+        companyName: formData.companyName,
+      });
+      if (result.success) {
+        router.push('/employer/dashboard');
+      } else {
+        setError(result.error || 'Registration failed. Please try again.');
+        setIsLoading(false);
+      }
+    } catch {
+      setError('Registration failed. Please try again.');
       setIsLoading(false);
-      router.push('/employer');
-    }, 1500);
+    }
   };
 
   const companySizes = [
@@ -95,6 +131,11 @@ export default function EmployerRegisterPage() {
           </div>
 
           <Card variant="elevated" className="mb-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-5">
               {step === 1 ? (
                 <>

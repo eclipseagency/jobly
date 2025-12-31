@@ -86,12 +86,48 @@ export default function PostNewJobPage() {
     }));
   };
 
+  const [errors, setErrors] = useState<string[]>([]);
+
   const steps = [
     { number: 1, title: 'Job Details' },
     { number: 2, title: 'Description' },
     { number: 3, title: 'Skills & Benefits' },
     { number: 4, title: 'Review' },
   ];
+
+  const validateStep = (step: number): string[] => {
+    const stepErrors: string[] = [];
+    if (step === 1) {
+      if (!formData.title.trim()) stepErrors.push('Job title is required');
+      if (!formData.department) stepErrors.push('Department is required');
+      if (!formData.location.trim()) stepErrors.push('Location is required');
+      if (!formData.workSetup) stepErrors.push('Work setup is required');
+      if (!formData.jobType) stepErrors.push('Job type is required');
+      if (!formData.experienceLevel) stepErrors.push('Experience level is required');
+      if (!formData.salaryMin || !formData.salaryMax) stepErrors.push('Salary range is required');
+    } else if (step === 2) {
+      if (!formData.description.trim()) stepErrors.push('Job description is required');
+      if (formData.responsibilities.filter(r => r.trim()).length === 0) {
+        stepErrors.push('At least one responsibility is required');
+      }
+      if (formData.requirements.filter(r => r.trim()).length === 0) {
+        stepErrors.push('At least one requirement is required');
+      }
+    } else if (step === 3) {
+      if (formData.skills.length === 0) stepErrors.push('At least one skill is required');
+    }
+    return stepErrors;
+  };
+
+  const handleContinue = () => {
+    const stepErrors = validateStep(currentStep);
+    if (stepErrors.length > 0) {
+      setErrors(stepErrors);
+      return;
+    }
+    setErrors([]);
+    setCurrentStep(prev => prev + 1);
+  };
 
   const handlePublish = async () => {
     setIsPublishing(true);
@@ -598,11 +634,30 @@ export default function PostNewJobPage() {
           </div>
         )}
 
+        {/* Validation Errors */}
+        {errors.length > 0 && (
+          <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex gap-3">
+              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="font-medium text-red-800">Please fix the following errors:</p>
+                <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
+                  {errors.map((error, i) => (
+                    <li key={i}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Buttons */}
         <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
           {currentStep > 1 ? (
             <button
-              onClick={() => setCurrentStep(prev => prev - 1)}
+              onClick={() => { setErrors([]); setCurrentStep(prev => prev - 1); }}
               className="flex items-center gap-2 px-5 py-2.5 text-slate-600 hover:text-slate-900 font-medium transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -616,7 +671,7 @@ export default function PostNewJobPage() {
 
           {currentStep < 4 ? (
             <button
-              onClick={() => setCurrentStep(prev => prev + 1)}
+              onClick={handleContinue}
               className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
             >
               Continue

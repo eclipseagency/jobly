@@ -1,140 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { employerAPI, JobPosting } from '@/lib/api';
 
-const jobsData = [
-  {
-    id: '1',
-    title: 'Senior Frontend Developer',
-    department: 'Engineering',
-    location: 'BGC, Taguig',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 120000,
-    salaryMax: 180000,
-    applicants: 45,
-    newApplicants: 8,
-    views: 1240,
-    posted: '2024-12-20',
-    expires: '2025-01-20',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    title: 'Full Stack Engineer',
-    department: 'Engineering',
-    location: 'BGC, Taguig',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 100000,
-    salaryMax: 160000,
-    applicants: 38,
-    newApplicants: 5,
-    views: 980,
-    posted: '2024-12-18',
-    expires: '2025-01-18',
-    status: 'Active',
-  },
-  {
-    id: '3',
-    title: 'Product Designer',
-    department: 'Design',
-    location: 'Makati City',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 80000,
-    salaryMax: 120000,
-    applicants: 29,
-    newApplicants: 3,
-    views: 756,
-    posted: '2024-12-18',
-    expires: '2025-01-18',
-    status: 'Active',
-  },
-  {
-    id: '4',
-    title: 'DevOps Engineer',
-    department: 'Engineering',
-    location: 'Remote',
-    type: 'Full-time',
-    workSetup: 'Remote',
-    salaryMin: 90000,
-    salaryMax: 150000,
-    applicants: 22,
-    newApplicants: 4,
-    views: 543,
-    posted: '2024-12-10',
-    expires: '2025-01-10',
-    status: 'Active',
-  },
-  {
-    id: '5',
-    title: 'Technical Project Manager',
-    department: 'Operations',
-    location: 'BGC, Taguig',
-    type: 'Full-time',
-    workSetup: 'On-site',
-    salaryMin: 100000,
-    salaryMax: 150000,
-    applicants: 18,
-    newApplicants: 0,
-    views: 432,
-    posted: '2024-12-05',
-    expires: '2025-01-05',
-    status: 'Active',
-  },
-  {
-    id: '6',
-    title: 'Junior Software Developer',
-    department: 'Engineering',
-    location: 'Makati City',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 35000,
-    salaryMax: 50000,
-    applicants: 89,
-    newApplicants: 0,
-    views: 1567,
-    posted: '2024-11-15',
-    expires: '2024-12-15',
-    status: 'Closed',
-  },
-  {
-    id: '7',
-    title: 'QA Automation Engineer',
-    department: 'Engineering',
-    location: 'BGC, Taguig',
-    type: 'Full-time',
-    workSetup: 'Hybrid',
-    salaryMin: 60000,
-    salaryMax: 90000,
-    applicants: 34,
-    newApplicants: 0,
-    views: 678,
-    posted: '2024-11-20',
-    expires: '2024-12-20',
-    status: 'Paused',
-  },
-  {
-    id: '8',
-    title: 'Data Analyst',
-    department: 'Analytics',
-    location: 'Remote',
-    type: 'Full-time',
-    workSetup: 'Remote',
-    salaryMin: 55000,
-    salaryMax: 80000,
-    applicants: 56,
-    newApplicants: 0,
-    views: 890,
-    posted: '2024-11-10',
-    expires: '2024-12-10',
-    status: 'Closed',
-  },
-];
+interface Job {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  workSetup: string;
+  salaryMin: number;
+  salaryMax: number;
+  applicants: number;
+  newApplicants: number;
+  views: number;
+  posted: string;
+  expires: string;
+  status: string;
+}
 
-type Job = typeof jobsData[0];
+function mapAPIJob(job: JobPosting): Job {
+  return {
+    id: job.id,
+    title: job.title,
+    department: job.department,
+    location: job.location,
+    type: job.type,
+    workSetup: job.workSetup,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    applicants: job.applicants,
+    newApplicants: 0,
+    views: job.views,
+    posted: job.posted,
+    expires: job.expires,
+    status: job.status,
+  };
+}
+
 
 const formatSalary = (min: number, max: number) => {
   const format = (n: number) => `₱${(n / 1000).toFixed(0)}k`;
@@ -145,13 +51,59 @@ const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-export default function ManageJobsPage() {
+function ManageJobsContent() {
+  const searchParams = useSearchParams();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
 
-  const filteredJobs = jobsData.filter(job => {
+  // Fetch jobs from API
+  useEffect(() => {
+    async function loadJobs() {
+      try {
+        const data = await employerAPI.getJobPostings();
+        if (data.length > 0) {
+          setJobs(data.map(mapAPIJob));
+        } else {
+          // No jobs yet - show empty state
+          setJobs([]);
+        }
+      } catch (error) {
+        console.error('Failed to load jobs:', error);
+        // API failed - show empty state
+        setJobs([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadJobs();
+  }, []);
+
+  // Handle success notifications from post job page
+  useEffect(() => {
+    if (searchParams.get('published') === 'true') {
+      setNotification({ type: 'success', message: 'Job posted successfully! It is now live and visible to candidates.' });
+      // Clear the URL params
+      window.history.replaceState({}, '', '/employer/jobs');
+    } else if (searchParams.get('draft') === 'true') {
+      setNotification({ type: 'info', message: 'Job saved as draft. You can publish it anytime.' });
+      window.history.replaceState({}, '', '/employer/jobs');
+    }
+  }, [searchParams]);
+
+  // Auto-dismiss notification
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  const filteredJobs = jobs.filter(job => {
     const matchesStatus = statusFilter === 'all' || job.status.toLowerCase() === statusFilter;
     const matchesSearch = !searchQuery ||
       job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -183,8 +135,59 @@ export default function ManageJobsPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 bg-slate-200 rounded mb-2"></div>
+          <div className="h-4 w-64 bg-slate-200 rounded mb-8"></div>
+          <div className="h-16 bg-slate-200 rounded-xl mb-6"></div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-20 bg-slate-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Success/Info Notification */}
+      {notification && (
+        <div className={`mb-6 p-4 rounded-xl flex items-center justify-between ${
+          notification.type === 'success'
+            ? 'bg-green-50 border border-green-200'
+            : 'bg-blue-50 border border-blue-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            {notification.type === 'success' ? (
+              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+            <p className={notification.type === 'success' ? 'text-green-800' : 'text-blue-800'}>
+              {notification.message}
+            </p>
+          </div>
+          <button
+            onClick={() => setNotification(null)}
+            className={`p-1 rounded hover:bg-opacity-50 ${
+              notification.type === 'success' ? 'hover:bg-green-200 text-green-600' : 'hover:bg-blue-200 text-blue-600'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -406,5 +409,13 @@ export default function ManageJobsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ManageJobsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 lg:p-8 max-w-7xl mx-auto"><div className="animate-pulse bg-slate-200 h-8 w-48 rounded mb-4"></div></div>}>
+      <ManageJobsContent />
+    </Suspense>
   );
 }

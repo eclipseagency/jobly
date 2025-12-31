@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Input, Card } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EmployeeRegisterPage() {
   const router = useRouter();
+  const { register } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -18,6 +20,7 @@ export default function EmployeeRegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,17 +28,44 @@ export default function EmployeeRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (step === 1) {
+      if (!formData.fullName || !formData.email || !formData.password) {
+        setError('Please fill in all required fields');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+      if (formData.password.length < 8) {
+        setError('Password must be at least 8 characters');
+        return;
+      }
       setStep(2);
       return;
     }
+
     setIsLoading(true);
-    // TODO: Implement actual registration with backend
-    // For now, simulate registration and redirect to job seeker dashboard
-    setTimeout(() => {
+
+    try {
+      const result = await register({
+        email: formData.email,
+        password: formData.password,
+        name: formData.fullName,
+        role: 'employee',
+      });
+      if (result.success) {
+        router.push('/dashboard');
+      } else {
+        setError(result.error || 'Registration failed. Please try again.');
+        setIsLoading(false);
+      }
+    } catch {
+      setError('Registration failed. Please try again.');
       setIsLoading(false);
-      router.push('/dashboard');
-    }, 1500);
+    }
   };
 
   return (
@@ -112,6 +142,11 @@ export default function EmployeeRegisterPage() {
           </div>
 
           <Card variant="elevated" className="mb-6">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-5">
               {step === 1 ? (
                 <>
