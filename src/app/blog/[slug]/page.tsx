@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { blogPosts, getBlogPost } from '@/lib/blog-data';
 import { ArticleSchema, BreadcrumbSchema } from '@/components/seo/StructuredData';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -120,30 +122,8 @@ export default async function BlogPostPage({ params }: Props) {
       <BreadcrumbSchema items={breadcrumbs} />
 
       <div className="min-h-screen bg-white">
-        {/* Header */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="text-2xl font-bold text-primary-600">
-                Jobly
-              </Link>
-              <nav className="flex items-center gap-6">
-                <Link href="/jobs" className="text-slate-600 hover:text-slate-900">
-                  Find Jobs
-                </Link>
-                <Link href="/blog" className="text-slate-600 hover:text-slate-900">
-                  Blog
-                </Link>
-                <Link
-                  href="/auth"
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  Sign In
-                </Link>
-              </nav>
-            </div>
-          </div>
-        </header>
+        {/* Header - Same as Homepage */}
+        <Header currentPage="blog" />
 
         {/* Breadcrumbs */}
         <nav className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -243,44 +223,10 @@ export default async function BlogPostPage({ params }: Props) {
           )}
         </article>
 
-        {/* Footer */}
-        <footer className="bg-slate-900 text-white py-12 mt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-4 gap-8">
-              <div>
-                <h3 className="text-xl font-bold mb-4">Jobly</h3>
-                <p className="text-slate-400">
-                  The trusted job portal for Filipino professionals
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-4">Job Seekers</h4>
-                <ul className="space-y-2 text-slate-400">
-                  <li><Link href="/jobs" className="hover:text-white">Browse Jobs</Link></li>
-                  <li><Link href="/auth/employee/register" className="hover:text-white">Create Account</Link></li>
-                  <li><Link href="/blog" className="hover:text-white">Career Blog</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-4">Employers</h4>
-                <ul className="space-y-2 text-slate-400">
-                  <li><Link href="/employer" className="hover:text-white">Post a Job</Link></li>
-                  <li><Link href="/auth/employer/register" className="hover:text-white">Employer Sign Up</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-4">Company</h4>
-                <ul className="space-y-2 text-slate-400">
-                  <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
-                  <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-8 pt-8 border-t border-slate-800 text-center text-slate-400">
-              <p>&copy; {new Date().getFullYear()} Jobly Philippines. All rights reserved.</p>
-            </div>
-          </div>
-        </footer>
+        {/* Footer - Same as Homepage */}
+        <div className="mt-16">
+          <Footer />
+        </div>
       </div>
     </>
   );
