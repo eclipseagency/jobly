@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { LocationDropdown } from '@/components/ui/LocationDropdown';
 import { jobSeekerAPI, Job as APIJob } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Job {
   id: string;
@@ -528,12 +529,15 @@ const formatSalary = (min: number, max: number) => {
 
 function FindJobsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user, isLoggedIn } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [savedJobsMap, setSavedJobsMap] = useState<Record<string, string>>({}); // jobId -> savedJobId
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState('relevance');
   const [currentPage, setCurrentPage] = useState(1);
@@ -568,6 +572,35 @@ function FindJobsContent() {
     if (q) setSearchQuery(q);
     if (location) setLocationQuery(location);
   }, [searchParams]);
+
+  // Load user's saved jobs
+  useEffect(() => {
+    async function loadSavedJobs() {
+      if (!user?.id) return;
+
+      try {
+        const response = await fetch('/api/saved-jobs', {
+          headers: {
+            'x-user-id': user.id,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const savedJobIds = data.savedJobs?.map((sj: { job: { id: string } }) => sj.job.id) || [];
+          const jobsMap: Record<string, string> = {};
+          data.savedJobs?.forEach((sj: { id: string; job: { id: string } }) => {
+            jobsMap[sj.job.id] = sj.id;
+          });
+          setSavedJobs(savedJobIds);
+          setSavedJobsMap(jobsMap);
+        }
+      } catch (error) {
+        console.error('Error loading saved jobs:', error);
+      }
+    }
+
+    loadSavedJobs();
+  }, [user?.id]);
 
   const [filters, setFilters] = useState({
     jobType: [] as string[],
@@ -630,8 +663,74 @@ function FindJobsContent() {
   const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
   const paginatedJobs = filteredJobs.slice((currentPage - 1) * jobsPerPage, currentPage * jobsPerPage);
 
-  const toggleSaveJob = (jobId: string) => {
-    setSavedJobs(prev => prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]);
+  const toggleSaveJob = async (jobId: string) => {
+    if (!isLoggedIn || !user?.id) {
+      router.push(`/auth/employee/login?redirect=/dashboard/jobs`);
+      return;
+    }
+
+    const isSaved = savedJobs.includes(jobId);
+
+    if (isSaved) {
+      // Unsave the job
+      const savedJobId = savedJobsMap[jobId];
+      if (!savedJobId) return;
+
+      // Optimistically update UI
+      setSavedJobs(prev => prev.filter(id => id !== jobId));
+      setSavedJobsMap(prev => {
+        const newMap = { ...prev };
+        delete newMap[jobId];
+        return newMap;
+      });
+
+      try {
+        const response = await fetch(`/api/saved-jobs/${savedJobId}`, {
+          method: 'DELETE',
+          headers: {
+            'x-user-id': user.id,
+          },
+        });
+
+        if (!response.ok) {
+          // Revert on failure
+          setSavedJobs(prev => [...prev, jobId]);
+          setSavedJobsMap(prev => ({ ...prev, [jobId]: savedJobId }));
+        }
+      } catch (error) {
+        console.error('Error unsaving job:', error);
+        // Revert on failure
+        setSavedJobs(prev => [...prev, jobId]);
+        setSavedJobsMap(prev => ({ ...prev, [jobId]: savedJobId }));
+      }
+    } else {
+      // Save the job
+      // Optimistically update UI
+      setSavedJobs(prev => [...prev, jobId]);
+
+      try {
+        const response = await fetch('/api/saved-jobs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id,
+          },
+          body: JSON.stringify({ jobId }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setSavedJobsMap(prev => ({ ...prev, [jobId]: data.savedJob.id }));
+        } else {
+          // Revert on failure
+          setSavedJobs(prev => prev.filter(id => id !== jobId));
+        }
+      } catch (error) {
+        console.error('Error saving job:', error);
+        // Revert on failure
+        setSavedJobs(prev => prev.filter(id => id !== jobId));
+      }
+    }
   };
 
   return (
