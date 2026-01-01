@@ -163,6 +163,7 @@ export default function PostNewJobPage() {
         headers: {
           'Content-Type': 'application/json',
           'x-tenant-id': user.tenantId,
+          'x-user-id': user.id,
         },
         body: JSON.stringify({
           title: formData.title,
