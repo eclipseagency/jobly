@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SavedJob {
   id: string;
@@ -40,16 +41,22 @@ function formatDate(dateString: string): string {
 }
 
 export default function SavedJobsPage() {
+  const { user, isLoggedIn, isLoading: authLoading } = useAuth();
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchSavedJobs() {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch('/api/saved-jobs', {
           headers: {
-            'x-user-id': 'demo-user', // TODO: Get from auth
+            'x-user-id': user.id,
           },
         });
         if (response.ok) {
@@ -63,16 +70,20 @@ export default function SavedJobsPage() {
       }
     }
 
-    fetchSavedJobs();
-  }, []);
+    if (!authLoading) {
+      fetchSavedJobs();
+    }
+  }, [user?.id, authLoading]);
 
   const handleRemove = async (savedJobId: string) => {
+    if (!user?.id) return;
+
     setRemoving(savedJobId);
     try {
       const response = await fetch(`/api/saved-jobs/${savedJobId}`, {
         method: 'DELETE',
         headers: {
-          'x-user-id': 'demo-user', // TODO: Get from auth
+          'x-user-id': user.id,
         },
       });
 
