@@ -1,6 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+// Helper function to ensure tenant exists
+async function ensureTenantExists(tenantId: string, userId?: string): Promise<string> {
+  // Check if tenant exists
+  const existingTenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (existingTenant) {
+    return tenantId;
+  }
+
+  // If tenant doesn't exist (localStorage fallback case), create one
+  // Generate a unique slug
+  const baseSlug = `company-${tenantId.substring(0, 8)}`;
+  let slug = baseSlug;
+  let suffix = 1;
+  while (await prisma.tenant.findUnique({ where: { slug } })) {
+    slug = `${baseSlug}-${suffix}`;
+    suffix++;
+  }
+
+  const newTenant = await prisma.tenant.create({
+    data: {
+      id: tenantId, // Use the same ID from localStorage
+      name: 'My Company',
+      slug,
+    },
+  });
+
+  // If we have a userId, link the user to this tenant
+  if (userId) {
+    await prisma.user.updateMany({
+      where: { id: userId },
+      data: { tenantId: newTenant.id },
+    });
+  }
+
+  return newTenant.id;
+}
+
 // GET /api/employer/jobs - List employer's job postings
 export async function GET(request: NextRequest) {
   try {
@@ -52,9 +92,10 @@ export async function GET(request: NextRequest) {
 // POST /api/employer/jobs - Create new job posting
 export async function POST(request: NextRequest) {
   try {
-    const tenantId = request.headers.get('x-tenant-id');
+    const tenantIdHeader = request.headers.get('x-tenant-id');
+    const userId = request.headers.get('x-user-id');
 
-    if (!tenantId) {
+    if (!tenantIdHeader) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -70,6 +111,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Ensure tenant exists (creates one if using localStorage fallback)
+    const tenantId = await ensureTenantExists(tenantIdHeader, userId || undefined);
 
     const job = await prisma.job.create({
       data: {
