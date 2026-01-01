@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 const skillOptions = [
   'JavaScript', 'TypeScript', 'React', 'Vue.js', 'Angular', 'Node.js', 'Python', 'Java', 'Go', 'Rust',
@@ -20,9 +21,11 @@ const benefitOptions = [
 
 export default function PostNewJobPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     department: '',
@@ -130,19 +133,71 @@ export default function PostNewJobPage() {
   };
 
   const handlePublish = async () => {
+    if (!user?.tenantId) {
+      setPublishError('You must be logged in as an employer to publish jobs');
+      return;
+    }
+
     setIsPublishing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsPublishing(false);
-    router.push('/employer/jobs?published=true');
+    setPublishError(null);
+
+    try {
+      // Format salary string
+      const salary = formData.salaryMin && formData.salaryMax
+        ? `₱${parseInt(formData.salaryMin).toLocaleString()} - ₱${parseInt(formData.salaryMax).toLocaleString()}/mo`
+        : null;
+
+      // Combine responsibilities and requirements into a formatted requirements string
+      const requirementsText = [
+        ...formData.responsibilities.filter(r => r.trim()).map(r => `• ${r}`),
+        '',
+        'Requirements:',
+        ...formData.requirements.filter(r => r.trim()).map(r => `• ${r}`),
+        ...(formData.niceToHave.filter(r => r.trim()).length > 0 ? ['', 'Nice to have:', ...formData.niceToHave.filter(r => r.trim()).map(r => `• ${r}`)] : []),
+        ...(formData.skills.length > 0 ? ['', 'Skills: ' + formData.skills.join(', ')] : []),
+        ...(formData.benefits.length > 0 ? ['', 'Benefits: ' + formData.benefits.join(', ')] : []),
+      ].join('\n');
+
+      const response = await fetch('/api/employer/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': user.tenantId,
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          requirements: requirementsText,
+          location: formData.location,
+          locationType: formData.workSetup,
+          salary,
+          jobType: formData.jobType,
+          department: formData.department,
+          expiresAt: formData.applicationDeadline || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to publish job');
+      }
+
+      router.push('/employer/jobs?published=true');
+    } catch (error) {
+      console.error('Error publishing job:', error);
+      setPublishError(error instanceof Error ? error.message : 'Failed to publish job. Please try again.');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleSaveDraft = async () => {
+    // For now, drafts are not supported in the API, so just redirect
+    // In a full implementation, you would save with isActive: false
     setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
     setIsSaving(false);
-    router.push('/employer/jobs?draft=true');
+    alert('Draft saving is not yet implemented. Please publish the job when ready.');
   };
 
   return (
@@ -631,6 +686,20 @@ export default function PostNewJobPage() {
                 </div>
               </div>
             </div>
+
+            {publishError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex gap-3">
+                  <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-red-800">Failed to publish</p>
+                    <p className="text-sm text-red-700 mt-1">{publishError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
