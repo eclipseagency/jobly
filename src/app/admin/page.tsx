@@ -33,6 +33,13 @@ interface Stats {
   employers: number;
 }
 
+interface ApiError {
+  error: string;
+  details?: string;
+  hint?: string;
+  dbConnected?: boolean;
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -52,6 +59,7 @@ export default function AdminDashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [apiError, setApiError] = useState<ApiError | null>(null);
 
   const getAdminToken = () => {
     if (typeof window !== 'undefined') {
@@ -89,11 +97,23 @@ export default function AdminDashboard() {
       }
 
       const data = await response.json();
-      setUsers(data.users || []);
-      setStats(data.stats || { total: 0, employees: 0, employers: 0 });
-      setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
+
+      if (!response.ok) {
+        setApiError(data);
+        setUsers([]);
+        setStats({ total: 0, employees: 0, employers: 0 });
+      } else {
+        setApiError(null);
+        setUsers(data.users || []);
+        setStats(data.stats || { total: 0, employees: 0, employers: 0 });
+        setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
+      setApiError({
+        error: 'Network error',
+        details: error instanceof Error ? error.message : 'Failed to connect to API',
+      });
     } finally {
       setLoading(false);
     }
@@ -248,6 +268,43 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Database Error Warning */}
+        {apiError && (
+          <div className="bg-red-900/30 border border-red-700 rounded-xl p-4 mb-6">
+            <div className="flex gap-3">
+              <svg className="w-6 h-6 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-medium text-red-300">{apiError.error}</p>
+                {apiError.details && <p className="text-sm text-red-400 mt-1">{apiError.details}</p>}
+                {apiError.hint && <p className="text-sm text-red-400/80 mt-2">{apiError.hint}</p>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Info about localStorage users */}
+        {!apiError && stats.total === 0 && !loading && (
+          <div className="bg-yellow-900/30 border border-yellow-700 rounded-xl p-4 mb-6">
+            <div className="flex gap-3">
+              <svg className="w-6 h-6 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="font-medium text-yellow-300">No users in database</p>
+                <p className="text-sm text-yellow-400 mt-1">
+                  Users who registered while the database was unavailable are stored in localStorage (browser-only)
+                  and won&apos;t appear here. Only users with successful API registrations will show up in this panel.
+                </p>
+                <p className="text-sm text-yellow-400/80 mt-2">
+                  To fix this, ensure the DATABASE_URL environment variable is properly configured in your deployment.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-slate-800 rounded-xl p-4 mb-6 border border-slate-700">
