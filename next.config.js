@@ -6,11 +6,8 @@ const nextConfig = {
   // Optimize for Vercel Edge Network
   poweredByHeader: false,
 
-  // Enable experimental features as needed
-  experimental: {
-    // Optimize package imports
-    optimizePackageImports: ['@prisma/client'],
-  },
+  // Exclude Prisma from bundling to prevent query engine issues
+  serverExternalPackages: ['@prisma/client', 'prisma'],
 };
 
 module.exports = nextConfig;
