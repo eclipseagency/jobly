@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // Test database connection first
+    await prisma.$connect();
+
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -108,11 +111,17 @@ export async function GET(request: NextRequest) {
         employees: employeeCount,
         employers: employerCount,
       },
+      dbConnected: true,
     });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch users' },
+      {
+        error: 'Failed to fetch users',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        dbConnected: false,
+        hint: 'Database connection may be unavailable. Users who registered via localStorage fallback will not appear here.'
+      },
       { status: 500 }
     );
   }
