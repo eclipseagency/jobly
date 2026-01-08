@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { employerAPI, JobPosting } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Job {
   id: string;
@@ -22,22 +22,37 @@ interface Job {
   status: string;
 }
 
-function mapAPIJob(job: JobPosting): Job {
+interface APIJob {
+  id: string;
+  title: string;
+  description: string;
+  location: string | null;
+  locationType: string | null;
+  salary: string | null;
+  jobType: string | null;
+  department: string | null;
+  isActive: boolean;
+  createdAt: string;
+  expiresAt: string | null;
+  applicationsCount: number;
+}
+
+function mapAPIJob(job: APIJob): Job {
   return {
     id: job.id,
     title: job.title,
-    department: job.department,
-    location: job.location,
-    type: job.type,
-    workSetup: job.workSetup,
-    salaryMin: job.salaryMin,
-    salaryMax: job.salaryMax,
-    applicants: job.applicants,
+    department: job.department || 'General',
+    location: job.location || 'Not specified',
+    type: job.jobType || 'Full-time',
+    workSetup: job.locationType || 'On-site',
+    salaryMin: 0,
+    salaryMax: 0,
+    applicants: job.applicationsCount || 0,
     newApplicants: 0,
-    views: job.views,
-    posted: job.posted,
-    expires: job.expires,
-    status: job.status,
+    views: 0,
+    posted: job.createdAt,
+    expires: job.expiresAt || '',
+    status: job.isActive ? 'Active' : 'Closed',
   };
 }
 
@@ -53,6 +68,7 @@ const formatDate = (dateStr: string) => {
 
 function ManageJobsContent() {
   const searchParams = useSearchParams();
+  const { user, isLoggedIn, isLoading: authLoading } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -64,12 +80,29 @@ function ManageJobsContent() {
   // Fetch jobs from API
   useEffect(() => {
     async function loadJobs() {
+      if (!user?.tenantId) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const data = await employerAPI.getJobPostings();
-        if (data.length > 0) {
-          setJobs(data.map(mapAPIJob));
+        const response = await fetch('/api/employer/jobs', {
+          headers: {
+            'x-tenant-id': user.tenantId,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const apiJobs = data.jobs || [];
+          if (apiJobs.length > 0) {
+            setJobs(apiJobs.map(mapAPIJob));
+          } else {
+            // No jobs yet - show empty state
+            setJobs([]);
+          }
         } else {
-          // No jobs yet - show empty state
+          console.error('Failed to load jobs:', response.status);
           setJobs([]);
         }
       } catch (error) {
@@ -80,8 +113,11 @@ function ManageJobsContent() {
         setIsLoading(false);
       }
     }
-    loadJobs();
-  }, []);
+
+    if (!authLoading) {
+      loadJobs();
+    }
+  }, [user?.tenantId, authLoading]);
 
   // Handle success notifications from post job page
   useEffect(() => {
