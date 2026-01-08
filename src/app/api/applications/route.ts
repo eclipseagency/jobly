@@ -1,10 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+// Helper to ensure user exists in database
+async function ensureUserExists(userId: string, userName?: string, userEmail?: string): Promise<boolean> {
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (existingUser) {
+      return true;
+    }
+
+    // Create user if they don't exist (localStorage fallback users)
+    // We need at least an email to create the user
+    if (!userEmail) {
+      return false;
+    }
+
+    await prisma.user.create({
+      data: {
+        id: userId,
+        email: userEmail,
+        name: userName || 'Job Seeker',
+        passwordHash: 'localStorage-user', // Placeholder for localStorage users
+        role: 'EMPLOYEE',
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error ensuring user exists:', error);
+    return false;
+  }
+}
+
 // GET /api/applications - List user's applications
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Get userId from auth session
     const userId = request.headers.get('x-user-id');
 
     if (!userId) {
@@ -68,10 +101,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
+    const userName = request.headers.get('x-user-name');
+    const userEmail = request.headers.get('x-user-email');
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized. Please log in to apply for jobs.' },
         { status: 401 }
       );
     }
@@ -82,6 +117,39 @@ export async function POST(request: NextRequest) {
     if (!jobId) {
       return NextResponse.json(
         { error: 'Job ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify job exists
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+      include: {
+        tenant: {
+          select: { name: true },
+        },
+      },
+    });
+
+    if (!job) {
+      return NextResponse.json(
+        { error: 'Job not found. It may have been removed.' },
+        { status: 404 }
+      );
+    }
+
+    if (!job.isActive) {
+      return NextResponse.json(
+        { error: 'This job is no longer accepting applications.' },
+        { status: 400 }
+      );
+    }
+
+    // Ensure user exists in database
+    const userExists = await ensureUserExists(userId, userName || undefined, userEmail || undefined);
+    if (!userExists) {
+      return NextResponse.json(
+        { error: 'Unable to verify your account. Please try logging in again.' },
         { status: 400 }
       );
     }
@@ -100,41 +168,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create application
     const application = await prisma.application.create({
       data: {
         userId,
         jobId,
-        coverLetter,
-        resumeUrl,
+        coverLetter: coverLetter || null,
+        resumeUrl: resumeUrl || null,
         status: 'pending',
-      },
-      include: {
-        job: {
-          include: {
-            tenant: {
-              select: { name: true },
-            },
-          },
-        },
       },
     });
 
     return NextResponse.json({
+      success: true,
       application: {
         id: application.id,
         status: application.status,
         createdAt: application.createdAt,
         job: {
-          id: application.job.id,
-          title: application.job.title,
-          company: application.job.tenant.name,
+          id: job.id,
+          title: job.title,
+          company: job.tenant.name,
         },
       },
     });
   } catch (error) {
     console.error('Error creating application:', error);
+
+    // Provide more specific error messages
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    if (errorMessage.includes('Foreign key constraint')) {
+      return NextResponse.json(
+        { error: 'Unable to process application. Please ensure you are logged in.' },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to create application' },
+      { error: 'Failed to submit application. Please try again.' },
       { status: 500 }
     );
   }

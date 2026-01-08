@@ -89,6 +89,51 @@ export default function JobDetailPage() {
     }
   }, [params.id]);
 
+  // Check if user has already applied or saved
+  useEffect(() => {
+    async function checkUserStatus() {
+      if (!user?.id || !params.id) return;
+
+      try {
+        // Check application status
+        const appResponse = await fetch('/api/applications', {
+          headers: { 'x-user-id': user.id },
+        });
+
+        if (appResponse.ok) {
+          const appData = await appResponse.json();
+          const hasApplied = appData.applications?.some(
+            (app: { job: { id: string } }) => app.job.id === params.id
+          );
+          if (hasApplied) {
+            setApplied(true);
+          }
+        }
+
+        // Check saved status
+        const savedResponse = await fetch('/api/saved-jobs', {
+          headers: { 'x-user-id': user.id },
+        });
+
+        if (savedResponse.ok) {
+          const savedData = await savedResponse.json();
+          const isSaved = savedData.savedJobs?.some(
+            (saved: { job: { id: string } }) => saved.job.id === params.id
+          );
+          if (isSaved) {
+            setSaved(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user status:', error);
+      }
+    }
+
+    if (isLoggedIn && user) {
+      checkUserStatus();
+    }
+  }, [isLoggedIn, user, params.id]);
+
   const handleApplyClick = () => {
     if (!isLoggedIn) {
       // Redirect to login with return URL
@@ -111,6 +156,8 @@ export default function JobDetailPage() {
         headers: {
           'Content-Type': 'application/json',
           'x-user-id': user.id,
+          'x-user-name': user.name || '',
+          'x-user-email': user.email || '',
         },
         body: JSON.stringify({
           jobId: params.id,
@@ -118,12 +165,14 @@ export default function JobDetailPage() {
         }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         setApplied(true);
         setShowApplyModal(false);
+        setCoverLetter(''); // Reset cover letter
       } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to apply');
+        alert(data.error || 'Failed to apply. Please try again.');
       }
     } catch (error) {
       console.error('Error applying:', error);
@@ -146,15 +195,18 @@ export default function JobDetailPage() {
         headers: {
           'Content-Type': 'application/json',
           'x-user-id': user.id,
+          'x-user-name': user.name || '',
+          'x-user-email': user.email || '',
         },
         body: JSON.stringify({ jobId: params.id }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         setSaved(true);
       } else {
-        const data = await response.json();
-        if (data.error?.includes('already saved')) {
+        if (data.message?.includes('already saved') || data.error?.includes('already saved')) {
           setSaved(true);
         } else {
           alert(data.error || 'Failed to save job');
@@ -162,6 +214,7 @@ export default function JobDetailPage() {
       }
     } catch (error) {
       console.error('Error saving job:', error);
+      alert('Failed to save job. Please try again.');
     } finally {
       setSaving(false);
     }
