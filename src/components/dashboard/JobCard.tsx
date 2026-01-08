@@ -14,6 +14,8 @@ interface Job {
   postedAt: string;
   description: string;
   skills: string[];
+  experienceLevel?: 'entry' | 'mid' | 'senior' | 'lead' | 'executive';
+  hasScreeningForm?: boolean;
 }
 
 interface JobCardProps {
@@ -30,16 +32,36 @@ export function JobCard({ job, onApply, onSave }: JobCardProps) {
     onSave?.(job.id);
   };
 
-  const getLocationTypeColor = (type: string) => {
+  const getLocationTypeConfig = (type: string) => {
     switch (type) {
       case 'remote':
-        return 'bg-green-100 text-green-700';
+        return { label: 'Remote', color: 'bg-green-100 text-green-700', icon: '🌐' };
       case 'hybrid':
-        return 'bg-blue-100 text-blue-700';
+        return { label: 'Hybrid', color: 'bg-blue-100 text-blue-700', icon: '🏢' };
       default:
-        return 'bg-slate-100 text-slate-700';
+        return { label: 'On-site', color: 'bg-slate-100 text-slate-700', icon: '📍' };
     }
   };
+
+  const getExperienceLevelConfig = (level?: string) => {
+    switch (level) {
+      case 'entry':
+        return { label: 'Entry Level', color: 'bg-teal-100 text-teal-700' };
+      case 'mid':
+        return { label: 'Mid-Level', color: 'bg-indigo-100 text-indigo-700' };
+      case 'senior':
+        return { label: 'Senior', color: 'bg-purple-100 text-purple-700' };
+      case 'lead':
+        return { label: 'Lead', color: 'bg-orange-100 text-orange-700' };
+      case 'executive':
+        return { label: 'Executive', color: 'bg-rose-100 text-rose-700' };
+      default:
+        return null;
+    }
+  };
+
+  const locationConfig = getLocationTypeConfig(job.locationType);
+  const experienceConfig = getExperienceLevelConfig(job.experienceLevel);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 hover:shadow-lg hover:border-slate-300 transition-all">
@@ -91,6 +113,14 @@ export function JobCard({ job, onApply, onSave }: JobCardProps) {
               <span className="px-3 py-1 bg-slate-100 text-slate-600 text-sm font-medium rounded-full whitespace-nowrap">
                 {job.jobType}
               </span>
+              <span className={`px-3 py-1 text-sm font-medium rounded-full whitespace-nowrap ${locationConfig.color}`}>
+                {locationConfig.icon} {locationConfig.label}
+              </span>
+              {experienceConfig && (
+                <span className={`px-3 py-1 text-sm font-medium rounded-full whitespace-nowrap ${experienceConfig.color}`}>
+                  {experienceConfig.label}
+                </span>
+              )}
             </div>
           </div>
 
@@ -136,9 +166,27 @@ export function JobCard({ job, onApply, onSave }: JobCardProps) {
               </button>
               <button
                 onClick={() => onApply?.(job.id)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg transition-colors"
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+                  job.hasScreeningForm
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'bg-slate-900 hover:bg-slate-800 text-white'
+                }`}
               >
-                Apply Now
+                {job.hasScreeningForm ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Apply
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Quick Apply
+                  </>
+                )}
               </button>
             </div>
           </div>

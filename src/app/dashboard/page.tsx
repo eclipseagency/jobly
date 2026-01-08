@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { jobSeekerAPI } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardData {
   stats: {
@@ -52,10 +53,53 @@ const getStatusColor = (status: string) => {
   }
 };
 
+// Profile completion calculation
+interface ProfileField {
+  key: string;
+  label: string;
+  weight: number;
+  required: boolean;
+}
+
+const PROFILE_FIELDS: ProfileField[] = [
+  { key: 'name', label: 'Full Name', weight: 15, required: true },
+  { key: 'email', label: 'Email', weight: 15, required: true },
+  { key: 'phone', label: 'Phone Number', weight: 10, required: false },
+  { key: 'location', label: 'Location', weight: 10, required: false },
+  { key: 'headline', label: 'Professional Headline', weight: 10, required: false },
+  { key: 'summary', label: 'Summary', weight: 10, required: false },
+  { key: 'experience', label: 'Work Experience', weight: 10, required: false },
+  { key: 'skills', label: 'Skills', weight: 10, required: false },
+  { key: 'resumeUrl', label: 'Resume', weight: 10, required: false },
+];
+
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [profileCompletion] = useState(0);
+
+  // Calculate profile completion
+  const profileCompletion = useMemo(() => {
+    if (!user) return { percentage: 0, completedFields: [], missingFields: PROFILE_FIELDS };
+
+    let totalWeight = 0;
+    const completedFields: ProfileField[] = [];
+    const missingFields: ProfileField[] = [];
+
+    for (const field of PROFILE_FIELDS) {
+      const value = user[field.key as keyof typeof user];
+      const isComplete = Array.isArray(value) ? value.length > 0 : Boolean(value);
+
+      if (isComplete) {
+        totalWeight += field.weight;
+        completedFields.push(field);
+      } else {
+        missingFields.push(field);
+      }
+    }
+
+    return { percentage: totalWeight, completedFields, missingFields };
+  }, [user]);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -143,12 +187,59 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-slate-900">
-          Welcome to your Dashboard
+          Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
         </h1>
         <p className="text-slate-500 mt-1">
           Here&apos;s what&apos;s happening with your job search.
         </p>
       </div>
+
+      {/* Profile Completion Card - Show prominently at top */}
+      {profileCompletion.percentage < 100 && (
+        <div className="mb-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-6 text-white">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <h2 className="font-semibold text-lg">Complete Your Profile</h2>
+              </div>
+              <p className="text-primary-100 text-sm mb-4">
+                Profiles with more details get 3x more views from employers.
+                {profileCompletion.missingFields.length > 0 && (
+                  <span className="block mt-1">
+                    Add your {profileCompletion.missingFields.slice(0, 2).map(f => f.label.toLowerCase()).join(' and ')} to stand out.
+                  </span>
+                )}
+              </p>
+
+              {/* Progress bar */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2.5 bg-primary-400/50 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-white rounded-full transition-all duration-500"
+                    style={{ width: `${profileCompletion.percentage}%` }}
+                  />
+                </div>
+                <span className="text-sm font-semibold whitespace-nowrap">
+                  {profileCompletion.percentage}% complete
+                </span>
+              </div>
+            </div>
+
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-primary-600 font-semibold rounded-lg hover:bg-primary-50 transition-colors whitespace-nowrap"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Update Profile
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -220,19 +311,53 @@ export default function DashboardPage() {
               ) : (
                 <div className="divide-y divide-slate-100">
                   {data?.recentApplications.map((app) => (
-                    <div key={app.id} className="p-5 flex items-center gap-4">
+                    <Link key={app.id} href={`/dashboard/applications/${app.id}`} className="p-5 flex items-start gap-4 hover:bg-slate-50 transition-colors block">
                       <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-medium text-sm flex-shrink-0">
                         {app.company.substring(0, 2).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-slate-900 truncate">{app.title}</h3>
-                        <p className="text-sm text-slate-500">{app.company}</p>
+                        <p className="text-sm text-slate-500 mb-2">{app.company}</p>
+                        {/* Status Timeline */}
+                        <div className="flex items-center gap-1">
+                          {['Applied', 'In Review', 'Interview', 'Offer'].map((step, idx) => {
+                            const currentIdx = ['submitted', 'in_review', 'interview', 'offer'].indexOf(
+                              app.status.toLowerCase().replace(' ', '_')
+                            );
+                            const isCompleted = idx <= currentIdx;
+                            const isCurrent = idx === currentIdx;
+                            const isRejected = app.status.toLowerCase() === 'rejected';
+
+                            return (
+                              <div key={step} className="flex items-center">
+                                <div
+                                  className={`w-2 h-2 rounded-full ${
+                                    isRejected && idx <= 0
+                                      ? 'bg-red-500'
+                                      : isCompleted
+                                      ? isCurrent
+                                        ? 'bg-primary-600 ring-2 ring-primary-100'
+                                        : 'bg-primary-600'
+                                      : 'bg-slate-200'
+                                  }`}
+                                />
+                                {idx < 3 && (
+                                  <div
+                                    className={`w-6 h-0.5 ${
+                                      isCompleted && idx < currentIdx ? 'bg-primary-600' : 'bg-slate-200'
+                                    }`}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                          <span className={`ml-2 text-xs font-medium ${app.statusColor.replace('bg-', 'text-').replace('-50', '-600')}`}>
+                            {app.status}
+                          </span>
+                        </div>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${app.statusColor}`}>
-                        {app.status}
-                      </span>
-                      <span className="text-xs text-slate-400 hidden sm:block">{app.appliedAt}</span>
-                    </div>
+                      <span className="text-xs text-slate-400 hidden sm:block whitespace-nowrap">{app.appliedAt}</span>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -317,31 +442,6 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* Profile Completion - Show if profile is incomplete */}
-      {profileCompletion < 100 && profileCompletion > 0 && (
-        <div className="mt-6 bg-primary-600 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="font-semibold text-white">Complete your profile</h2>
-            <p className="text-primary-100 text-sm mt-0.5">
-              Increase your chances of getting hired
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-white text-sm">
-              <span className="font-medium">{profileCompletion}%</span>
-              <div className="w-24 h-1.5 bg-primary-400 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full" style={{ width: `${profileCompletion}%` }} />
-              </div>
-            </div>
-            <Link
-              href="/dashboard/profile"
-              className="px-4 py-2 bg-white text-primary-600 font-medium text-sm rounded-lg hover:bg-primary-50 transition-colors"
-            >
-              Complete
-            </Link>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
