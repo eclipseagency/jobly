@@ -427,9 +427,9 @@ export default function JobDetailPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:relative">
             {/* Apply Card */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 sticky top-24">
+            <div className="bg-white rounded-xl border border-slate-200 p-6 sticky top-24 z-30">
               {job.salary && (
                 <div className="mb-4">
                   <p className="text-sm text-slate-500 mb-1">Salary</p>
@@ -463,26 +463,27 @@ export default function JobDetailPage() {
                   </Link>
                 </div>
               ) : (
-                <>
+                <div className="space-y-3">
                   <button
+                    type="button"
                     onClick={handleApplyClick}
-                    disabled={authLoading}
-                    className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors mb-3 disabled:opacity-50"
+                    className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors cursor-pointer active:scale-[0.98]"
                   >
-                    {authLoading ? 'Loading...' : 'Apply Now'}
+                    Apply Now
                   </button>
                   <button
+                    type="button"
                     onClick={handleSaveJob}
-                    disabled={saving || saved || authLoading}
-                    className={`w-full px-6 py-3 border font-medium rounded-lg transition-colors ${
+                    disabled={saving || saved}
+                    className={`w-full px-6 py-3 border font-medium rounded-lg transition-colors cursor-pointer ${
                       saved
                         ? 'border-green-200 bg-green-50 text-green-700'
                         : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
+                    } disabled:cursor-not-allowed`}
                   >
                     {saving ? 'Saving...' : saved ? 'Job Saved' : 'Save Job'}
                   </button>
-                </>
+                </div>
               )}
             </div>
 
