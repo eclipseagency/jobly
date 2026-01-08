@@ -221,6 +221,18 @@ export default function JobDetailPage() {
   const [screeningAnswers, setScreeningAnswers] = useState<{ questionId: string; answer: unknown }[]>([]);
   const [showScreeningForm, setShowScreeningForm] = useState(false);
   const [showApplicationWizard, setShowApplicationWizard] = useState(false);
+  const [userProfile, setUserProfile] = useState<{
+    phone?: string;
+    location?: string;
+    headline?: string;
+    summary?: string;
+    experience?: string;
+    skills?: string[];
+    resumeUrl?: string;
+    portfolioUrl?: string;
+    linkedinUrl?: string;
+    githubUrl?: string;
+  } | null>(null);
 
   useEffect(() => {
     async function fetchJob() {
@@ -254,12 +266,49 @@ export default function JobDetailPage() {
           const data = await response.json();
           setHasScreeningForm(data.form && data.form.questions?.length > 0);
         }
-      } catch (error) {
-        console.error('Error checking screening form:', error);
+      } catch {
+        // Error checking screening form
       }
     }
     checkScreeningForm();
   }, [params.id]);
+
+  // Load user profile from localStorage
+  useEffect(() => {
+    if (!user?.id) {
+      setUserProfile(null);
+      return;
+    }
+
+    try {
+      const savedProfile = localStorage.getItem(`jobly_profile_${user.id}`);
+      const resumeData = localStorage.getItem(`jobly_resume_${user.id}`);
+
+      if (savedProfile) {
+        const parsed = JSON.parse(savedProfile);
+        const profile = parsed.profile || {};
+        const skills = parsed.skills || [];
+        const experience = parsed.experience || [];
+
+        setUserProfile({
+          phone: profile.phone,
+          location: profile.city ? `${profile.city}, ${profile.country || ''}` : undefined,
+          headline: profile.title,
+          summary: profile.bio,
+          experience: experience.length > 0
+            ? experience.map((exp: { title: string; company: string }) => `${exp.title} at ${exp.company}`).join(', ')
+            : undefined,
+          skills: skills.map((s: { name: string }) => s.name),
+          resumeUrl: resumeData ? 'uploaded' : undefined,  // Mark as uploaded if we have resume data
+          portfolioUrl: profile.portfolioUrl,
+          linkedinUrl: profile.linkedinUrl,
+          githubUrl: profile.githubUrl,
+        });
+      }
+    } catch {
+      // Error loading profile
+    }
+  }, [user?.id]);
 
   // Check if user has already applied or saved
   useEffect(() => {
@@ -325,6 +374,10 @@ export default function JobDetailPage() {
 
     setApplying(true);
     try {
+      // Get resume from localStorage if available
+      const resumeData = localStorage.getItem(`jobly_resume_${user.id}`);
+      const resumeName = localStorage.getItem(`jobly_resume_name_${user.id}`);
+
       const response = await fetch('/api/applications', {
         method: 'POST',
         headers: {
@@ -337,6 +390,7 @@ export default function JobDetailPage() {
           jobId: params.id,
           coverLetter: data.coverLetter,
           screeningAnswers: data.screeningAnswers,
+          resumeUrl: resumeData ? `data:resume:${resumeName}` : undefined,
         }),
       });
 
@@ -348,8 +402,7 @@ export default function JobDetailPage() {
       } else {
         alert(result.error || 'Failed to apply. Please try again.');
       }
-    } catch (error) {
-      console.error('Error applying:', error);
+    } catch {
       alert('Failed to apply. Please try again.');
     } finally {
       setApplying(false);
@@ -364,6 +417,10 @@ export default function JobDetailPage() {
 
     setApplying(true);
     try {
+      // Get resume from localStorage if available
+      const resumeData = localStorage.getItem(`jobly_resume_${user.id}`);
+      const resumeName = localStorage.getItem(`jobly_resume_name_${user.id}`);
+
       const response = await fetch('/api/applications', {
         method: 'POST',
         headers: {
@@ -376,6 +433,7 @@ export default function JobDetailPage() {
           jobId: params.id,
           coverLetter,
           screeningAnswers: answers || screeningAnswers,
+          resumeUrl: resumeData ? `data:resume:${resumeName}` : undefined,
         }),
       });
 
@@ -390,8 +448,7 @@ export default function JobDetailPage() {
       } else {
         alert(data.error || 'Failed to apply. Please try again.');
       }
-    } catch (error) {
-      console.error('Error applying:', error);
+    } catch {
       alert('Failed to apply. Please try again.');
     } finally {
       setApplying(false);
@@ -1107,16 +1164,17 @@ export default function JobDetailPage() {
             id: user.id,
             name: user.name || '',
             email: user.email || '',
-            phone: user.phone,
-            location: user.location,
-            headline: user.headline,
-            summary: user.summary,
-            experience: user.experience,
-            skills: user.skills,
-            resumeUrl: user.resumeUrl,
-            portfolioUrl: user.portfolioUrl,
-            linkedinUrl: user.linkedinUrl,
-            githubUrl: user.githubUrl,
+            // Merge profile data from localStorage
+            phone: userProfile?.phone || user.phone,
+            location: userProfile?.location || user.location,
+            headline: userProfile?.headline || user.headline,
+            summary: userProfile?.summary || user.summary,
+            experience: userProfile?.experience || user.experience,
+            skills: userProfile?.skills || user.skills,
+            resumeUrl: userProfile?.resumeUrl || user.resumeUrl,
+            portfolioUrl: userProfile?.portfolioUrl || user.portfolioUrl,
+            linkedinUrl: userProfile?.linkedinUrl || user.linkedinUrl,
+            githubUrl: userProfile?.githubUrl || user.githubUrl,
           }}
           hasScreeningForm={hasScreeningForm}
           onSubmit={handleWizardSubmit}

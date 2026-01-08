@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -321,6 +321,191 @@ export default function ProfilePage() {
   const [editingEducation, setEditingEducation] = useState<EducationItem | null>(null);
   const [editingCertification, setEditingCertification] = useState<CertificationItem | null>(null);
   const [editingSkill, setEditingSkill] = useState<{ name: string; level: string; years: number } | null>(null);
+
+  // File upload refs
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+  const coverLetterInputRef = useRef<HTMLInputElement>(null);
+  const certificateInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [uploadingCoverLetter, setUploadingCoverLetter] = useState(false);
+  const [uploadingCertificate, setUploadingCertificate] = useState(false);
+
+  // File upload handlers
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a PDF, DOC, or DOCX file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadingResume(true);
+    try {
+      // Convert to base64 for localStorage storage
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        const newDocument: DocumentFile = {
+          name: file.name,
+          uploadedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          size: formatFileSize(file.size),
+        };
+        // Store both metadata and file data
+        setDocuments(prev => ({ ...prev, resume: newDocument }));
+        // Store the actual file data separately
+        if (user?.id) {
+          localStorage.setItem(`jobly_resume_${user.id}`, base64);
+          localStorage.setItem(`jobly_resume_name_${user.id}`, file.name);
+        }
+        setUploadingResume(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      alert('Failed to upload resume. Please try again.');
+      setUploadingResume(false);
+    }
+    // Reset input
+    if (resumeInputRef.current) resumeInputRef.current.value = '';
+  };
+
+  const handleCoverLetterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a PDF, DOC, or DOCX file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadingCoverLetter(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        const newDocument: DocumentFile = {
+          name: file.name,
+          uploadedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          size: formatFileSize(file.size),
+        };
+        setDocuments(prev => ({ ...prev, coverLetter: newDocument }));
+        if (user?.id) {
+          localStorage.setItem(`jobly_cover_letter_${user.id}`, base64);
+        }
+        setUploadingCoverLetter(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      alert('Failed to upload cover letter. Please try again.');
+      setUploadingCoverLetter(false);
+    }
+    if (coverLetterInputRef.current) coverLetterInputRef.current.value = '';
+  };
+
+  const handleCertificateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadingCertificate(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        const newDocument: DocumentFile = {
+          name: file.name,
+          uploadedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          size: formatFileSize(file.size),
+        };
+        setDocuments(prev => ({ ...prev, certificates: [...prev.certificates, newDocument] }));
+        // Store certificates with index
+        if (user?.id) {
+          const existingCerts = JSON.parse(localStorage.getItem(`jobly_certificates_${user.id}`) || '[]');
+          existingCerts.push({ name: file.name, data: base64 });
+          localStorage.setItem(`jobly_certificates_${user.id}`, JSON.stringify(existingCerts));
+        }
+        setUploadingCertificate(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      alert('Failed to upload certificate. Please try again.');
+      setUploadingCertificate(false);
+    }
+    if (certificateInputRef.current) certificateInputRef.current.value = '';
+  };
+
+  const deleteResume = () => {
+    setDocuments(prev => ({ ...prev, resume: null }));
+    if (user?.id) {
+      localStorage.removeItem(`jobly_resume_${user.id}`);
+      localStorage.removeItem(`jobly_resume_name_${user.id}`);
+    }
+  };
+
+  const deleteCoverLetter = () => {
+    setDocuments(prev => ({ ...prev, coverLetter: null }));
+    if (user?.id) {
+      localStorage.removeItem(`jobly_cover_letter_${user.id}`);
+    }
+  };
+
+  const deleteCertificate = (index: number) => {
+    setDocuments(prev => ({
+      ...prev,
+      certificates: prev.certificates.filter((_, i) => i !== index)
+    }));
+    if (user?.id) {
+      const existingCerts = JSON.parse(localStorage.getItem(`jobly_certificates_${user.id}`) || '[]');
+      existingCerts.splice(index, 1);
+      localStorage.setItem(`jobly_certificates_${user.id}`, JSON.stringify(existingCerts));
+    }
+  };
+
+  const viewDocument = (type: 'resume' | 'coverLetter' | 'certificate', index?: number) => {
+    if (!user?.id) return;
+    let data: string | null = null;
+
+    if (type === 'resume') {
+      data = localStorage.getItem(`jobly_resume_${user.id}`);
+    } else if (type === 'coverLetter') {
+      data = localStorage.getItem(`jobly_cover_letter_${user.id}`);
+    } else if (type === 'certificate' && index !== undefined) {
+      const certs = JSON.parse(localStorage.getItem(`jobly_certificates_${user.id}`) || '[]');
+      data = certs[index]?.data;
+    }
+
+    if (data) {
+      // Open in new tab
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<iframe src="${data}" style="width:100%;height:100%;border:none;"></iframe>`);
+      }
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
 
   // Save handlers
   const saveBasicInfo = () => {
@@ -972,6 +1157,29 @@ export default function ProfilePage() {
         {/* Documents Tab */}
         {activeTab === 'documents' && (
           <div className="space-y-6">
+            {/* Hidden file inputs */}
+            <input
+              ref={resumeInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={handleResumeUpload}
+              className="hidden"
+            />
+            <input
+              ref={coverLetterInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={handleCoverLetterUpload}
+              className="hidden"
+            />
+            <input
+              ref={certificateInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,image/*,application/pdf"
+              onChange={handleCertificateUpload}
+              className="hidden"
+            />
+
             {/* Resume */}
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
@@ -989,20 +1197,33 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">View</button>
-                    <button className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Replace</button>
-                    <button className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">Delete</button>
+                    <button onClick={() => viewDocument('resume')} className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">View</button>
+                    <button onClick={() => resumeInputRef.current?.click()} className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Replace</button>
+                    <button onClick={deleteResume} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">Delete</button>
                   </div>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center">
+                <div
+                  onClick={() => resumeInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50/30 transition-colors"
+                >
                   <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 mx-auto mb-3">
-                    {Icons.upload}
+                    {uploadingResume ? (
+                      <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      Icons.upload
+                    )}
                   </div>
-                  <p className="text-slate-600 mb-2">Drag and drop your resume here, or click to browse</p>
+                  <p className="text-slate-600 mb-2">
+                    {uploadingResume ? 'Uploading...' : 'Drag and drop your resume here, or click to browse'}
+                  </p>
                   <p className="text-xs text-slate-400">PDF, DOC, DOCX up to 5MB</p>
-                  <button className="mt-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    Upload Resume
+                  <button
+                    onClick={(e) => { e.stopPropagation(); resumeInputRef.current?.click(); }}
+                    disabled={uploadingResume}
+                    className="mt-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {uploadingResume ? 'Uploading...' : 'Upload Resume'}
                   </button>
                 </div>
               )}
@@ -1025,15 +1246,25 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">View</button>
-                    <button className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Replace</button>
+                    <button onClick={() => viewDocument('coverLetter')} className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">View</button>
+                    <button onClick={() => coverLetterInputRef.current?.click()} className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Replace</button>
+                    <button onClick={deleteCoverLetter} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">Delete</button>
                   </div>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
-                  <p className="text-slate-500 text-sm">No cover letter template uploaded</p>
-                  <button className="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors">
-                    Upload Template
+                <div
+                  onClick={() => coverLetterInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50/30 transition-colors"
+                >
+                  <p className="text-slate-500 text-sm">
+                    {uploadingCoverLetter ? 'Uploading...' : 'No cover letter template uploaded'}
+                  </p>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); coverLetterInputRef.current?.click(); }}
+                    disabled={uploadingCoverLetter}
+                    className="mt-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {uploadingCoverLetter ? 'Uploading...' : 'Upload Template'}
                   </button>
                 </div>
               )}
@@ -1043,29 +1274,48 @@ export default function ProfilePage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-900">Certificates & Documents</h2>
-                <button className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
-                  {Icons.plus} Upload
+                <button
+                  onClick={() => certificateInputRef.current?.click()}
+                  disabled={uploadingCertificate}
+                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {uploadingCertificate ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    Icons.plus
+                  )}
+                  {uploadingCertificate ? 'Uploading...' : 'Upload'}
                 </button>
               </div>
-              <div className="space-y-3">
-                {documents.certificates.map((cert, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center text-amber-600">
-                        {Icons.certificate}
+              {documents.certificates.length === 0 ? (
+                <div
+                  onClick={() => certificateInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50/30 transition-colors"
+                >
+                  <p className="text-slate-500 text-sm">No certificates uploaded yet</p>
+                  <p className="text-xs text-slate-400 mt-1">Click to upload certificates, licenses, or other documents</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {documents.certificates.map((cert, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center text-amber-600">
+                          {Icons.certificate}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">{cert.name}</p>
+                          <p className="text-xs text-slate-500">{cert.uploadedAt} · {cert.size}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">{cert.name}</p>
-                        <p className="text-xs text-slate-500">{cert.uploadedAt} · {cert.size}</p>
+                      <div className="flex gap-1">
+                        <button onClick={() => viewDocument('certificate', index)} className="p-1.5 text-slate-400 hover:text-primary-600 rounded" title="View">{Icons.document}</button>
+                        <button onClick={() => deleteCertificate(index)} className="p-1.5 text-slate-400 hover:text-red-600 rounded" title="Delete">{Icons.trash}</button>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <button className="p-1.5 text-slate-400 hover:text-primary-600 rounded">{Icons.edit}</button>
-                      <button className="p-1.5 text-slate-400 hover:text-red-600 rounded">{Icons.trash}</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
