@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ApplicationDetail {
   id: string;
@@ -102,6 +103,7 @@ function formatRelativeDate(dateString: string): string {
 export default function ApplicationDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [application, setApplication] = useState<ApplicationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [withdrawing, setWithdrawing] = useState(false);
@@ -109,43 +111,45 @@ export default function ApplicationDetailPage() {
 
   useEffect(() => {
     async function fetchApplication() {
+      if (!user?.id) return;
       try {
         const response = await fetch(`/api/applications/${params.id}`, {
           headers: {
-            'x-user-id': 'demo-user', // TODO: Get from auth
+            'x-user-id': user.id,
           },
         });
         if (response.ok) {
           const data = await response.json();
           setApplication(data.application);
         }
-      } catch (error) {
-        console.error('Error fetching application:', error);
+      } catch {
+        // Error fetching application - show empty state
       } finally {
         setLoading(false);
       }
     }
 
-    if (params.id) {
+    if (params.id && user?.id) {
       fetchApplication();
     }
-  }, [params.id]);
+  }, [params.id, user?.id]);
 
   const handleWithdraw = async () => {
+    if (!user?.id) return;
     setWithdrawing(true);
     try {
       const response = await fetch(`/api/applications/${params.id}/withdraw`, {
         method: 'POST',
         headers: {
-          'x-user-id': 'demo-user', // TODO: Get from auth
+          'x-user-id': user.id,
         },
       });
 
       if (response.ok) {
         router.push('/dashboard/applications?withdrawn=true');
       }
-    } catch (error) {
-      console.error('Error withdrawing application:', error);
+    } catch {
+      // Error withdrawing application
     } finally {
       setWithdrawing(false);
       setShowWithdrawConfirm(false);

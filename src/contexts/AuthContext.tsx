@@ -136,7 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Fallback to localStorage-based auth
-      console.log('Using localStorage fallback for login');
       const users = getStoredUsers();
       const storedUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
@@ -234,8 +233,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Fallback to localStorage-based registration
-      console.log('Using localStorage fallback for registration');
-
       // Validate
       if (!data.email || !data.password || !data.name) {
         return { success: false, error: 'Email, password, and name are required' };
