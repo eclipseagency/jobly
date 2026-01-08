@@ -45,17 +45,12 @@ export async function GET(request: NextRequest) {
     const blockedIds = blockedCandidates.map(b => b.candidateId);
 
     // Build where clause for job seekers
+    // openToOffers: true is the primary visibility flag - users who enable this want to be found
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
       role: 'EMPLOYEE',
       openToOffers: true,
       id: { notIn: blockedIds },
-      // Only show users who have opted into talent pool visibility
-      OR: [
-        { talentPoolProfile: { isVisible: true } },
-        // If no profile, only show if openToOffers is true (backward compatibility)
-        { talentPoolProfile: null, openToOffers: true },
-      ],
     };
 
     // Search filter (name, title, skills)
