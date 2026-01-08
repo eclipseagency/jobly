@@ -1213,7 +1213,10 @@ function FindJobsContent() {
                   </svg>
                   {savedJobs.includes(selectedJob.id) ? 'Saved' : 'Save Job'}
                 </button>
-                <button className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-colors">
+                <button
+                  onClick={() => router.push(`/jobs/${selectedJob.id}`)}
+                  className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-colors cursor-pointer"
+                >
                   Apply Now
                 </button>
               </div>
