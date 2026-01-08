@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import ScreeningFormBuilder, { ScreeningQuestion } from '@/components/screening/ScreeningFormBuilder';
 
 const skillOptions = [
   'JavaScript', 'TypeScript', 'React', 'Vue.js', 'Angular', 'Node.js', 'Python', 'Java', 'Go', 'Rust',
@@ -45,6 +46,9 @@ export default function PostNewJobPage() {
     applicationDeadline: '',
     startDate: '',
     positions: '1',
+    screeningQuestions: [] as ScreeningQuestion[],
+    passingThreshold: undefined as number | undefined,
+    shortlistThreshold: undefined as number | undefined,
   });
 
   const updateFormData = (field: string, value: string | string[] | boolean) => {
@@ -95,7 +99,8 @@ export default function PostNewJobPage() {
     { number: 1, title: 'Job Details' },
     { number: 2, title: 'Description' },
     { number: 3, title: 'Skills & Benefits' },
-    { number: 4, title: 'Review' },
+    { number: 4, title: 'Screening' },
+    { number: 5, title: 'Review' },
   ];
 
   const validateStep = (step: number): string[] => {
@@ -181,6 +186,51 @@ export default function PostNewJobPage() {
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to publish job');
+      }
+
+      const jobData = await response.json();
+      const jobId = jobData.job?.id;
+
+      // Save screening form if questions exist
+      if (jobId && formData.screeningQuestions.length > 0) {
+        try {
+          const screeningResponse = await fetch(`/api/employer/jobs/${jobId}/screening-form`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-tenant-id': user.tenantId,
+              'x-user-id': user.id,
+            },
+            body: JSON.stringify({
+              title: 'Screening Questions',
+              passingThreshold: formData.passingThreshold,
+              shortlistThreshold: formData.shortlistThreshold,
+              questions: formData.screeningQuestions.map(q => ({
+                questionText: q.questionText,
+                questionType: q.questionType,
+                order: q.order,
+                isRequired: q.isRequired,
+                config: q.config,
+                helpText: q.helpText,
+                placeholder: q.placeholder,
+                rules: q.rules.map(r => ({
+                  ruleType: r.ruleType,
+                  operator: r.operator,
+                  value: r.value,
+                  scoreValue: r.scoreValue,
+                  message: r.message,
+                  priority: r.priority,
+                })),
+              })),
+            }),
+          });
+
+          if (!screeningResponse.ok) {
+            console.error('Failed to save screening form, but job was created');
+          }
+        } catch (screeningError) {
+          console.error('Error saving screening form:', screeningError);
+        }
       }
 
       router.push('/employer/jobs?published=true');
@@ -580,8 +630,40 @@ export default function PostNewJobPage() {
           </div>
         )}
 
-        {/* Step 4: Review */}
+        {/* Step 4: Screening */}
         {currentStep === 4 && (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex gap-3">
+                <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="font-medium text-blue-800">Screening Questions (Optional)</p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Add screening questions to automatically evaluate applicants. You can add knockout rules to auto-reject unqualified candidates
+                    and scoring rules to rank applicants.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <ScreeningFormBuilder
+              questions={formData.screeningQuestions}
+              onChange={(questions) => setFormData(prev => ({ ...prev, screeningQuestions: questions }))}
+              passingThreshold={formData.passingThreshold}
+              shortlistThreshold={formData.shortlistThreshold}
+              onThresholdsChange={(passing, shortlist) => setFormData(prev => ({
+                ...prev,
+                passingThreshold: passing,
+                shortlistThreshold: shortlist,
+              }))}
+            />
+          </div>
+        )}
+
+        {/* Step 5: Review */}
+        {currentStep === 5 && (
           <div className="space-y-6">
             <div className="bg-slate-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">{formData.title || 'Job Title'}</h3>
@@ -739,7 +821,7 @@ export default function PostNewJobPage() {
             <div />
           )}
 
-          {currentStep < 4 ? (
+          {currentStep < 5 ? (
             <button
               onClick={handleContinue}
               className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"

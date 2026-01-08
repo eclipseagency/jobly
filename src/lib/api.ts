@@ -272,6 +272,18 @@ export interface Applicant {
   matchScore?: number;
   resumeUrl?: string;
   skills: string[];
+  screeningScore?: number | null;
+  hasKnockout?: boolean;
+  knockoutReason?: string | null;
+  screeningAnswers?: Array<{
+    id: string;
+    questionId: string;
+    answer: unknown;
+    question: {
+      questionText: string;
+      questionType: string;
+    };
+  }>;
 }
 
 export interface CompanyProfile {

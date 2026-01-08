@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import ApplicantScreeningForm from '@/components/screening/ApplicantScreeningForm';
 
 interface JobDetail {
   id: string;
@@ -66,6 +67,9 @@ export default function JobDetailPage() {
   const [applied, setApplied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [hasScreeningForm, setHasScreeningForm] = useState(false);
+  const [screeningAnswers, setScreeningAnswers] = useState<{ questionId: string; answer: unknown }[]>([]);
+  const [showScreeningForm, setShowScreeningForm] = useState(false);
 
   useEffect(() => {
     async function fetchJob() {
@@ -87,6 +91,23 @@ export default function JobDetailPage() {
     if (params.id) {
       fetchJob();
     }
+  }, [params.id]);
+
+  // Check if job has screening form
+  useEffect(() => {
+    async function checkScreeningForm() {
+      if (!params.id) return;
+      try {
+        const response = await fetch(`/api/jobs/${params.id}/screening-form`);
+        if (response.ok) {
+          const data = await response.json();
+          setHasScreeningForm(data.form && data.form.questions?.length > 0);
+        }
+      } catch (error) {
+        console.error('Error checking screening form:', error);
+      }
+    }
+    checkScreeningForm();
   }, [params.id]);
 
   // Check if user has already applied or saved
@@ -140,10 +161,15 @@ export default function JobDetailPage() {
       router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
       return;
     }
-    setShowApplyModal(true);
+    // If there's a screening form, show it first
+    if (hasScreeningForm) {
+      setShowScreeningForm(true);
+    } else {
+      setShowApplyModal(true);
+    }
   };
 
-  const handleApply = async () => {
+  const handleApply = async (answers?: { questionId: string; answer: unknown }[]) => {
     if (!isLoggedIn || !user) {
       router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
       return;
@@ -162,6 +188,7 @@ export default function JobDetailPage() {
         body: JSON.stringify({
           jobId: params.id,
           coverLetter,
+          screeningAnswers: answers || screeningAnswers,
         }),
       });
 
@@ -170,7 +197,9 @@ export default function JobDetailPage() {
       if (response.ok && data.success) {
         setApplied(true);
         setShowApplyModal(false);
-        setCoverLetter(''); // Reset cover letter
+        setShowScreeningForm(false);
+        setCoverLetter('');
+        setScreeningAnswers([]);
       } else {
         alert(data.error || 'Failed to apply. Please try again.');
       }
@@ -554,6 +583,38 @@ export default function JobDetailPage() {
         </div>
       </main>
 
+      {/* Screening Form Modal */}
+      {showScreeningForm && isLoggedIn && job && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Application Questions</h2>
+                <p className="text-sm text-slate-600 mt-1">Please answer the following questions to complete your application.</p>
+              </div>
+              <button
+                onClick={() => setShowScreeningForm(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <ApplicantScreeningForm
+              jobId={job.id}
+              onSubmit={(answers) => {
+                setScreeningAnswers(answers);
+                handleApply(answers);
+              }}
+              onCancel={() => setShowScreeningForm(false)}
+              isSubmitting={applying}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Apply Modal */}
       {showApplyModal && isLoggedIn && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
@@ -609,7 +670,7 @@ export default function JobDetailPage() {
                 Cancel
               </button>
               <button
-                onClick={handleApply}
+                onClick={() => handleApply()}
                 disabled={applying}
                 className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
               >

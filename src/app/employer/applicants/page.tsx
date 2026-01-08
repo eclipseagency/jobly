@@ -28,6 +28,9 @@ interface Applicant {
   interviewType?: 'video' | 'phone' | 'onsite';
   offerSalary?: string;
   offerStartDate?: string;
+  screeningScore?: number | null;
+  hasKnockout?: boolean;
+  knockoutReason?: string | null;
 }
 
 function mapAPIApplicant(app: APIApplicant): Applicant {
@@ -48,6 +51,9 @@ function mapAPIApplicant(app: APIApplicant): Applicant {
     education: 'Not provided',
     currentRole: app.title,
     resumeUrl: app.resumeUrl || '#',
+    screeningScore: app.screeningScore,
+    hasKnockout: app.hasKnockout,
+    knockoutReason: app.knockoutReason,
   };
 }
 
@@ -299,13 +305,23 @@ export default function ApplicantsPage() {
           <div className="flex-1">
             <h2 className="text-xl font-semibold text-slate-900">{applicant.name}</h2>
             <p className="text-slate-600">{applicant.currentRole}</p>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(applicant.status)}`}>
                 {applicant.status}
               </span>
               <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getMatchScoreColor(applicant.matchScore)}`}>
                 {applicant.matchScore}% match
               </span>
+              {applicant.hasKnockout && (
+                <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">
+                  Rejected (Knockout)
+                </span>
+              )}
+              {!applicant.hasKnockout && applicant.screeningScore !== null && applicant.screeningScore !== undefined && (
+                <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                  Score: {applicant.screeningScore} pts
+                </span>
+              )}
             </div>
           </div>
         </div>
