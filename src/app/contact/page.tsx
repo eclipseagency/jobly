@@ -15,8 +15,7 @@ export default function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, this would send to an API
-    console.log('Contact form submitted:', formData);
+    // TODO: Send to contact API endpoint
     setSubmitted(true);
   };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -145,13 +145,61 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return total;
   }, [user]);
 
-  // Mock badge counts (in real app, fetch from API)
-  const badges: Record<string, number> = {
-    applications: 3,
-    interviews: 1,
-    messages: 2,
-    notifications: 5,
-  };
+  // Badge counts from API
+  const [badges, setBadges] = useState<Record<string, number>>({
+    applications: 0,
+    interviews: 0,
+    messages: 0,
+    notifications: 0,
+  });
+
+  useEffect(() => {
+    async function fetchBadgeCounts() {
+      if (!user?.id) return;
+
+      try {
+        const headers = { 'x-user-id': user.id };
+
+        // Fetch counts in parallel
+        const [applicationsRes, notificationsRes] = await Promise.all([
+          fetch('/api/applications', { headers }),
+          fetch('/api/notifications', { headers }),
+        ]);
+
+        const counts: Record<string, number> = {
+          applications: 0,
+          interviews: 0,
+          messages: 0,
+          notifications: 0,
+        };
+
+        if (applicationsRes.ok) {
+          const data = await applicationsRes.json();
+          // Count pending/in-review applications
+          counts.applications = data.applications?.filter(
+            (app: { status: string }) => ['submitted', 'in_review'].includes(app.status.toLowerCase().replace(' ', '_'))
+          ).length || 0;
+          // Count upcoming interviews
+          counts.interviews = data.applications?.filter(
+            (app: { status: string }) => app.status.toLowerCase() === 'interview'
+          ).length || 0;
+        }
+
+        if (notificationsRes.ok) {
+          const data = await notificationsRes.json();
+          counts.notifications = data.notifications?.filter(
+            (n: { read: boolean }) => !n.read
+          ).length || 0;
+        }
+
+        setBadges(counts);
+      } catch {
+        // Silently fail - badges will show 0
+      }
+    }
+
+    fetchBadgeCounts();
+  }, [user?.id]);
 
   const handleLogout = () => {
     logout();

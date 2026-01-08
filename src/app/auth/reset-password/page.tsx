@@ -25,9 +25,17 @@ function ResetPasswordContent() {
       return;
     }
 
-    // TODO: Validate token with API
-    // For now, assume token is valid if it exists
-    setTokenValid(true);
+    // Validate token with API
+    async function validateToken() {
+      try {
+        const response = await fetch(`/api/auth/validate-reset-token?token=${encodeURIComponent(token || '')}`);
+        setTokenValid(response.ok);
+      } catch {
+        // If validation fails, still allow attempt (API will validate on submit)
+        setTokenValid(true);
+      }
+    }
+    validateToken();
   }, [token]);
 
   const validatePassword = (pwd: string): string | null => {
@@ -66,7 +74,6 @@ function ResetPasswordContent() {
     setIsLoading(true);
 
     try {
-      // TODO: Call API to reset password
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: {

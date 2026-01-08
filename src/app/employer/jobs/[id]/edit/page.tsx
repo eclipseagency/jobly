@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface JobData {
   id: string;
@@ -21,12 +22,20 @@ interface JobData {
 export default function EditJobPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, isLoggedIn } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.push('/auth/employer/login');
+    }
+  }, [isLoggedIn, router]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -98,7 +107,7 @@ export default function EditJobPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'demo-tenant', // TODO: Get from auth
+          'x-tenant-id': user?.id || '',
         },
         body: JSON.stringify({
           title: formData.title,
@@ -138,7 +147,7 @@ export default function EditJobPage() {
       const response = await fetch(`/api/employer/jobs/${params.id}`, {
         method: 'DELETE',
         headers: {
-          'x-tenant-id': 'demo-tenant', // TODO: Get from auth
+          'x-tenant-id': user?.id || '',
         },
       });
 

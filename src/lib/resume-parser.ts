@@ -185,7 +185,6 @@ export async function parseResume(dataUrl: string, fileName: string): Promise<{
   } else {
     // For DOC/DOCX files, we can't easily parse them client-side
     // Return empty for now - would need server-side processing
-    console.log('DOC/DOCX parsing requires server-side processing');
     return { skills: [], rawText: '' };
   }
 
