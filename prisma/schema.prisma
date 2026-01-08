@@ -1,5 +1,6 @@
 // Prisma schema for Jobly
 // Using PostgreSQL via Neon.tech with connection pooling
+// Schema version: 2026-01-08 - Added screeningFormId to applications
 
 generator client {
   provider      = "prisma-client-js"

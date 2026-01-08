@@ -21,13 +21,12 @@ export async function GET(request: NextRequest) {
     });
     console.log('User stats by role:', userStats);
 
-    // Debug: Check openToOffers distribution for employees
-    const employeeStats = await prisma.user.findMany({
-      where: { role: 'EMPLOYEE' },
-      select: { id: true, name: true, openToOffers: true, role: true },
-      take: 10,
+    // Debug: Check ALL users (not just employees)
+    const allUsersStats = await prisma.user.findMany({
+      select: { id: true, name: true, email: true, openToOffers: true, role: true },
+      take: 20,
     });
-    console.log('Sample employees:', employeeStats);
+    console.log('All users sample:', allUsersStats);
 
     // Pagination
     const page = parseInt(searchParams.get('page') || '1');
@@ -60,16 +59,16 @@ export async function GET(request: NextRequest) {
     const blockedIds = blockedCandidates.map(b => b.candidateId);
 
     // Build where clause for job seekers
-    // openToOffers: true is the primary visibility flag - users who enable this want to be found
-    // Also include users where openToOffers is null (default behavior) or explicitly true
+    // TEMPORARY: Show all users to diagnose the issue
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
-      role: 'EMPLOYEE',
-      // Include users with openToOffers: true OR openToOffers: null (treat null as default true)
-      OR: [
-        { openToOffers: true },
-        { openToOffers: null },
-      ],
+      // Temporarily removed role filter to see all users
+      // role: 'EMPLOYEE',
+      // Temporarily removed openToOffers filter
+      // OR: [
+      //   { openToOffers: true },
+      //   { openToOffers: null },
+      // ],
       id: { notIn: blockedIds },
     };
 
@@ -244,10 +243,10 @@ export async function GET(request: NextRequest) {
       // Debug info - remove in production
       debug: {
         userStats,
-        sampleEmployees: employeeStats,
+        allUsers: allUsersStats,
         queryFilters: {
-          role: 'EMPLOYEE',
-          openToOffers: 'true or null',
+          role: 'ALL (temporarily disabled)',
+          openToOffers: 'ALL (temporarily disabled)',
           blockedIds: blockedIds.length,
         },
       },

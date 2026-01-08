@@ -133,7 +133,7 @@ export default function TalentPoolPage() {
   });
   const [debugInfo, setDebugInfo] = useState<{
     userStats: { role: string; _count: { id: number } }[];
-    sampleEmployees: { id: string; name: string; openToOffers: boolean | null; role: string }[];
+    allUsers: { id: string; name: string; email: string; openToOffers: boolean | null; role: string }[];
     queryFilters: { role: string; openToOffers: string; blockedIds: number };
   } | null>(null);
 
@@ -729,13 +729,13 @@ export default function TalentPoolPage() {
                 ))}
               </ul>
             </div>
-            {debugInfo.sampleEmployees && debugInfo.sampleEmployees.length > 0 && (
+            {debugInfo.allUsers && debugInfo.allUsers.length > 0 && (
               <div>
-                <p className="font-medium text-amber-700">Sample EMPLOYEE Users (first 10):</p>
-                <ul className="ml-4 mt-1 text-amber-600">
-                  {debugInfo.sampleEmployees.map(emp => (
-                    <li key={emp.id}>
-                      {emp.name || 'No name'} - openToOffers: {emp.openToOffers === null ? 'null' : emp.openToOffers ? 'true' : 'false'}
+                <p className="font-medium text-amber-700">All Users in Database (first 20):</p>
+                <ul className="ml-4 mt-1 text-amber-600 space-y-1">
+                  {debugInfo.allUsers.map(u => (
+                    <li key={u.id}>
+                      <strong>{u.name || 'No name'}</strong> ({u.email}) - role: {u.role}, openToOffers: {u.openToOffers === null ? 'null' : u.openToOffers ? 'true' : 'false'}
                     </li>
                   ))}
                 </ul>
