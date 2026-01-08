@@ -152,17 +152,185 @@ model Job {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  applications Application[]
-  savedJobs    SavedJob[]
+  applications    Application[]
+  savedJobs       SavedJob[]
+  screeningForms  ScreeningForm[]
 
   @@index([tenantId])
   @@index([isActive])
   @@map("jobs")
 }
 
+// Question type enumeration for screening forms
+enum QuestionType {
+  YES_NO
+  SINGLE_SELECT
+  MULTI_SELECT
+  SHORT_TEXT
+  LONG_TEXT
+  NUMBER
+  DATE
+  SALARY_EXPECTATION
+  YEARS_OF_EXPERIENCE
+  AVAILABILITY
+  WORK_AUTHORIZATION
+  URL_LIST
+  FILE_UPLOAD
+}
+
+// Rule type enumeration
+enum RuleType {
+  KNOCKOUT      // If condition met, auto-reject
+  SCORE         // Add/subtract points based on answer
+}
+
+// Rule operator enumeration
+enum RuleOperator {
+  EQUALS
+  NOT_EQUALS
+  CONTAINS
+  NOT_CONTAINS
+  GREATER_THAN
+  LESS_THAN
+  GREATER_THAN_OR_EQUAL
+  LESS_THAN_OR_EQUAL
+  IN_LIST
+  NOT_IN_LIST
+  IS_EMPTY
+  IS_NOT_EMPTY
+}
+
+// Screening form - versioned per job
+model ScreeningForm {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  version     Int      @default(1)
+  isActive    Boolean  @default(true)
+  title       String?
+  description String?
+
+  // Scoring thresholds
+  shortlistThreshold  Int?     // Score >= this = Shortlisted
+  passingThreshold    Int?     // Score >= this = Passed (but not shortlisted)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions   ScreeningQuestion[]
+  applications Application[]
+
+  @@unique([jobId, version])
+  @@index([jobId])
+  @@index([isActive])
+  @@map("screening_forms")
+}
+
+// Screening question
+model ScreeningQuestion {
+  id            String       @id @default(cuid())
+  formId        String
+  form          ScreeningForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  questionText  String
+  questionType  QuestionType
+  order         Int          @default(0)
+  isRequired    Boolean      @default(false)
+
+  // Configuration stored as JSON
+  // For select types: { "choices": ["Option 1", "Option 2"] }
+  // For number: { "min": 0, "max": 100 }
+  // For text: { "minLength": 10, "maxLength": 500, "regex": "^[a-z]+$" }
+  // For salary: { "currency": "PHP", "period": "monthly" }
+  // For file: { "maxSize": 5242880, "allowedTypes": ["pdf", "doc"] }
+  config        Json?
+
+  // Help text shown to applicant
+  helpText      String?
+
+  // Placeholder text for input fields
+  placeholder   String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rules         ScreeningRule[]
+  answers       ScreeningAnswer[]
+
+  @@index([formId])
+  @@index([order])
+  @@map("screening_questions")
+}
+
+// Screening rule - for knockout and scoring
+model ScreeningRule {
+  id          String       @id @default(cuid())
+  questionId  String
+  question    ScreeningQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  ruleType    RuleType
+  operator    RuleOperator
+
+  // The value to compare against (stored as JSON for flexibility)
+  // For simple values: "yes", 5, "2024-01-01"
+  // For lists: ["Option 1", "Option 2"]
+  value       Json
+
+  // For SCORE type: points to add (positive) or subtract (negative)
+  scoreValue  Int?
+
+  // Optional message shown when rule triggers (for knockout)
+  message     String?
+
+  // Priority for rule evaluation (lower = evaluated first)
+  priority    Int          @default(0)
+
+  isActive    Boolean      @default(true)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([questionId])
+  @@index([ruleType])
+  @@map("screening_rules")
+}
+
+// Screening answer - stores applicant responses
+model ScreeningAnswer {
+  id            String       @id @default(cuid())
+  applicationId String
+  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  questionId    String
+  question      ScreeningQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  // Answer stored as JSON for flexibility
+  // For yes/no: true/false
+  // For select: "Option 1" or ["Option 1", "Option 2"]
+  // For text: "answer text"
+  // For number: 5
+  // For date: "2024-01-01"
+  // For salary: { "amount": 50000, "currency": "PHP", "period": "monthly" }
+  // For file: { "url": "...", "filename": "resume.pdf", "size": 1024 }
+  answer        Json
+
+  // Cached rule evaluation results
+  isKnockout    Boolean      @default(false)
+  scoreEarned   Int          @default(0)
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([applicationId, questionId])
+  @@index([applicationId])
+  @@index([questionId])
+  @@map("screening_answers")
+}
+
 model Application {
   id          String   @id @default(cuid())
-  status      String   @default("pending") // pending, reviewing, interviewed, offered, rejected
+  status      String   @default("new") // new, shortlisted, reviewing, interviewed, offered, rejected
   coverLetter String?
   resumeUrl   String?
   notes       String?
@@ -173,13 +341,27 @@ model Application {
   jobId       String
   job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
+  // Screening form tracking
+  screeningFormId  String?
+  screeningForm    ScreeningForm? @relation(fields: [screeningFormId], references: [id], onDelete: SetNull)
+
+  // Screening results
+  screeningScore   Int?           // Total score from screening
+  hasKnockout      Boolean        @default(false)  // True if any knockout rule triggered
+  knockoutReason   String?        // Reason for knockout (question that triggered it)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Relations
+  screeningAnswers ScreeningAnswer[]
 
   @@unique([userId, jobId])
   @@index([userId])
   @@index([jobId])
   @@index([status])
+  @@index([screeningFormId])
+  @@index([screeningScore])
   @@map("applications")
 }
 
