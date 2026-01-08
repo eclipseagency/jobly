@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import {
+  processScreeningApplication,
+  ScreeningForm,
+  ScreeningQuestion,
+  ScreeningRule,
+  AnswerSubmission,
+} from '@/lib/screening';
 
 // Helper to ensure user exists in database
 // Returns the actual user ID to use (may be different from input if email already exists)
@@ -109,6 +116,69 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Helper to convert DB screening form to internal type
+function convertToScreeningForm(dbForm: {
+  id: string;
+  jobId: string;
+  version: number;
+  isActive: boolean;
+  title: string | null;
+  description: string | null;
+  shortlistThreshold: number | null;
+  passingThreshold: number | null;
+  questions: Array<{
+    id: string;
+    questionText: string;
+    questionType: string;
+    order: number;
+    isRequired: boolean;
+    config: unknown;
+    helpText: string | null;
+    placeholder: string | null;
+    rules: Array<{
+      id: string;
+      ruleType: string;
+      operator: string;
+      value: unknown;
+      scoreValue: number | null;
+      message: string | null;
+      priority: number;
+      isActive: boolean;
+    }>;
+  }>;
+}): ScreeningForm {
+  return {
+    id: dbForm.id,
+    jobId: dbForm.jobId,
+    version: dbForm.version,
+    isActive: dbForm.isActive,
+    title: dbForm.title ?? undefined,
+    description: dbForm.description ?? undefined,
+    shortlistThreshold: dbForm.shortlistThreshold ?? undefined,
+    passingThreshold: dbForm.passingThreshold ?? undefined,
+    questions: dbForm.questions.map((q): ScreeningQuestion => ({
+      id: q.id,
+      questionText: q.questionText,
+      questionType: q.questionType as ScreeningQuestion['questionType'],
+      order: q.order,
+      isRequired: q.isRequired,
+      config: q.config as ScreeningQuestion['config'],
+      helpText: q.helpText ?? undefined,
+      placeholder: q.placeholder ?? undefined,
+      rules: q.rules.map((r): ScreeningRule => ({
+        id: r.id,
+        ruleType: r.ruleType as ScreeningRule['ruleType'],
+        operator: r.operator as ScreeningRule['operator'],
+        value: r.value,
+        scoreValue: r.scoreValue ?? undefined,
+        message: r.message ?? undefined,
+        priority: r.priority,
+        isActive: r.isActive,
+      })),
+    })),
+  };
+}
+
 // POST /api/applications - Create new application
 export async function POST(request: NextRequest) {
   try {
@@ -124,7 +194,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { jobId, coverLetter, resumeUrl } = body;
+    const { jobId, coverLetter, resumeUrl, screeningAnswers } = body;
 
     if (!jobId) {
       return NextResponse.json(
@@ -183,15 +253,114 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create application
-    const application = await prisma.application.create({
-      data: {
-        userId: finalUserId,
+    // Get active screening form if exists
+    const dbScreeningForm = await prisma.screeningForm.findFirst({
+      where: {
         jobId,
-        coverLetter: coverLetter || null,
-        resumeUrl: resumeUrl || null,
-        status: 'pending',
+        isActive: true,
       },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+          include: {
+            rules: {
+              where: { isActive: true },
+              orderBy: { priority: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    let screeningResult = null;
+    let applicationStatus = 'new';
+    let screeningScore: number | null = null;
+    let hasKnockout = false;
+    let knockoutReason: string | null = null;
+
+    // Process screening if form exists
+    if (dbScreeningForm) {
+      // Screening form exists - answers are required
+      if (!screeningAnswers || !Array.isArray(screeningAnswers)) {
+        return NextResponse.json(
+          { error: 'Screening answers are required for this job' },
+          { status: 400 }
+        );
+      }
+
+      // Convert DB form to internal type
+      const screeningForm = convertToScreeningForm(dbScreeningForm);
+
+      // Process screening
+      const answers: AnswerSubmission[] = screeningAnswers.map((a: { questionId: string; answer: unknown }) => ({
+        questionId: a.questionId,
+        answer: a.answer,
+      }));
+
+      screeningResult = processScreeningApplication(screeningForm, answers);
+
+      // Check validation errors
+      if (!screeningResult.isValid) {
+        return NextResponse.json({
+          error: 'Screening validation failed',
+          validationErrors: screeningResult.validationErrors,
+        }, { status: 400 });
+      }
+
+      // Set application status based on screening result
+      if (screeningResult.hasKnockout) {
+        applicationStatus = 'rejected';
+        hasKnockout = true;
+        knockoutReason = screeningResult.knockoutReason ?? null;
+      } else if (screeningResult.recommendedStatus === 'shortlisted') {
+        applicationStatus = 'shortlisted';
+      } else {
+        applicationStatus = 'new';
+      }
+
+      screeningScore = screeningResult.totalScore;
+    }
+
+    // Create application with screening data in a transaction
+    const application = await prisma.$transaction(async (tx) => {
+      // Create the application
+      const app = await tx.application.create({
+        data: {
+          userId: finalUserId,
+          jobId,
+          coverLetter: coverLetter || null,
+          resumeUrl: resumeUrl || null,
+          status: applicationStatus,
+          screeningFormId: dbScreeningForm?.id || null,
+          screeningScore,
+          hasKnockout,
+          knockoutReason,
+        },
+      });
+
+      // Create screening answers if we have them
+      if (dbScreeningForm && screeningResult && screeningAnswers) {
+        const answerData = screeningAnswers.map((a: { questionId: string; answer: unknown }) => {
+          // Find the result for this question
+          const questionResult = screeningResult.answerResults.find(
+            r => r.questionId === a.questionId
+          );
+
+          return {
+            applicationId: app.id,
+            questionId: a.questionId,
+            answer: a.answer,
+            isKnockout: questionResult?.isKnockout ?? false,
+            scoreEarned: questionResult?.scoreEarned ?? 0,
+          };
+        });
+
+        await tx.screeningAnswer.createMany({
+          data: answerData,
+        });
+      }
+
+      return app;
     });
 
     return NextResponse.json({
@@ -199,6 +368,8 @@ export async function POST(request: NextRequest) {
       application: {
         id: application.id,
         status: application.status,
+        screeningScore: application.screeningScore,
+        hasKnockout: application.hasKnockout,
         createdAt: application.createdAt,
         job: {
           id: job.id,
@@ -206,6 +377,11 @@ export async function POST(request: NextRequest) {
           company: job.tenant.name,
         },
       },
+      screeningResult: screeningResult ? {
+        totalScore: screeningResult.totalScore,
+        hasKnockout: screeningResult.hasKnockout,
+        recommendedStatus: screeningResult.recommendedStatus,
+      } : null,
     });
   } catch (error) {
     console.error('Error creating application:', error);
