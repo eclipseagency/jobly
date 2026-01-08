@@ -131,6 +131,11 @@ export default function TalentPoolPage() {
     total: 0,
     totalPages: 0,
   });
+  const [debugInfo, setDebugInfo] = useState<{
+    userStats: { role: string; _count: { id: number } }[];
+    sampleEmployees: { id: string; name: string; openToOffers: boolean | null; role: string }[];
+    queryFilters: { role: string; openToOffers: string; blockedIds: number };
+  } | null>(null);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -205,6 +210,10 @@ export default function TalentPoolPage() {
         const data = await response.json();
         setJobSeekers(data.jobSeekers || []);
         setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
+        // Capture debug info for troubleshooting
+        if (data.debug) {
+          setDebugInfo(data.debug);
+        }
       }
     } catch {
       setJobSeekers([]);
@@ -706,6 +715,43 @@ export default function TalentPoolPage() {
           {loading ? 'Loading...' : `${pagination.total} job seeker${pagination.total !== 1 ? 's' : ''} found`}
         </p>
       </div>
+
+      {/* Debug Info Panel - Shows database stats for troubleshooting */}
+      {debugInfo && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <h3 className="text-sm font-semibold text-amber-800 mb-3">Debug Info (Database Statistics)</h3>
+          <div className="space-y-3 text-sm">
+            <div>
+              <p className="font-medium text-amber-700">User Counts by Role:</p>
+              <ul className="ml-4 mt-1 text-amber-600">
+                {debugInfo.userStats.map(stat => (
+                  <li key={stat.role}>{stat.role}: {stat._count.id} users</li>
+                ))}
+              </ul>
+            </div>
+            {debugInfo.sampleEmployees && debugInfo.sampleEmployees.length > 0 && (
+              <div>
+                <p className="font-medium text-amber-700">Sample EMPLOYEE Users (first 10):</p>
+                <ul className="ml-4 mt-1 text-amber-600">
+                  {debugInfo.sampleEmployees.map(emp => (
+                    <li key={emp.id}>
+                      {emp.name || 'No name'} - openToOffers: {emp.openToOffers === null ? 'null' : emp.openToOffers ? 'true' : 'false'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div>
+              <p className="font-medium text-amber-700">Query Filters Applied:</p>
+              <ul className="ml-4 mt-1 text-amber-600">
+                <li>Role: {debugInfo.queryFilters.role}</li>
+                <li>openToOffers: {debugInfo.queryFilters.openToOffers}</li>
+                <li>Blocked IDs count: {debugInfo.queryFilters.blockedIds}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Job Seekers List */}
       {loading ? (
