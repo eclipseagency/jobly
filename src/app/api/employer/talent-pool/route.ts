@@ -14,6 +14,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Debug: Get user counts by role
+    const userStats = await prisma.user.groupBy({
+      by: ['role'],
+      _count: { id: true },
+    });
+    console.log('User stats by role:', userStats);
+
+    // Debug: Check openToOffers distribution for employees
+    const employeeStats = await prisma.user.findMany({
+      where: { role: 'EMPLOYEE' },
+      select: { id: true, name: true, openToOffers: true, role: true },
+      take: 10,
+    });
+    console.log('Sample employees:', employeeStats);
+
     // Pagination
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -225,6 +240,16 @@ export async function GET(request: NextRequest) {
         limit,
         total,
         totalPages: Math.ceil(total / limit),
+      },
+      // Debug info - remove in production
+      debug: {
+        userStats,
+        sampleEmployees: employeeStats,
+        queryFilters: {
+          role: 'EMPLOYEE',
+          openToOffers: 'true or null',
+          blockedIds: blockedIds.length,
+        },
       },
     });
   } catch (error) {
