@@ -127,9 +127,23 @@ model User {
   references      Reference[]
   notifications   Notification[]
 
+  // Talent Pool relations (for job seekers)
+  talentPoolProfile    TalentPoolProfile?
+  receivedInvites      InterviewInvite[]   @relation("ReceivedInvites")
+  sentMessagesAsSeeker Message[]           @relation("SeekerMessages")
+  receivedMessagesAsSeeker Message[]       @relation("EmployerToSeekerMessages")
+
+  // Employer-side talent pool relations
+  shortlists           EmployerShortlist[]
+  sentInvites          InterviewInvite[]   @relation("SentInvites")
+  profileViews         ProfileView[]       @relation("ViewerProfile")
+  profileViewsReceived ProfileView[]       @relation("ViewedProfile")
+  candidateBlocks      CandidateBlock[]
+
   @@index([tenantId])
   @@index([role])
   @@index([email])
+  @@index([openToOffers])
   @@map("users")
 }
 
@@ -152,9 +166,10 @@ model Job {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  applications    Application[]
-  savedJobs       SavedJob[]
-  screeningForms  ScreeningForm[]
+  applications     Application[]
+  savedJobs        SavedJob[]
+  screeningForms   ScreeningForm[]
+  interviewInvites InterviewInvite[]
 
   @@index([tenantId])
   @@index([isActive])
@@ -504,4 +519,205 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@map("notifications")
+}
+
+// ==========================================
+// TALENT POOL FEATURE MODELS
+// ==========================================
+
+// Job seeker's talent pool visibility settings
+model TalentPoolProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Visibility controls
+  isVisible             Boolean  @default(false)  // Allow employers to find this profile
+  minProfileCompleteness Int     @default(80)     // Minimum % to be visible
+
+  // Availability settings
+  availability          String?  // immediate, 2_weeks, 1_month, 3_months, not_looking
+  experienceLevel       String?  // entry, junior, mid, senior, lead, manager
+
+  // Additional searchable fields (cached for performance)
+  primarySkills         String[] // Top skills for filtering
+  preferredLocations    String[] // Cities/countries willing to work in
+  remotePreference      String?  // remote_only, hybrid, onsite, flexible
+
+  // Activity tracking
+  lastActiveAt          DateTime @default(now())
+  profileViewsCount     Int      @default(0)
+  searchAppearances     Int      @default(0)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([isVisible])
+  @@index([availability])
+  @@index([experienceLevel])
+  @@index([lastActiveAt])
+  @@map("talent_pool_profiles")
+}
+
+// Employer's shortlist collections
+model EmployerShortlist {
+  id          String   @id @default(cuid())
+  employerId  String
+  employer    User     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+  name        String   // e.g., "Frontend Developers", "Sales Team"
+  description String?
+  color       String?  // For UI organization
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  candidates  ShortlistCandidate[]
+
+  @@index([employerId])
+  @@map("employer_shortlists")
+}
+
+// Candidates saved to shortlists
+model ShortlistCandidate {
+  id            String   @id @default(cuid())
+  shortlistId   String
+  shortlist     EmployerShortlist @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+
+  candidateId   String   // The job seeker's user ID
+  notes         String?  // Private notes by employer
+  rating        Int?     // 1-5 star rating
+
+  addedAt       DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([shortlistId, candidateId])
+  @@index([shortlistId])
+  @@index([candidateId])
+  @@map("shortlist_candidates")
+}
+
+// Interview invitations sent to candidates
+model InterviewInvite {
+  id              String   @id @default(cuid())
+
+  // Sender (employer)
+  employerId      String
+  employer        User     @relation("SentInvites", fields: [employerId], references: [id], onDelete: Cascade)
+
+  // Recipient (job seeker)
+  candidateId     String
+  candidate       User     @relation("ReceivedInvites", fields: [candidateId], references: [id], onDelete: Cascade)
+
+  // Optional job reference
+  jobId           String?
+  job             Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  // Invite details
+  type            String   @default("general") // general, job_specific
+  message         String?
+  proposedDates   Json?    // Array of proposed date/times
+
+  // Status tracking
+  status          String   @default("pending") // pending, accepted, declined, expired
+  respondedAt     DateTime?
+  responseMessage String?
+
+  expiresAt       DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([employerId])
+  @@index([candidateId])
+  @@index([jobId])
+  @@index([status])
+  @@map("interview_invites")
+}
+
+// Internal messaging between employers and candidates
+model Message {
+  id          String   @id @default(cuid())
+
+  // Sender (can be either employer or job seeker)
+  senderId    String
+  sender      User     @relation("SeekerMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  // Recipient
+  recipientId String
+  recipient   User     @relation("EmployerToSeekerMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // Thread reference (for conversation grouping)
+  threadId    String?
+  parentId    String?  // For reply chains
+
+  subject     String?
+  content     String
+  isRead      Boolean  @default(false)
+
+  // Optional context
+  jobId       String?  // Related job posting
+  inviteId    String?  // Related interview invite
+
+  createdAt   DateTime @default(now())
+  readAt      DateTime?
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([threadId])
+  @@index([isRead])
+  @@map("messages")
+}
+
+// Track profile views for analytics
+model ProfileView {
+  id          String   @id @default(cuid())
+
+  viewerId    String   // Employer who viewed
+  viewer      User     @relation("ViewerProfile", fields: [viewerId], references: [id], onDelete: Cascade)
+
+  viewedId    String   // Job seeker whose profile was viewed
+  viewed      User     @relation("ViewedProfile", fields: [viewedId], references: [id], onDelete: Cascade)
+
+  viewedAt    DateTime @default(now())
+
+  // Analytics
+  source      String?  // search, shortlist, recommendation
+  timeSpent   Int?     // Seconds spent on profile
+
+  @@index([viewerId])
+  @@index([viewedId])
+  @@index([viewedAt])
+  @@map("profile_views")
+}
+
+// Block/hide candidates from employer's view
+model CandidateBlock {
+  id          String   @id @default(cuid())
+  employerId  String
+  employer    User     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+  candidateId String   // Job seeker to block
+  reason      String?
+
+  createdAt   DateTime @default(now())
+
+  @@unique([employerId, candidateId])
+  @@index([employerId])
+  @@map("candidate_blocks")
+}
+
+// Saved filter sets for employers
+model SavedFilter {
+  id          String   @id @default(cuid())
+  employerId  String
+
+  name        String   // e.g., "Senior React Developers – Remote"
+  filters     Json     // Serialized filter configuration
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([employerId])
+  @@map("saved_filters")
 }
