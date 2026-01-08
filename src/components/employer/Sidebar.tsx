@@ -38,6 +38,16 @@ const navigation = [
     ),
   },
   {
+    name: 'Talent Pool',
+    href: '/employer/dashboard/talent-pool',
+    badge: 'New',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    ),
+  },
+  {
     name: 'Messages',
     href: '/employer/dashboard/messages',
     icon: (
@@ -119,7 +129,12 @@ export function EmployerSidebar({ isOpen, onClose }: SidebarProps) {
                   <span className={isActive ? 'text-primary-600' : 'text-slate-400'}>
                     {item.icon}
                   </span>
-                  {item.name}
+                  <span className="flex-1">{item.name}</span>
+                  {item.badge && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-primary-100 text-primary-700">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
