@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import ApplicantScreeningForm from '@/components/screening/ApplicantScreeningForm';
+import { ApplicationWizard } from '@/components/application';
 
 interface JobDetail {
   id: string;
@@ -55,6 +56,68 @@ function formatRelativeDate(dateString: string): string {
   return formatDate(dateString);
 }
 
+// Parse job requirements into structured sections
+interface ParsedJobContent {
+  responsibilities: string[];
+  requirements: string[];
+  niceToHave: string[];
+  skills: string[];
+  benefits: string[];
+}
+
+function parseJobContent(requirements: string | null): ParsedJobContent {
+  const result: ParsedJobContent = {
+    responsibilities: [],
+    requirements: [],
+    niceToHave: [],
+    skills: [],
+    benefits: [],
+  };
+
+  if (!requirements) return result;
+
+  const lines = requirements.split('\n');
+  let currentSection: keyof ParsedJobContent = 'responsibilities';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Check for section headers
+    const lowerLine = trimmed.toLowerCase();
+    if (lowerLine.includes('requirement')) {
+      currentSection = 'requirements';
+      continue;
+    } else if (lowerLine.includes('nice to have') || lowerLine.includes('preferred')) {
+      currentSection = 'niceToHave';
+      continue;
+    } else if (lowerLine.startsWith('skills:')) {
+      const skillsStr = trimmed.substring(7).trim();
+      result.skills = skillsStr.split(',').map(s => s.trim()).filter(Boolean);
+      continue;
+    } else if (lowerLine.startsWith('benefits:')) {
+      const benefitsStr = trimmed.substring(9).trim();
+      result.benefits = benefitsStr.split(',').map(s => s.trim()).filter(Boolean);
+      continue;
+    }
+
+    // Add to current section (remove bullet if present)
+    const cleanLine = trimmed.replace(/^[•\-\*]\s*/, '');
+    if (cleanLine) {
+      result[currentSection].push(cleanLine);
+    }
+  }
+
+  return result;
+}
+
+function getApplicantInterest(count: number): { label: string; color: string } {
+  if (count === 0) return { label: 'Be first to apply', color: 'text-green-600' };
+  if (count < 10) return { label: 'Low interest', color: 'text-green-600' };
+  if (count < 50) return { label: 'Moderate interest', color: 'text-yellow-600' };
+  return { label: 'High interest', color: 'text-red-600' };
+}
+
 export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -70,6 +133,7 @@ export default function JobDetailPage() {
   const [hasScreeningForm, setHasScreeningForm] = useState(false);
   const [screeningAnswers, setScreeningAnswers] = useState<{ questionId: string; answer: unknown }[]>([]);
   const [showScreeningForm, setShowScreeningForm] = useState(false);
+  const [showApplicationWizard, setShowApplicationWizard] = useState(false);
 
   useEffect(() => {
     async function fetchJob() {
@@ -161,11 +225,47 @@ export default function JobDetailPage() {
       router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
       return;
     }
-    // If there's a screening form, show it first
-    if (hasScreeningForm) {
-      setShowScreeningForm(true);
-    } else {
-      setShowApplyModal(true);
+    // Show the application wizard
+    setShowApplicationWizard(true);
+  };
+
+  // Handler for the Application Wizard
+  const handleWizardSubmit = async (data: { coverLetter: string; screeningAnswers: { questionId: string; answer: unknown }[] }) => {
+    if (!isLoggedIn || !user) {
+      router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
+      return;
+    }
+
+    setApplying(true);
+    try {
+      const response = await fetch('/api/applications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+          'x-user-name': user.name || '',
+          'x-user-email': user.email || '',
+        },
+        body: JSON.stringify({
+          jobId: params.id,
+          coverLetter: data.coverLetter,
+          screeningAnswers: data.screeningAnswers,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setApplied(true);
+        setShowApplicationWizard(false);
+      } else {
+        alert(result.error || 'Failed to apply. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error applying:', error);
+      alert('Failed to apply. Please try again.');
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -444,15 +544,115 @@ export default function JobDetailPage() {
               </div>
             </div>
 
-            {/* Requirements */}
-            {job.requirements && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
-                <h2 className="text-xl font-semibold text-slate-900 mb-4">Requirements</h2>
-                <div className="prose prose-slate max-w-none">
-                  <p className="text-slate-600 whitespace-pre-wrap">{job.requirements}</p>
-                </div>
-              </div>
-            )}
+            {/* Structured Job Content */}
+            {job.requirements && (() => {
+              const parsed = parseJobContent(job.requirements);
+              const hasStructuredContent = parsed.responsibilities.length > 0 ||
+                parsed.requirements.length > 0 ||
+                parsed.niceToHave.length > 0;
+
+              return (
+                <>
+                  {/* Responsibilities Section */}
+                  {parsed.responsibilities.length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
+                      <h2 className="text-xl font-semibold text-slate-900 mb-4">Responsibilities</h2>
+                      <ul className="space-y-3">
+                        {parsed.responsibilities.map((item, idx) => (
+                          <li key={idx} className="flex gap-3 text-slate-600">
+                            <svg className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                            </svg>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Requirements Section */}
+                  {parsed.requirements.length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
+                      <h2 className="text-xl font-semibold text-slate-900 mb-4">Requirements</h2>
+                      <ul className="space-y-3">
+                        {parsed.requirements.map((item, idx) => (
+                          <li key={idx} className="flex gap-3 text-slate-600">
+                            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Nice to Have Section */}
+                  {parsed.niceToHave.length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
+                      <h2 className="text-xl font-semibold text-slate-900 mb-4">Nice to Have</h2>
+                      <ul className="space-y-3">
+                        {parsed.niceToHave.map((item, idx) => (
+                          <li key={idx} className="flex gap-3 text-slate-600">
+                            <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Skills Tags */}
+                  {parsed.skills.length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
+                      <h2 className="text-xl font-semibold text-slate-900 mb-4">Required Skills</h2>
+                      <div className="flex flex-wrap gap-2">
+                        {parsed.skills.map((skill, idx) => (
+                          <span
+                            key={idx}
+                            className="px-3 py-1.5 bg-primary-50 text-primary-700 text-sm font-medium rounded-full"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Benefits Tags */}
+                  {parsed.benefits.length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
+                      <h2 className="text-xl font-semibold text-slate-900 mb-4">Benefits</h2>
+                      <div className="flex flex-wrap gap-2">
+                        {parsed.benefits.map((benefit, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-sm font-medium rounded-full"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            {benefit}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fallback: Show raw requirements if no structured content was parsed */}
+                  {!hasStructuredContent && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8">
+                      <h2 className="text-xl font-semibold text-slate-900 mb-4">Requirements</h2>
+                      <div className="prose prose-slate max-w-none">
+                        <p className="text-slate-600 whitespace-pre-wrap">{job.requirements}</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           {/* Sidebar */}
@@ -466,6 +666,19 @@ export default function JobDetailPage() {
                 </div>
               )}
 
+              {/* Application Type Badge */}
+              {hasScreeningForm && (
+                <div className="mb-4 p-3 bg-purple-50 border border-purple-100 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="text-sm font-medium text-purple-700">Screened Application</span>
+                  </div>
+                  <p className="text-xs text-purple-600 mt-1">This job includes screening questions</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                   <p className="text-sm text-slate-500 mb-1">Posted</p>
@@ -473,7 +686,9 @@ export default function JobDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500 mb-1">Applicants</p>
-                  <p className="text-sm font-medium text-slate-900">{job.applicationsCount}</p>
+                  <p className={`text-sm font-medium ${getApplicantInterest(job.applicationsCount).color}`}>
+                    {job.applicationsCount} - {getApplicantInterest(job.applicationsCount).label}
+                  </p>
                 </div>
               </div>
 
@@ -582,6 +797,41 @@ export default function JobDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Application Wizard */}
+      {showApplicationWizard && isLoggedIn && job && user && (
+        <ApplicationWizard
+          job={{
+            id: job.id,
+            title: job.title,
+            company: {
+              name: job.company.name,
+              logo: job.company.logo || undefined,
+            },
+            requiresResume: true,
+            requiresPortfolio: false,
+          }}
+          user={{
+            id: user.id,
+            name: user.name || '',
+            email: user.email || '',
+            phone: user.phone,
+            location: user.location,
+            headline: user.headline,
+            summary: user.summary,
+            experience: user.experience,
+            skills: user.skills,
+            resumeUrl: user.resumeUrl,
+            portfolioUrl: user.portfolioUrl,
+            linkedinUrl: user.linkedinUrl,
+            githubUrl: user.githubUrl,
+          }}
+          hasScreeningForm={hasScreeningForm}
+          onSubmit={handleWizardSubmit}
+          onCancel={() => setShowApplicationWizard(false)}
+          isSubmitting={applying}
+        />
+      )}
 
       {/* Screening Form Modal */}
       {showScreeningForm && isLoggedIn && job && (

@@ -12,6 +12,17 @@ export interface User {
   // Employer-specific
   tenantId?: string;
   tenantName?: string;
+  // Profile fields (for employees)
+  phone?: string;
+  location?: string;
+  headline?: string;
+  summary?: string;
+  experience?: string;
+  skills?: string[];
+  resumeUrl?: string;
+  portfolioUrl?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
 }
 
 interface StoredUser extends User {
