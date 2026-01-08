@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ApplicantScreeningForm from '@/components/screening/ApplicantScreeningForm';
 
 interface UserProfile {
@@ -42,6 +42,7 @@ interface ApplicationWizardProps {
   onSubmit: (data: { coverLetter: string; screeningAnswers: ScreeningAnswer[] }) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
+  onProfileUpdate?: (updates: Partial<UserProfile>) => void;
 }
 
 type Step = 'eligibility' | 'screening' | 'review';
@@ -64,16 +65,39 @@ export default function ApplicationWizard({
   const [currentStep, setCurrentStep] = useState<Step>('eligibility');
   const [coverLetter, setCoverLetter] = useState('');
   const [screeningAnswers, setScreeningAnswers] = useState<ScreeningAnswer[]>([]);
-  const [eligibilityChecked, setEligibilityChecked] = useState(false);
 
-  // Calculate profile completeness
+  // Local profile state for inline editing
+  const [localProfile, setLocalProfile] = useState({
+    phone: user.phone || '',
+    location: user.location || '',
+    headline: user.headline || '',
+    resumeUrl: user.resumeUrl || '',
+  });
+
+  // Inline editing states
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+
+  // Update local profile when user prop changes
+  useEffect(() => {
+    setLocalProfile({
+      phone: user.phone || '',
+      location: user.location || '',
+      headline: user.headline || '',
+      resumeUrl: user.resumeUrl || '',
+    });
+  }, [user.phone, user.location, user.headline, user.resumeUrl]);
+
+  // Calculate profile completeness with local state
   const profileChecks: ProfileCheck[] = [
     { label: 'Full Name', completed: !!user.name, required: true, field: 'name' },
     { label: 'Email Address', completed: !!user.email, required: true, field: 'email' },
-    { label: 'Phone Number', completed: !!user.phone, required: false, field: 'phone' },
-    { label: 'Location', completed: !!user.location, required: false, field: 'location' },
-    { label: 'Professional Headline', completed: !!user.headline, required: false, field: 'headline' },
-    { label: 'Resume/CV', completed: !!user.resumeUrl, required: job.requiresResume !== false, field: 'resumeUrl' },
+    { label: 'Phone Number', completed: !!localProfile.phone, required: false, field: 'phone' },
+    { label: 'Location', completed: !!localProfile.location, required: false, field: 'location' },
+    { label: 'Professional Headline', completed: !!localProfile.headline, required: false, field: 'headline' },
+    { label: 'Resume/CV', completed: !!localProfile.resumeUrl, required: job.requiresResume !== false, field: 'resumeUrl' },
     { label: 'Portfolio URL', completed: !!user.portfolioUrl, required: !!job.requiresPortfolio, field: 'portfolioUrl' },
     { label: 'Work Experience', completed: !!user.experience, required: false, field: 'experience' },
     { label: 'Skills', completed: (user.skills?.length || 0) > 0, required: false, field: 'skills' },
@@ -118,9 +142,132 @@ export default function ApplicationWizard({
     await onSubmit({ coverLetter, screeningAnswers });
   };
 
+  // Inline editing handlers
+  const startEditing = (field: string, currentValue: string) => {
+    setEditingField(field);
+    setEditValue(currentValue);
+  };
+
+  const saveEdit = (field: string) => {
+    if (field === 'phone' || field === 'location' || field === 'headline') {
+      setLocalProfile(prev => ({ ...prev, [field]: editValue }));
+
+      // Save to localStorage
+      if (user.id) {
+        try {
+          const savedProfile = localStorage.getItem(`jobly_profile_${user.id}`);
+          const parsed = savedProfile ? JSON.parse(savedProfile) : { profile: {} };
+
+          if (field === 'phone') {
+            parsed.profile = { ...parsed.profile, phone: editValue };
+          } else if (field === 'location') {
+            const parts = editValue.split(',').map(p => p.trim());
+            parsed.profile = { ...parsed.profile, city: parts[0] || '', country: parts[1] || '' };
+          } else if (field === 'headline') {
+            parsed.profile = { ...parsed.profile, title: editValue };
+          }
+
+          localStorage.setItem(`jobly_profile_${user.id}`, JSON.stringify(parsed));
+        } catch {
+          // Error saving to localStorage
+        }
+      }
+    }
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const cancelEdit = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  // Resume upload handler
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a PDF, DOC, or DOCX file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadingResume(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+
+        // Update local state
+        setLocalProfile(prev => ({ ...prev, resumeUrl: 'uploaded' }));
+
+        // Save to localStorage
+        if (user.id) {
+          localStorage.setItem(`jobly_resume_${user.id}`, base64);
+          localStorage.setItem(`jobly_resume_name_${user.id}`, file.name);
+
+          // Also update profile documents
+          try {
+            const savedProfile = localStorage.getItem(`jobly_profile_${user.id}`);
+            const parsed = savedProfile ? JSON.parse(savedProfile) : { profile: {}, documents: {} };
+            parsed.documents = {
+              ...parsed.documents,
+              resume: {
+                name: file.name,
+                uploadedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                size: formatFileSize(file.size),
+              }
+            };
+            localStorage.setItem(`jobly_profile_${user.id}`, JSON.stringify(parsed));
+          } catch {
+            // Error updating profile
+          }
+        }
+        setUploadingResume(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      alert('Failed to upload resume. Please try again.');
+      setUploadingResume(false);
+    }
+
+    if (resumeInputRef.current) resumeInputRef.current.value = '';
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  // Get resume file name from localStorage
+  const getResumeName = () => {
+    if (user.id) {
+      return localStorage.getItem(`jobly_resume_name_${user.id}`) || 'Resume uploaded';
+    }
+    return 'Resume uploaded';
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Hidden file input */}
+        <input
+          ref={resumeInputRef}
+          type="file"
+          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={handleResumeUpload}
+          className="hidden"
+        />
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200">
           <div className="flex items-center justify-between mb-4">
@@ -202,64 +349,146 @@ export default function ApplicationWizard({
                 <h4 className="text-sm font-medium text-slate-700 mb-3">Required for this application</h4>
                 <div className="space-y-2">
                   {requiredChecks.map((check) => (
-                    <div
-                      key={check.field}
-                      className={`flex items-center gap-3 p-3 rounded-lg border ${
-                        check.completed
-                          ? 'bg-green-50 border-green-200'
-                          : 'bg-red-50 border-red-200'
-                      }`}
-                    >
-                      {check.completed ? (
-                        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                    <div key={check.field}>
+                      {/* Resume field - special handling */}
+                      {check.field === 'resumeUrl' ? (
+                        <div className={`p-3 rounded-lg border ${
+                          check.completed
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-red-50 border-red-200'
+                        }`}>
+                          <div className="flex items-center gap-3">
+                            {check.completed ? (
+                              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )}
+                            <div className="flex-1">
+                              <span className={check.completed ? 'text-green-700' : 'text-red-700'}>
+                                {check.label}
+                              </span>
+                              {check.completed && (
+                                <p className="text-xs text-green-600 mt-0.5">{getResumeName()}</p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => resumeInputRef.current?.click()}
+                              disabled={uploadingResume}
+                              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                                check.completed
+                                  ? 'text-green-700 hover:bg-green-100'
+                                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              }`}
+                            >
+                              {uploadingResume ? (
+                                <span className="flex items-center gap-2">
+                                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                  Uploading...
+                                </span>
+                              ) : check.completed ? 'Replace' : 'Upload Resume'}
+                            </button>
+                          </div>
+                        </div>
                       ) : (
-                        <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                      <span className={check.completed ? 'text-green-700' : 'text-red-700'}>
-                        {check.label}
-                      </span>
-                      {!check.completed && (
-                        <a
-                          href="/dashboard/profile"
-                          className="ml-auto text-xs text-red-600 hover:text-red-700 underline"
-                        >
-                          Complete
-                        </a>
+                        /* Other required fields (Name, Email) - read only display */
+                        <div className={`flex items-center gap-3 p-3 rounded-lg border ${
+                          check.completed
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-red-50 border-red-200'
+                        }`}>
+                          {check.completed ? (
+                            <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
+                          <span className={check.completed ? 'text-green-700' : 'text-red-700'}>
+                            {check.label}
+                          </span>
+                        </div>
                       )}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Optional Checks */}
+              {/* Optional Checks - with inline editing */}
               <div>
                 <h4 className="text-sm font-medium text-slate-700 mb-3">Recommended (improves your chances)</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {profileChecks.filter(c => !c.required).map((check) => (
-                    <div
-                      key={check.field}
-                      className={`flex items-center gap-2 p-2 rounded-lg text-sm ${
-                        check.completed
-                          ? 'bg-slate-50 text-slate-700'
-                          : 'bg-slate-50 text-slate-500'
-                      }`}
-                    >
-                      {check.completed ? (
-                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                      )}
-                      {check.label}
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  {profileChecks.filter(c => !c.required).map((check) => {
+                    const isEditable = ['phone', 'location', 'headline'].includes(check.field);
+                    const isEditing = editingField === check.field;
+                    const currentValue = check.field === 'phone' ? localProfile.phone :
+                                        check.field === 'location' ? localProfile.location :
+                                        check.field === 'headline' ? localProfile.headline : '';
+
+                    return (
+                      <div key={check.field} className="bg-slate-50 rounded-lg p-3">
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type={check.field === 'phone' ? 'tel' : 'text'}
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              placeholder={
+                                check.field === 'phone' ? '+63 912 345 6789' :
+                                check.field === 'location' ? 'City, Country' :
+                                check.field === 'headline' ? 'e.g. Senior Software Engineer' : ''
+                              }
+                              className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => saveEdit(check.field)}
+                              className="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            {check.completed ? (
+                              <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            )}
+                            <span className={`flex-1 text-sm ${check.completed ? 'text-slate-700' : 'text-slate-500'}`}>
+                              {check.label}
+                              {check.completed && currentValue && (
+                                <span className="text-slate-500 ml-2">· {currentValue}</span>
+                              )}
+                            </span>
+                            {isEditable && (
+                              <button
+                                onClick={() => startEditing(check.field, currentValue)}
+                                className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                              >
+                                {check.completed ? 'Edit' : 'Add'}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -271,9 +500,9 @@ export default function ApplicationWizard({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <div>
-                      <p className="font-medium text-red-800">Complete your profile to apply</p>
+                      <p className="font-medium text-red-800">Complete required fields to apply</p>
                       <p className="text-sm text-red-700 mt-1">
-                        Please complete all required fields before submitting your application.
+                        Please upload your resume to continue with this application.
                       </p>
                     </div>
                   </div>
@@ -326,25 +555,25 @@ export default function ApplicationWizard({
                     <span className="text-slate-500">Email:</span>
                     <span className="ml-2 text-slate-900">{user.email}</span>
                   </div>
-                  {user.phone && (
+                  {localProfile.phone && (
                     <div>
                       <span className="text-slate-500">Phone:</span>
-                      <span className="ml-2 text-slate-900">{user.phone}</span>
+                      <span className="ml-2 text-slate-900">{localProfile.phone}</span>
                     </div>
                   )}
-                  {user.location && (
+                  {localProfile.location && (
                     <div>
                       <span className="text-slate-500">Location:</span>
-                      <span className="ml-2 text-slate-900">{user.location}</span>
+                      <span className="ml-2 text-slate-900">{localProfile.location}</span>
                     </div>
                   )}
                 </div>
-                {user.resumeUrl && (
+                {localProfile.resumeUrl && (
                   <div className="mt-3 flex items-center gap-2 text-sm">
                     <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-green-700">Resume attached</span>
+                    <span className="text-green-700">Resume attached: {getResumeName()}</span>
                   </div>
                 )}
               </div>
