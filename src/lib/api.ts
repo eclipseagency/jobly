@@ -46,6 +46,50 @@ export interface Job {
   experience: string;
 }
 
+// Raw API response job structure
+interface APIJobResponse {
+  id: string;
+  title: string;
+  description: string;
+  requirements: string | null;
+  location: string | null;
+  locationType: string | null;
+  salary: string | null;
+  jobType: string | null;
+  department: string | null;
+  createdAt: string;
+  company: {
+    id: string;
+    name: string;
+    logo: string | null;
+    location: string | null;
+    isVerified: boolean;
+  };
+  applicationsCount: number;
+}
+
+function mapAPIJobToJob(apiJob: APIJobResponse): Job {
+  return {
+    id: apiJob.id,
+    title: apiJob.title,
+    company: apiJob.company.name,
+    companyLogo: apiJob.company.logo || undefined,
+    location: apiJob.location || apiJob.company.location || 'Not specified',
+    type: apiJob.jobType || 'Full-time',
+    workSetup: apiJob.locationType || 'On-site',
+    salaryMin: 0,
+    salaryMax: 0,
+    posted: apiJob.createdAt,
+    applicants: apiJob.applicationsCount || 0,
+    description: apiJob.description,
+    responsibilities: [],
+    requirements: apiJob.requirements ? [apiJob.requirements] : [],
+    benefits: [],
+    skills: [],
+    experience: '',
+  };
+}
+
 export interface Application {
   id: string;
   jobId: string;
@@ -115,12 +159,14 @@ export const jobSeekerAPI = {
   // Jobs
   async getJobs(filters?: { search?: string; location?: string; type?: string }): Promise<Job[]> {
     if (!API_BASE) return [];
-    return fetchAPI<Job[]>(`/jobs?${new URLSearchParams(filters as Record<string, string>)}`);
+    const data = await fetchAPI<{ jobs: APIJobResponse[] }>(`/jobs?${new URLSearchParams(filters as Record<string, string>)}`);
+    return (data.jobs || []).map(mapAPIJobToJob);
   },
 
   async getJob(id: string): Promise<Job | null> {
     if (!API_BASE) return null;
-    return fetchAPI<Job>(`/jobs/${id}`);
+    const data = await fetchAPI<{ job: APIJobResponse }>(`/jobs/${id}`);
+    return data.job ? mapAPIJobToJob(data.job) : null;
   },
 
   // Applications
