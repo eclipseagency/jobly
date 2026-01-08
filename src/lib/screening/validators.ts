@@ -74,7 +74,8 @@ function validateMultiSelect(answer: AnswerValue, config: QuestionConfig): strin
 
   const selectConfig = config as SelectConfig;
   if (selectConfig?.choices) {
-    const invalidChoices = answer.filter(item => !selectConfig.choices.includes(item));
+    const stringAnswer = answer as string[];
+    const invalidChoices = stringAnswer.filter(item => !selectConfig.choices.includes(item));
     if (invalidChoices.length > 0) {
       return `Invalid options selected: ${invalidChoices.join(', ')}`;
     }
@@ -316,7 +317,7 @@ function validateUrlList(answer: AnswerValue, config: QuestionConfig): string | 
   }
 
   if (urlConfig?.requiredDomains && urlConfig.requiredDomains.length > 0) {
-    for (const url of answer) {
+    for (const url of answer as string[]) {
       try {
         const urlObj = new URL(url);
         const matchesDomain = urlConfig.requiredDomains.some(domain =>

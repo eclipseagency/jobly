@@ -6,6 +6,7 @@ import {
   ScreeningQuestion,
   ScreeningRule,
   AnswerSubmission,
+  AnswerValue,
 } from '@/lib/screening';
 
 // Helper to ensure user exists in database
@@ -294,7 +295,7 @@ export async function POST(request: NextRequest) {
       // Process screening
       const answers: AnswerSubmission[] = screeningAnswers.map((a: { questionId: string; answer: unknown }) => ({
         questionId: a.questionId,
-        answer: a.answer,
+        answer: a.answer as AnswerValue,
       }));
 
       screeningResult = processScreeningApplication(screeningForm, answers);

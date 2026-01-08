@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { QuestionType, RuleType, RuleOperator } from '@prisma/client';
+import { QuestionType, RuleType, RuleOperator, Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -162,60 +162,55 @@ export async function POST(
 
     const newVersion = (latestForm?.version ?? 0) + 1;
 
-    // Create new form with questions and rules in a transaction
-    const form = await prisma.$transaction(async (tx) => {
-      // Deactivate all existing forms for this job
-      await tx.screeningForm.updateMany({
-        where: { jobId },
-        data: { isActive: false },
-      });
+    // Deactivate all existing forms for this job
+    await prisma.screeningForm.updateMany({
+      where: { jobId },
+      data: { isActive: false },
+    });
 
-      // Create new form
-      const newForm = await tx.screeningForm.create({
-        data: {
-          jobId,
-          version: newVersion,
-          isActive: true,
-          title: body.title,
-          description: body.description,
-          shortlistThreshold: body.shortlistThreshold,
-          passingThreshold: body.passingThreshold,
-          questions: {
-            create: body.questions.map((q, index) => ({
-              questionText: q.questionText,
-              questionType: q.questionType,
-              order: q.order ?? index,
-              isRequired: q.isRequired ?? false,
-              config: q.config ?? null,
-              helpText: q.helpText,
-              placeholder: q.placeholder,
-              rules: q.rules && q.rules.length > 0 ? {
-                create: q.rules.map((r, rIndex) => ({
-                  ruleType: r.ruleType,
-                  operator: r.operator,
-                  value: r.value,
-                  scoreValue: r.scoreValue,
-                  message: r.message,
-                  priority: r.priority ?? rIndex,
-                  isActive: true,
-                })),
-              } : undefined,
-            })),
-          },
+    // Create new form with questions and rules
+    const form = await prisma.screeningForm.create({
+      data: {
+        jobId,
+        version: newVersion,
+        isActive: true,
+        title: body.title,
+        description: body.description,
+        shortlistThreshold: body.shortlistThreshold,
+        passingThreshold: body.passingThreshold,
+        questions: {
+          create: body.questions.map((q, index) => ({
+            questionText: q.questionText,
+            questionType: q.questionType,
+            order: q.order ?? index,
+            isRequired: q.isRequired ?? false,
+            config: (q.config ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+            helpText: q.helpText,
+            placeholder: q.placeholder,
+            rules: q.rules && q.rules.length > 0 ? {
+              create: q.rules.map((r, rIndex) => ({
+                ruleType: r.ruleType,
+                operator: r.operator,
+                value: r.value as Prisma.InputJsonValue,
+                scoreValue: r.scoreValue,
+                message: r.message,
+                priority: r.priority ?? rIndex,
+                isActive: true,
+              })),
+            } : undefined,
+          })),
         },
-        include: {
-          questions: {
-            orderBy: { order: 'asc' },
-            include: {
-              rules: {
-                orderBy: { priority: 'asc' },
-              },
+      },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+          include: {
+            rules: {
+              orderBy: { priority: 'asc' },
             },
           },
         },
-      });
-
-      return newForm;
+      },
     });
 
     return NextResponse.json({

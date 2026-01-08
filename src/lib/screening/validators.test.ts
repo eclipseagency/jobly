@@ -159,7 +159,8 @@ describe('validateAnswer', () => {
     });
 
     it('should reject invalid period', () => {
-      const answer = { amount: 50000, currency: 'PHP', period: 'quarterly' };
+      // Intentionally invalid period to test validation
+      const answer = { amount: 50000, currency: 'PHP', period: 'quarterly' } as unknown as import('../screening/types').SalaryAnswer;
       const error = validateAnswer('SALARY_EXPECTATION', answer, null, false);
       expect(error).toBe('Please select a valid pay period');
     });

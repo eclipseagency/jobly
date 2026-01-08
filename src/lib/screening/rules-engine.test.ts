@@ -398,7 +398,7 @@ describe('evaluateRule', () => {
         isActive: true,
       };
 
-      const answer = { amount: 150000, currency: 'PHP', period: 'monthly' };
+      const answer = { amount: 150000, currency: 'PHP', period: 'monthly' as const };
       const result = evaluateRule(rule, answer, 'SALARY_EXPECTATION');
       expect(result.triggered).toBe(true);
     });
