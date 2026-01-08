@@ -25,6 +25,16 @@ const menuItems = [
     ),
   },
   {
+    label: 'Talent Pool',
+    href: '/employer/dashboard/talent-pool',
+    badge: 'New',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Applicants',
     href: '/employer/applicants',
     icon: (
@@ -167,7 +177,12 @@ export function EmployerSidebar({ isOpen, onClose }: EmployerSidebarProps) {
                   `}
                 >
                   {item.icon}
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-green-100 text-green-700 rounded">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
