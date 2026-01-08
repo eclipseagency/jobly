@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -21,6 +21,7 @@ interface JobDetail {
   experienceLevel?: string | null;
   createdAt: string;
   expiresAt: string | null;
+  status?: string;
   company: {
     id: string;
     name: string;
@@ -205,6 +206,32 @@ function getDaysUntilExpiry(expiresAt: string | null): { days: number; label: st
   return null;
 }
 
+// Check if job is closed
+function isJobClosed(job: JobDetail): { closed: boolean; reason: string } {
+  // Check explicit status
+  if (job.status === 'closed' || job.status === 'filled' || job.status === 'expired') {
+    return { closed: true, reason: job.status === 'filled' ? 'Position filled' : 'Job posting closed' };
+  }
+
+  // Check expiration date
+  if (job.expiresAt) {
+    const expiry = new Date(job.expiresAt);
+    const now = new Date();
+    if (expiry < now) {
+      return { closed: true, reason: 'Job posting expired' };
+    }
+  }
+
+  return { closed: false, reason: '' };
+}
+
+// Format Job ID for display
+function formatJobId(id: string): string {
+  if (!id) return '';
+  // Show last 8 characters for readability
+  return id.length > 8 ? `...${id.slice(-8)}` : id;
+}
+
 export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -217,7 +244,9 @@ export default function JobDetailPage() {
   const [applied, setApplied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savedJobId, setSavedJobId] = useState<string | null>(null);
   const [hasScreeningForm, setHasScreeningForm] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [screeningAnswers, setScreeningAnswers] = useState<{ questionId: string; answer: unknown }[]>([]);
   const [showScreeningForm, setShowScreeningForm] = useState(false);
   const [showApplicationWizard, setShowApplicationWizard] = useState(false);
@@ -338,11 +367,12 @@ export default function JobDetailPage() {
 
         if (savedResponse.ok) {
           const savedData = await savedResponse.json();
-          const isSaved = savedData.savedJobs?.some(
-            (saved: { job: { id: string } }) => saved.job.id === params.id
+          const savedJob = savedData.savedJobs?.find(
+            (saved: { id: string; job: { id: string } }) => saved.job.id === params.id
           );
-          if (isSaved) {
+          if (savedJob) {
             setSaved(true);
+            setSavedJobId(savedJob.id);
           }
         }
       } catch (error) {
@@ -478,6 +508,9 @@ export default function JobDetailPage() {
 
       if (response.ok) {
         setSaved(true);
+        if (data.savedJob?.id) {
+          setSavedJobId(data.savedJob.id);
+        }
       } else {
         if (data.message?.includes('already saved') || data.error?.includes('already saved')) {
           setSaved(true);
@@ -492,6 +525,52 @@ export default function JobDetailPage() {
       setSaving(false);
     }
   };
+
+  const handleUnsaveJob = async () => {
+    if (!isLoggedIn || !user || !savedJobId) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/saved-jobs?id=${savedJobId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-user-id': user.id,
+        },
+      });
+
+      if (response.ok) {
+        setSaved(false);
+        setSavedJobId(null);
+      } else {
+        alert('Failed to unsave job');
+      }
+    } catch (error) {
+      console.error('Error unsaving job:', error);
+      alert('Failed to unsave job. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCopyLink = useCallback(async () => {
+    try {
+      const url = window.location.href;
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const url = window.location.href;
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -684,15 +763,7 @@ export default function JobDetailPage() {
 
                   {/* Tags grouped by meaning */}
                   <div className="flex flex-wrap gap-2">
-                    {/* Location & Work Setup */}
-                    {job.location && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-medium rounded-full">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        </svg>
-                        {job.location}
-                      </span>
-                    )}
+                    {/* Work Setup */}
                     {job.locationType && (
                       <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 text-sm font-medium rounded-full capitalize">
                         <span>{getWorkSetupIcon(job.locationType)}</span>
@@ -700,12 +771,14 @@ export default function JobDetailPage() {
                       </span>
                     )}
 
-                    {/* Employment Type & Experience */}
+                    {/* Employment Type */}
                     {job.jobType && (
                       <span className="px-3 py-1.5 bg-primary-50 text-primary-700 text-sm font-medium rounded-full capitalize">
                         {job.jobType}
                       </span>
                     )}
+
+                    {/* Experience Level */}
                     {job.experienceLevel && (() => {
                       const style = getExperienceLevelStyle(job.experienceLevel);
                       return (
@@ -721,6 +794,36 @@ export default function JobDetailPage() {
                         {job.department}
                       </span>
                     )}
+                  </div>
+
+                  {/* Metadata Row */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-100 text-sm text-slate-500">
+                    {job.location && (
+                      <span className="flex items-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                        {job.location}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1.5">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Posted {formatRelativeDate(job.createdAt)}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {getApplicantInterest(job.applicationsCount).label}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-slate-400">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                      </svg>
+                      {formatJobId(job.id)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -953,7 +1056,7 @@ export default function JobDetailPage() {
               })()}
 
               {/* Application Type Badge */}
-              {hasScreeningForm && (
+              {hasScreeningForm ? (
                 <div className="mb-4 p-3 bg-purple-50 border border-purple-100 rounded-lg">
                   <div className="flex items-center gap-2">
                     <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -962,6 +1065,16 @@ export default function JobDetailPage() {
                     <span className="text-sm font-medium text-purple-700">Screened Application</span>
                   </div>
                   <p className="text-xs text-purple-600 mt-1">Includes screening questions (2-3 min)</p>
+                </div>
+              ) : (
+                <div className="mb-4 p-3 bg-green-50 border border-green-100 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-sm font-medium text-green-700">Quick Apply</span>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">Apply with your profile in ~1 min</p>
                 </div>
               )}
 
@@ -997,43 +1110,73 @@ export default function JobDetailPage() {
                 </div>
               </div>
 
-              {applied ? (
-                <div className="text-center py-4">
-                  <svg className="w-12 h-12 text-green-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-sm font-medium text-green-700">Application Submitted!</p>
-                  <p className="text-xs text-slate-500 mt-1">We&apos;ll notify you when they respond</p>
-                  <Link
-                    href="/dashboard/applications"
-                    className="inline-block mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    Track My Application
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={handleApplyClick}
-                    className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors cursor-pointer active:scale-[0.98]"
-                  >
-                    Apply Now
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveJob}
-                    disabled={saving || saved}
-                    className={`w-full px-6 py-3 border font-medium rounded-lg transition-colors cursor-pointer ${
-                      saved
-                        ? 'border-green-200 bg-green-50 text-green-700'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                    } disabled:cursor-not-allowed`}
-                  >
-                    {saving ? 'Saving...' : saved ? 'Job Saved' : 'Save Job'}
-                  </button>
-                </div>
-              )}
+              {(() => {
+                const jobClosedStatus = isJobClosed(job);
+
+                if (applied) {
+                  return (
+                    <div className="text-center py-4">
+                      <svg className="w-12 h-12 text-green-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm font-medium text-green-700">Application Submitted!</p>
+                      <p className="text-xs text-slate-500 mt-1">We&apos;ll notify you when they respond</p>
+                      <Link
+                        href="/dashboard/applications"
+                        className="inline-flex items-center justify-center gap-1.5 mt-3 px-4 py-2 bg-primary-50 text-primary-600 hover:bg-primary-100 text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        View Application
+                      </Link>
+                    </div>
+                  );
+                }
+
+                if (jobClosedStatus.closed) {
+                  return (
+                    <div className="text-center py-4">
+                      <svg className="w-12 h-12 text-slate-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                      </svg>
+                      <p className="text-sm font-medium text-slate-700">{jobClosedStatus.reason}</p>
+                      <p className="text-xs text-slate-500 mt-1">This position is no longer accepting applications</p>
+                      <Link
+                        href="/jobs"
+                        className="inline-flex items-center justify-center gap-1.5 mt-3 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        Browse Similar Jobs
+                      </Link>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={handleApplyClick}
+                      className="w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors cursor-pointer active:scale-[0.98]"
+                    >
+                      Apply Now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saved ? handleUnsaveJob : handleSaveJob}
+                      disabled={saving}
+                      className={`w-full px-6 py-3 border font-medium rounded-lg transition-colors cursor-pointer ${
+                        saved
+                          ? 'border-green-200 bg-green-50 text-green-700 hover:bg-red-50 hover:border-red-200 hover:text-red-700'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      {saving ? (saved ? 'Removing...' : 'Saving...') : saved ? 'Saved • Click to Unsave' : 'Save Job'}
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Company Card */}
@@ -1117,31 +1260,51 @@ export default function JobDetailPage() {
               <h3 className="font-semibold text-slate-900 mb-2">Know someone who&apos;d be great?</h3>
               <p className="text-sm text-slate-500 mb-4">Share this opportunity with your network</p>
               <div className="flex gap-2">
-                <button
+                <a
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Check out this ${job.title} position at ${job.company.name}!`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex-1 p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors group"
                   title="Share on Twitter"
                 >
                   <svg className="w-5 h-5 mx-auto text-slate-500 group-hover:text-[#1DA1F2]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
                   </svg>
-                </button>
-                <button
+                </a>
+                <a
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex-1 p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors group"
                   title="Share on LinkedIn"
                 >
                   <svg className="w-5 h-5 mx-auto text-slate-500 group-hover:text-[#0A66C2]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
                   </svg>
-                </button>
+                </a>
                 <button
-                  className="flex-1 p-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors group"
-                  title="Copy link"
+                  onClick={handleCopyLink}
+                  className={`flex-1 p-2.5 border rounded-lg transition-all group ${
+                    linkCopied
+                      ? 'border-green-300 bg-green-50'
+                      : 'border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+                  title={linkCopied ? 'Copied!' : 'Copy link'}
                 >
-                  <svg className="w-5 h-5 mx-auto text-slate-500 group-hover:text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
+                  {linkCopied ? (
+                    <svg className="w-5 h-5 mx-auto text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 mx-auto text-slate-500 group-hover:text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  )}
                 </button>
               </div>
+              {linkCopied && (
+                <p className="text-xs text-green-600 text-center mt-2">Link copied to clipboard!</p>
+              )}
             </div>
           </div>
         </div>
@@ -1281,8 +1444,97 @@ export default function JobDetailPage() {
         </div>
       )}
 
+      {/* Mobile Sticky Bottom Apply Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 z-50 safe-area-inset-bottom">
+        {(() => {
+          const jobClosedStatus = isJobClosed(job);
+          const salary = formatSalaryWithContext(job.salary);
+
+          if (applied) {
+            return (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-green-700">Applied</p>
+                  <p className="text-xs text-slate-500">Application submitted</p>
+                </div>
+                <Link
+                  href="/dashboard/applications"
+                  className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  View Application
+                </Link>
+              </div>
+            );
+          }
+
+          if (jobClosedStatus.closed) {
+            return (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-700">{jobClosedStatus.reason}</p>
+                  <p className="text-xs text-slate-500">No longer accepting applications</p>
+                </div>
+                <Link
+                  href="/jobs"
+                  className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+                >
+                  Browse Jobs
+                </Link>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                {salary.disclosed ? (
+                  <>
+                    <p className="text-sm font-semibold text-slate-900 truncate">{salary.display}</p>
+                    {salary.monthly && (
+                      <p className="text-xs text-slate-500">{salary.monthly}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-500">Salary not disclosed</p>
+                )}
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <button
+                  onClick={saved ? handleUnsaveJob : handleSaveJob}
+                  disabled={saving}
+                  className={`p-2.5 border rounded-lg transition-colors ${
+                    saved
+                      ? 'border-green-200 bg-green-50 text-green-700'
+                      : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  {saved ? (
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={handleApplyClick}
+                  className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+                >
+                  Apply Now
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Spacer for mobile bottom bar */}
+      <div className="lg:hidden h-20" />
+
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-8 mt-12">
+      <footer className="bg-white border-t border-slate-200 py-8 mt-12 lg:mt-12">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-6">
