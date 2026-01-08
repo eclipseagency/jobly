@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import ApplicantScreeningForm from '@/components/screening/ApplicantScreeningForm';
+import { ApplicationWizard } from '@/components/application';
 
 interface JobDetail {
   id: string;
@@ -70,6 +71,7 @@ export default function JobDetailPage() {
   const [hasScreeningForm, setHasScreeningForm] = useState(false);
   const [screeningAnswers, setScreeningAnswers] = useState<{ questionId: string; answer: unknown }[]>([]);
   const [showScreeningForm, setShowScreeningForm] = useState(false);
+  const [showApplicationWizard, setShowApplicationWizard] = useState(false);
 
   useEffect(() => {
     async function fetchJob() {
@@ -161,11 +163,47 @@ export default function JobDetailPage() {
       router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
       return;
     }
-    // If there's a screening form, show it first
-    if (hasScreeningForm) {
-      setShowScreeningForm(true);
-    } else {
-      setShowApplyModal(true);
+    // Show the application wizard
+    setShowApplicationWizard(true);
+  };
+
+  // Handler for the Application Wizard
+  const handleWizardSubmit = async (data: { coverLetter: string; screeningAnswers: { questionId: string; answer: unknown }[] }) => {
+    if (!isLoggedIn || !user) {
+      router.push(`/auth/employee/login?redirect=/jobs/${params.id}`);
+      return;
+    }
+
+    setApplying(true);
+    try {
+      const response = await fetch('/api/applications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+          'x-user-name': user.name || '',
+          'x-user-email': user.email || '',
+        },
+        body: JSON.stringify({
+          jobId: params.id,
+          coverLetter: data.coverLetter,
+          screeningAnswers: data.screeningAnswers,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setApplied(true);
+        setShowApplicationWizard(false);
+      } else {
+        alert(result.error || 'Failed to apply. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error applying:', error);
+      alert('Failed to apply. Please try again.');
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -582,6 +620,41 @@ export default function JobDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Application Wizard */}
+      {showApplicationWizard && isLoggedIn && job && user && (
+        <ApplicationWizard
+          job={{
+            id: job.id,
+            title: job.title,
+            company: {
+              name: job.company.name,
+              logo: job.company.logo || undefined,
+            },
+            requiresResume: true,
+            requiresPortfolio: false,
+          }}
+          user={{
+            id: user.id,
+            name: user.name || '',
+            email: user.email || '',
+            phone: user.phone,
+            location: user.location,
+            headline: user.headline,
+            summary: user.summary,
+            experience: user.experience,
+            skills: user.skills,
+            resumeUrl: user.resumeUrl,
+            portfolioUrl: user.portfolioUrl,
+            linkedinUrl: user.linkedinUrl,
+            githubUrl: user.githubUrl,
+          }}
+          hasScreeningForm={hasScreeningForm}
+          onSubmit={handleWizardSubmit}
+          onCancel={() => setShowApplicationWizard(false)}
+          isSubmitting={applying}
+        />
+      )}
 
       {/* Screening Form Modal */}
       {showScreeningForm && isLoggedIn && job && (
