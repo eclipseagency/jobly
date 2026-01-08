@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface JobSeekerProfile {
   id: string;
@@ -115,7 +116,9 @@ interface Job {
 export default function JobSeekerProfilePage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const candidateId = params.id as string;
+  const tenantId = user?.id || '';
 
   const [profile, setProfile] = useState<JobSeekerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -140,10 +143,11 @@ export default function JobSeekerProfilePage() {
 
   // Fetch profile
   const fetchProfile = useCallback(async () => {
+    if (!tenantId) return;
     try {
       setLoading(true);
       const response = await fetch(`/api/employer/talent-pool/${candidateId}`, {
-        headers: { 'x-tenant-id': 'employer-1' },
+        headers: { 'x-tenant-id': tenantId },
       });
 
       if (!response.ok) {
@@ -163,13 +167,14 @@ export default function JobSeekerProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [candidateId]);
+  }, [candidateId, tenantId]);
 
   // Fetch shortlists
   const fetchShortlists = useCallback(async () => {
+    if (!tenantId) return;
     try {
       const response = await fetch('/api/employer/shortlists', {
-        headers: { 'x-tenant-id': 'employer-1' },
+        headers: { 'x-tenant-id': tenantId },
       });
       if (response.ok) {
         const data = await response.json();
@@ -178,13 +183,14 @@ export default function JobSeekerProfilePage() {
     } catch (err) {
       console.error('Failed to fetch shortlists:', err);
     }
-  }, []);
+  }, [tenantId]);
 
   // Fetch jobs for invite
   const fetchJobs = useCallback(async () => {
+    if (!tenantId) return;
     try {
       const response = await fetch('/api/employer/jobs?status=active', {
-        headers: { 'x-tenant-id': 'employer-1' },
+        headers: { 'x-tenant-id': tenantId },
       });
       if (response.ok) {
         const data = await response.json();
@@ -193,7 +199,7 @@ export default function JobSeekerProfilePage() {
     } catch (err) {
       console.error('Failed to fetch jobs:', err);
     }
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
     fetchProfile();
@@ -203,14 +209,14 @@ export default function JobSeekerProfilePage() {
 
   // Send message
   const handleSendMessage = async () => {
-    if (!messageText.trim()) return;
+    if (!messageText.trim() || !tenantId) return;
     setActionLoading(true);
     try {
       const response = await fetch('/api/employer/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'employer-1',
+          'x-tenant-id': tenantId,
         },
         body: JSON.stringify({
           recipientId: candidateId,
@@ -232,14 +238,14 @@ export default function JobSeekerProfilePage() {
 
   // Send invite
   const handleSendInvite = async () => {
-    if (!inviteData.type) return;
+    if (!inviteData.type || !tenantId) return;
     setActionLoading(true);
     try {
       const response = await fetch('/api/employer/interview-invites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'employer-1',
+          'x-tenant-id': tenantId,
         },
         body: JSON.stringify({
           candidateId,
@@ -263,14 +269,14 @@ export default function JobSeekerProfilePage() {
 
   // Add to shortlist
   const handleAddToShortlist = async () => {
-    if (!selectedShortlistId) return;
+    if (!selectedShortlistId || !tenantId) return;
     setActionLoading(true);
     try {
       const response = await fetch('/api/employer/shortlists', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'employer-1',
+          'x-tenant-id': tenantId,
         },
         body: JSON.stringify({
           shortlistId: selectedShortlistId,
@@ -297,13 +303,14 @@ export default function JobSeekerProfilePage() {
 
   // Block candidate
   const handleBlockCandidate = async () => {
+    if (!tenantId) return;
     setActionLoading(true);
     try {
       const response = await fetch('/api/employer/candidate-blocks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'employer-1',
+          'x-tenant-id': tenantId,
         },
         body: JSON.stringify({ candidateId }),
       });
@@ -320,12 +327,13 @@ export default function JobSeekerProfilePage() {
 
   // Remove from shortlist
   const handleRemoveFromShortlist = async (shortlistId: string) => {
+    if (!tenantId) return;
     try {
       await fetch('/api/employer/shortlists', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': 'employer-1',
+          'x-tenant-id': tenantId,
         },
         body: JSON.stringify({
           shortlistId,
