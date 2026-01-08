@@ -2,35 +2,48 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
 // Helper to ensure user exists in database
-async function ensureUserExists(userId: string, userName?: string, userEmail?: string): Promise<boolean> {
+// Returns the actual user ID to use (may be different from input if email already exists)
+async function ensureUserExists(userId: string, userName?: string, userEmail?: string): Promise<{ success: boolean; finalUserId: string }> {
   try {
-    const existingUser = await prisma.user.findUnique({
+    // First check if user with this ID exists
+    const existingUserById = await prisma.user.findUnique({
       where: { id: userId },
     });
 
-    if (existingUser) {
-      return true;
+    if (existingUserById) {
+      return { success: true, finalUserId: userId };
     }
 
-    // Create user if they don't exist (localStorage fallback users)
-    if (!userEmail) {
-      return false;
+    // User ID doesn't exist - check if email exists (for localStorage users who registered before)
+    if (userEmail) {
+      const existingUserByEmail = await prisma.user.findUnique({
+        where: { email: userEmail },
+      });
+
+      if (existingUserByEmail) {
+        // Email exists with different ID - use the existing user's ID
+        return { success: true, finalUserId: existingUserByEmail.id };
+      }
+
+      // Neither ID nor email exists - create new user
+      await prisma.user.create({
+        data: {
+          id: userId,
+          email: userEmail,
+          name: userName || 'Job Seeker',
+          passwordHash: 'localStorage-user',
+          role: 'EMPLOYEE',
+        },
+      });
+
+      return { success: true, finalUserId: userId };
     }
 
-    await prisma.user.create({
-      data: {
-        id: userId,
-        email: userEmail,
-        name: userName || 'Job Seeker',
-        passwordHash: 'localStorage-user',
-        role: 'EMPLOYEE',
-      },
-    });
-
-    return true;
+    // No email provided and user doesn't exist - cannot create
+    return { success: false, finalUserId: userId };
   } catch (error) {
     console.error('Error ensuring user exists:', error);
-    return false;
+    return { success: false, finalUserId: userId };
   }
 }
 
@@ -125,18 +138,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure user exists in database
-    const userExists = await ensureUserExists(userId, userName || undefined, userEmail || undefined);
-    if (!userExists) {
+    const userResult = await ensureUserExists(userId, userName || undefined, userEmail || undefined);
+    if (!userResult.success) {
       return NextResponse.json(
         { error: 'Unable to verify your account. Please try logging in again.' },
         { status: 400 }
       );
     }
 
+    // Use the final user ID (may be different if email matched existing user)
+    const finalUserId = userResult.finalUserId;
+
     // Check if already saved
     const existing = await prisma.savedJob.findUnique({
       where: {
-        userId_jobId: { userId, jobId },
+        userId_jobId: { userId: finalUserId, jobId },
       },
     });
 
@@ -152,7 +168,7 @@ export async function POST(request: NextRequest) {
     }
 
     const savedJob = await prisma.savedJob.create({
-      data: { userId, jobId },
+      data: { userId: finalUserId, jobId },
     });
 
     return NextResponse.json({
