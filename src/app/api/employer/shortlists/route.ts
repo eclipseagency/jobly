@@ -75,6 +75,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify the employer user exists
+    const employerExists = await prisma.user.findUnique({
+      where: { id: tenantId },
+      select: { id: true, role: true },
+    });
+
+    if (!employerExists) {
+      console.error('Employer not found:', tenantId);
+      return NextResponse.json(
+        { error: 'Employer account not found' },
+        { status: 404 }
+      );
+    }
+
     const shortlist = await prisma.employerShortlist.create({
       data: {
         employerId: tenantId,
@@ -87,8 +101,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ shortlist }, { status: 201 });
   } catch (error) {
     console.error('Error creating shortlist:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to create shortlist' },
+      { error: 'Failed to create shortlist', details: errorMessage },
       { status: 500 }
     );
   }

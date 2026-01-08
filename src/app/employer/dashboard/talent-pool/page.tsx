@@ -299,14 +299,19 @@ export default function TalentPoolPage() {
         body: JSON.stringify(newShortlist),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         setShortlists(prev => [{ ...data.shortlist, candidateCount: 0 }, ...prev]);
         setShowCreateShortlistModal(false);
         setNewShortlist({ name: '', description: '', color: '#3b82f6' });
+      } else {
+        console.error('Failed to create shortlist:', data);
+        alert(data.error || 'Failed to create shortlist');
       }
-    } catch {
-      // Error creating shortlist
+    } catch (err) {
+      console.error('Error creating shortlist:', err);
+      alert('Failed to create shortlist. Please try again.');
     }
   };
 

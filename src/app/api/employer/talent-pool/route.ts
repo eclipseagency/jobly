@@ -46,10 +46,15 @@ export async function GET(request: NextRequest) {
 
     // Build where clause for job seekers
     // openToOffers: true is the primary visibility flag - users who enable this want to be found
+    // Also include users where openToOffers is null (default behavior) or explicitly true
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
       role: 'EMPLOYEE',
-      openToOffers: true,
+      // Include users with openToOffers: true OR openToOffers: null (treat null as default true)
+      OR: [
+        { openToOffers: true },
+        { openToOffers: null },
+      ],
       id: { notIn: blockedIds },
     };
 
