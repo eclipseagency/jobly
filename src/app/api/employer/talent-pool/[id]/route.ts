@@ -44,7 +44,7 @@ export async function GET(
         role: 'EMPLOYEE',
         OR: [
           { openToOffers: true },
-          { openToOffers: null },
+          { openToOffers: { equals: null } },
         ],
       },
       select: {
