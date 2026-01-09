@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Helper function to ensure tenant exists
 async function ensureTenantExists(tenantId: string, userId?: string): Promise<string> {
   // Check if tenant exists
