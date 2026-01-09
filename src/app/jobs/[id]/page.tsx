@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 import ApplicantScreeningForm from '@/components/screening/ApplicantScreeningForm';
 import { ApplicationWizard } from '@/components/application';
 
@@ -236,6 +237,7 @@ export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isLoggedIn, isLoading: authLoading } = useAuth();
+  const toast = useToast();
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
@@ -429,11 +431,12 @@ export default function JobDetailPage() {
       if (response.ok && result.success) {
         setApplied(true);
         setShowApplicationWizard(false);
+        toast.success('Application submitted successfully!');
       } else {
-        alert(result.error || 'Failed to apply. Please try again.');
+        toast.error(result.error || 'Failed to apply. Please try again.');
       }
     } catch {
-      alert('Failed to apply. Please try again.');
+      toast.error('Failed to apply. Please try again.');
     } finally {
       setApplying(false);
     }
@@ -475,11 +478,12 @@ export default function JobDetailPage() {
         setShowScreeningForm(false);
         setCoverLetter('');
         setScreeningAnswers([]);
+        toast.success('Application submitted successfully!');
       } else {
-        alert(data.error || 'Failed to apply. Please try again.');
+        toast.error(data.error || 'Failed to apply. Please try again.');
       }
     } catch {
-      alert('Failed to apply. Please try again.');
+      toast.error('Failed to apply. Please try again.');
     } finally {
       setApplying(false);
     }
@@ -511,16 +515,18 @@ export default function JobDetailPage() {
         if (data.savedJob?.id) {
           setSavedJobId(data.savedJob.id);
         }
+        toast.success('Job saved to your bookmarks');
       } else {
         if (data.message?.includes('already saved') || data.error?.includes('already saved')) {
           setSaved(true);
+          toast.info('Job already saved');
         } else {
-          alert(data.error || 'Failed to save job');
+          toast.error(data.error || 'Failed to save job');
         }
       }
     } catch (error) {
       console.error('Error saving job:', error);
-      alert('Failed to save job. Please try again.');
+      toast.error('Failed to save job. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -541,14 +547,15 @@ export default function JobDetailPage() {
       if (response.ok) {
         setSaved(false);
         setSavedJobId(null);
+        toast.success('Job removed from bookmarks');
       } else {
         const data = await response.json().catch(() => ({}));
         console.error('Unsave failed:', data);
-        alert(data.error || 'Failed to unsave job');
+        toast.error(data.error || 'Failed to unsave job');
       }
     } catch (error) {
       console.error('Error unsaving job:', error);
-      alert('Failed to unsave job. Please try again.');
+      toast.error('Failed to unsave job. Please try again.');
     } finally {
       setSaving(false);
     }

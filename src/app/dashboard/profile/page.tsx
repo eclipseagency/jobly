@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 
 // Icons
 const Icons = {
@@ -123,6 +124,7 @@ const tabs = [
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('personal');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -338,13 +340,13 @@ export default function ProfilePage() {
     // Validate file type
     const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!validTypes.includes(file.type)) {
-      alert('Please upload a PDF, DOC, or DOCX file');
+      toast.warning('Please upload a PDF, DOC, or DOCX file');
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      toast.warning('File size must be less than 5MB');
       return;
     }
 
@@ -367,10 +369,11 @@ export default function ProfilePage() {
           localStorage.setItem(`jobly_resume_name_${user.id}`, file.name);
         }
         setUploadingResume(false);
+        toast.success('Resume uploaded successfully');
       };
       reader.readAsDataURL(file);
     } catch {
-      alert('Failed to upload resume. Please try again.');
+      toast.error('Failed to upload resume. Please try again.');
       setUploadingResume(false);
     }
     // Reset input
@@ -383,12 +386,12 @@ export default function ProfilePage() {
 
     const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!validTypes.includes(file.type)) {
-      alert('Please upload a PDF, DOC, or DOCX file');
+      toast.warning('Please upload a PDF, DOC, or DOCX file');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      toast.warning('File size must be less than 5MB');
       return;
     }
 
@@ -407,10 +410,11 @@ export default function ProfilePage() {
           localStorage.setItem(`jobly_cover_letter_${user.id}`, base64);
         }
         setUploadingCoverLetter(false);
+        toast.success('Cover letter uploaded successfully');
       };
       reader.readAsDataURL(file);
     } catch {
-      alert('Failed to upload cover letter. Please try again.');
+      toast.error('Failed to upload cover letter. Please try again.');
       setUploadingCoverLetter(false);
     }
     if (coverLetterInputRef.current) coverLetterInputRef.current.value = '';
@@ -421,7 +425,7 @@ export default function ProfilePage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      toast.warning('File size must be less than 5MB');
       return;
     }
 
@@ -443,10 +447,11 @@ export default function ProfilePage() {
           localStorage.setItem(`jobly_certificates_${user.id}`, JSON.stringify(existingCerts));
         }
         setUploadingCertificate(false);
+        toast.success('Certificate uploaded successfully');
       };
       reader.readAsDataURL(file);
     } catch {
-      alert('Failed to upload certificate. Please try again.');
+      toast.error('Failed to upload certificate. Please try again.');
       setUploadingCertificate(false);
     }
     if (certificateInputRef.current) certificateInputRef.current.value = '';

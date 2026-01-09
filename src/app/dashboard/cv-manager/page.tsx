@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseResume, getSkillCategory } from '@/lib/resume-parser';
+import { useToast } from '@/components/ui/Toast';
 
 interface Resume {
   id: string;
@@ -16,6 +17,7 @@ interface Resume {
 
 export default function CVManagerPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [dragActive, setDragActive] = useState(false);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -74,13 +76,13 @@ export default function CVManagerPage() {
     // Validate file type
     const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!validTypes.includes(file.type)) {
-      alert('Please upload a PDF or Word document');
+      toast.warning('Please upload a PDF or Word document');
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      toast.warning('File size must be less than 5MB');
       return;
     }
 
@@ -107,6 +109,7 @@ export default function CVManagerPage() {
         const updatedResumes = [...resumes, newResume];
         saveResumes(updatedResumes);
         setUploading(false);
+        toast.success('Resume uploaded successfully');
 
         // Parse resume to extract skills (async)
         try {
@@ -121,6 +124,7 @@ export default function CVManagerPage() {
 
           if (skills.length > 0) {
             setExpandedResume(resumeId);
+            toast.info(`Found ${skills.length} skills in your resume`);
           }
         } catch (parseError) {
           console.error('Error parsing resume:', parseError);
@@ -134,13 +138,13 @@ export default function CVManagerPage() {
         }
       };
       reader.onerror = () => {
-        alert('Error reading file');
+        toast.error('Error reading file');
         setUploading(false);
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Error uploading file');
+      toast.error('Error uploading file');
       setUploading(false);
     }
   };
@@ -178,6 +182,7 @@ export default function CVManagerPage() {
 
       // Merge skills without duplicates
       const mergedSkills = Array.from(new Set([...existingSkills, ...skills]));
+      const newSkillsCount = skills.length - existingSkills.filter(s => skills.includes(s)).length;
 
       // Save updated profile
       const updatedProfile = {
@@ -186,10 +191,10 @@ export default function CVManagerPage() {
       };
       localStorage.setItem(`jobly_profile_${user.id}`, JSON.stringify(updatedProfile));
 
-      alert(`Added ${skills.length - existingSkills.filter(s => skills.includes(s)).length} new skills to your profile!`);
+      toast.success(`Added ${newSkillsCount} new skill${newSkillsCount !== 1 ? 's' : ''} to your profile!`);
     } catch (error) {
       console.error('Error adding skills to profile:', error);
-      alert('Error adding skills to profile');
+      toast.error('Error adding skills to profile');
     } finally {
       setAddingSkills(false);
     }
