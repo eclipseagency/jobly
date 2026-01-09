@@ -48,14 +48,11 @@ export async function GET(request: NextRequest) {
     const blockedIds = blockedCandidates.map(b => b.candidateId);
 
     // Build where clause for job seekers
-    // Only show EMPLOYEE users who are open to offers (or haven't set preference yet)
+    // Only show EMPLOYEE users who are open to offers
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
       role: 'EMPLOYEE',
-      OR: [
-        { openToOffers: true },
-        { openToOffers: { equals: null } },
-      ],
+      openToOffers: true,
       id: { notIn: blockedIds },
     };
 
