@@ -37,13 +37,15 @@ export async function GET(
       );
     }
 
-    // Fetch job seeker profile
-    // TEMPORARY: Removed role and openToOffers filters to match list view
+    // Fetch job seeker profile - only EMPLOYEE users who are open to offers
     const jobSeeker = await prisma.user.findFirst({
       where: {
         id,
-        // role: 'EMPLOYEE',  // Temporarily disabled
-        // openToOffers: true,  // Temporarily disabled
+        role: 'EMPLOYEE',
+        OR: [
+          { openToOffers: true },
+          { openToOffers: null },
+        ],
       },
       select: {
         id: true,
