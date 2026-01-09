@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       role: 'EMPLOYEE',
       OR: [
         { openToOffers: true },
-        { openToOffers: null },
+        { openToOffers: { equals: null } },
       ],
       id: { notIn: blockedIds },
     };
