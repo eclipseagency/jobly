@@ -531,7 +531,7 @@ export default function JobDetailPage() {
 
     setSaving(true);
     try {
-      const response = await fetch(`/api/saved-jobs?id=${savedJobId}`, {
+      const response = await fetch(`/api/saved-jobs/${savedJobId}`, {
         method: 'DELETE',
         headers: {
           'x-user-id': user.id,
@@ -542,7 +542,9 @@ export default function JobDetailPage() {
         setSaved(false);
         setSavedJobId(null);
       } else {
-        alert('Failed to unsave job');
+        const data = await response.json().catch(() => ({}));
+        console.error('Unsave failed:', data);
+        alert(data.error || 'Failed to unsave job');
       }
     } catch (error) {
       console.error('Error unsaving job:', error);
