@@ -17,20 +17,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Debug: Get user counts by role
-    const userStats = await prisma.user.groupBy({
-      by: ['role'],
-      _count: { id: true },
-    });
-    console.log('User stats by role:', userStats);
-
-    // Debug: Check ALL users (not just employees)
-    const allUsersStats = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, openToOffers: true, role: true },
-      take: 20,
-    });
-    console.log('All users sample:', allUsersStats);
-
     // Pagination
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -62,16 +48,14 @@ export async function GET(request: NextRequest) {
     const blockedIds = blockedCandidates.map(b => b.candidateId);
 
     // Build where clause for job seekers
-    // TEMPORARY: Show all users to diagnose the issue
+    // Only show EMPLOYEE users who are open to offers (or haven't set preference yet)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
-      // Temporarily removed role filter to see all users
-      // role: 'EMPLOYEE',
-      // Temporarily removed openToOffers filter
-      // OR: [
-      //   { openToOffers: true },
-      //   { openToOffers: null },
-      // ],
+      role: 'EMPLOYEE',
+      OR: [
+        { openToOffers: true },
+        { openToOffers: null },
+      ],
       id: { notIn: blockedIds },
     };
 
@@ -242,16 +226,6 @@ export async function GET(request: NextRequest) {
         limit,
         total,
         totalPages: Math.ceil(total / limit),
-      },
-      // Debug info - remove in production
-      debug: {
-        userStats,
-        allUsers: allUsersStats,
-        queryFilters: {
-          role: 'ALL (temporarily disabled)',
-          openToOffers: 'ALL (temporarily disabled)',
-          blockedIds: blockedIds.length,
-        },
       },
     });
   } catch (error) {
