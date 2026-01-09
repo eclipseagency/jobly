@@ -127,6 +127,7 @@ model User {
   languages       Language[]
   references      Reference[]
   notifications   Notification[]
+  resumes         Resume[]
 
   // Talent Pool relations (for job seekers)
   talentPoolProfile    TalentPoolProfile?
@@ -721,4 +722,25 @@ model SavedFilter {
 
   @@index([employerId])
   @@map("saved_filters")
+}
+
+// User uploaded resumes
+model Resume {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  filename        String
+  fileSize        Int      // Size in bytes
+  mimeType        String   // application/pdf, application/msword, etc.
+  dataUrl         String   @db.Text  // Base64 data URL for file content
+  extractedSkills String[] // Skills extracted from resume
+
+  isPrimary       Boolean  @default(false) // Primary resume for applications
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@map("resumes")
 }
