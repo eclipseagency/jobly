@@ -1,53 +1,99 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
-interface AnalyticsData {
-  totalViews: number;
-  totalApplications: number;
-  interviewRate: number;
-  hireRate: number;
-  jobPerformance: Array<{
-    title: string;
-    views: number;
-    applications: number;
-    interviews: number;
-    hires: number;
-  }>;
+interface JobPerformance {
+  id: string;
+  title: string;
+  isActive: boolean;
+  applications: number;
+  interviewed: number;
+  offered: number;
+  hired: number;
+  conversionRate: number;
 }
 
-const defaultAnalytics: AnalyticsData = {
-  totalViews: 0,
-  totalApplications: 0,
-  interviewRate: 0,
-  hireRate: 0,
-  jobPerformance: [],
-};
+interface AnalyticsData {
+  summary: {
+    totalJobs: number;
+    activeJobs: number;
+    totalApplications: number;
+    interviewRate: number;
+    offerRate: number;
+    hireRate: number;
+    avgApplicationsPerJob: number;
+  };
+  jobPerformance: JobPerformance[];
+  applicationTrend: Array<{ date: string; count: number }>;
+  statusBreakdown: {
+    new: number;
+    reviewing: number;
+    shortlisted: number;
+    interviewed: number;
+    offered: number;
+    hired: number;
+    rejected: number;
+  };
+  timeRange: string;
+}
 
 export default function EmployerAnalyticsPage() {
-  const { user } = useAuth();
-  const [timeRange, setTimeRange] = useState('7d');
-  const [analytics, setAnalytics] = useState<AnalyticsData>(defaultAnalytics);
+  const [timeRange, setTimeRange] = useState('30d');
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load analytics from localStorage (in production this would come from API)
-  useEffect(() => {
-    if (user?.id) {
-      try {
-        const saved = localStorage.getItem(`jobly_analytics_${user.id}`);
-        if (saved) {
-          setAnalytics(JSON.parse(saved));
-        }
-      } catch (error) {
-        console.error('Error loading analytics:', error);
-      }
+  const fetchAnalytics = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/employer/analytics?timeRange=${timeRange}`);
+      if (!response.ok) throw new Error('Failed to fetch analytics');
+      const data = await response.json();
+      setAnalytics(data);
+    } catch (err) {
+      console.error('Error fetching analytics:', err);
+      setError('Failed to load analytics');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, [user?.id]);
+  }, [timeRange]);
 
-  const hasData = analytics.totalViews > 0 || analytics.totalApplications > 0 || analytics.jobPerformance.length > 0;
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  const hasData = analytics && (
+    analytics.summary.totalApplications > 0 ||
+    analytics.summary.totalJobs > 0
+  );
+
+  // Calculate max for trend chart
+  const maxTrend = analytics?.applicationTrend
+    ? Math.max(...analytics.applicationTrend.map(t => t.count), 1)
+    : 1;
+
+  // Status colors
+  const statusColors: Record<string, string> = {
+    new: 'bg-blue-500',
+    reviewing: 'bg-yellow-500',
+    shortlisted: 'bg-purple-500',
+    interviewed: 'bg-cyan-500',
+    offered: 'bg-green-500',
+    hired: 'bg-emerald-600',
+    rejected: 'bg-red-400',
+  };
+
+  const statusLabels: Record<string, string> = {
+    new: 'New',
+    reviewing: 'Reviewing',
+    shortlisted: 'Shortlisted',
+    interviewed: 'Interviewed',
+    offered: 'Offered',
+    hired: 'Hired',
+    rejected: 'Rejected',
+  };
 
   if (isLoading) {
     return (
@@ -60,6 +106,26 @@ export default function EmployerAnalyticsPage() {
               <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
             ))}
           </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-64 bg-slate-200 rounded-xl"></div>
+            <div className="h-64 bg-slate-200 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={fetchAnalytics}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -104,7 +170,7 @@ export default function EmployerAnalyticsPage() {
           </div>
           <h2 className="text-xl font-semibold text-slate-900 mb-2">No Analytics Yet</h2>
           <p className="text-slate-600 mb-6 max-w-md mx-auto">
-            Start posting jobs to see your hiring analytics. Once candidates view and apply to your jobs, you&apos;ll see metrics here.
+            Start posting jobs to see your hiring analytics. Once candidates apply to your jobs, you&apos;ll see metrics here.
           </p>
           <Link
             href="/employer/jobs/new"
@@ -116,70 +182,195 @@ export default function EmployerAnalyticsPage() {
             Post Your First Job
           </Link>
         </div>
-      ) : (
+      ) : analytics && (
         <>
           {/* Overview Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <p className="text-sm text-slate-600 mb-1">Total Views</p>
-              <p className="text-3xl font-bold text-slate-900">{analytics.totalViews.toLocaleString()}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600">Active Jobs</p>
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900 mt-2">
+                {analytics.summary.activeJobs}
+                <span className="text-sm font-normal text-slate-500 ml-1">/ {analytics.summary.totalJobs}</span>
+              </p>
             </div>
+
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <p className="text-sm text-slate-600 mb-1">Total Applications</p>
-              <p className="text-3xl font-bold text-slate-900">{analytics.totalApplications}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600">Applications</p>
+                <div className="p-2 bg-purple-50 rounded-lg">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900 mt-2">{analytics.summary.totalApplications}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                ~{analytics.summary.avgApplicationsPerJob} per job
+              </p>
             </div>
+
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <p className="text-sm text-slate-600 mb-1">Interview Rate</p>
-              <p className="text-3xl font-bold text-slate-900">{analytics.interviewRate}%</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600">Interview Rate</p>
+                <div className="p-2 bg-cyan-50 rounded-lg">
+                  <svg className="w-5 h-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900 mt-2">{analytics.summary.interviewRate}%</p>
+              <p className="text-xs text-slate-500 mt-1">of applicants interviewed</p>
             </div>
+
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <p className="text-sm text-slate-600 mb-1">Hire Rate</p>
-              <p className="text-3xl font-bold text-slate-900">{analytics.hireRate}%</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600">Hire Rate</p>
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-slate-900 mt-2">{analytics.summary.hireRate}%</p>
+              <p className="text-xs text-slate-500 mt-1">of applicants hired</p>
+            </div>
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Application Trend */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">Application Trend</h3>
+              {analytics.applicationTrend.length > 0 ? (
+                <div className="h-48 flex items-end gap-1">
+                  {analytics.applicationTrend.slice(-14).map((day, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        className="w-full bg-primary-500 rounded-t transition-all hover:bg-primary-600"
+                        style={{ height: `${(day.count / maxTrend) * 100}%`, minHeight: day.count > 0 ? '8px' : '2px' }}
+                        title={`${day.date}: ${day.count} applications`}
+                      />
+                      <span className="text-[10px] text-slate-400 -rotate-45 origin-left whitespace-nowrap">
+                        {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
+                  No application data for this period
+                </div>
+              )}
+            </div>
+
+            {/* Status Breakdown */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">Application Status</h3>
+              <div className="space-y-3">
+                {Object.entries(analytics.statusBreakdown).map(([status, count]) => {
+                  const total = analytics.summary.totalApplications || 1;
+                  const percentage = Math.round((count / total) * 100);
+                  return (
+                    <div key={status} className="flex items-center gap-3">
+                      <div className="w-20 text-sm text-slate-600">{statusLabels[status]}</div>
+                      <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-full ${statusColors[status]} transition-all`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <div className="w-12 text-sm text-slate-600 text-right">{count}</div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           {/* Job Performance Table */}
           {analytics.jobPerformance.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h2 className="font-semibold text-slate-900">Job Performance</h2>
+                <Link
+                  href="/employer/dashboard/jobs"
+                  className="text-sm text-primary-600 hover:text-primary-700"
+                >
+                  View All Jobs →
+                </Link>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-slate-50">
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Job Title</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Views</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Applications</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Interviews</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Hires</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Interviewed</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Offered</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Hired</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Conversion</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {analytics.jobPerformance.map((job, i) => {
-                      const conversion = job.views > 0 ? ((job.applications / job.views) * 100).toFixed(1) : '0.0';
-                      return (
-                        <tr key={i} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 font-medium text-slate-900">{job.title}</td>
-                          <td className="px-6 py-4 text-slate-600">{job.views.toLocaleString()}</td>
-                          <td className="px-6 py-4 text-slate-600">{job.applications}</td>
-                          <td className="px-6 py-4 text-slate-600">{job.interviews}</td>
-                          <td className="px-6 py-4">
-                            {job.hires > 0 ? (
-                              <span className="px-2 py-1 bg-green-50 text-green-700 text-sm rounded-full">{job.hires}</span>
-                            ) : (
-                              <span className="text-slate-400">-</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`font-medium ${parseFloat(conversion) > 3 ? 'text-green-600' : 'text-slate-600'}`}>
-                              {conversion}%
+                    {analytics.jobPerformance.map((job) => (
+                      <tr key={job.id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4">
+                          <Link
+                            href={`/employer/jobs/${job.id}`}
+                            className="font-medium text-slate-900 hover:text-primary-600"
+                          >
+                            {job.title}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            job.isActive
+                              ? 'bg-green-50 text-green-700'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {job.isActive ? 'Active' : 'Closed'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">{job.applications}</td>
+                        <td className="px-6 py-4 text-slate-600">{job.interviewed}</td>
+                        <td className="px-6 py-4 text-slate-600">{job.offered}</td>
+                        <td className="px-6 py-4">
+                          {job.hired > 0 ? (
+                            <span className="px-2 py-1 bg-green-50 text-green-700 text-sm rounded-full">
+                              {job.hired}
                             </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-slate-100 rounded-full h-1.5">
+                              <div
+                                className={`h-full rounded-full ${
+                                  job.conversionRate > 20 ? 'bg-green-500' :
+                                  job.conversionRate > 10 ? 'bg-yellow-500' : 'bg-slate-300'
+                                }`}
+                                style={{ width: `${Math.min(job.conversionRate, 100)}%` }}
+                              />
+                            </div>
+                            <span className={`text-sm font-medium ${
+                              job.conversionRate > 20 ? 'text-green-600' : 'text-slate-600'
+                            }`}>
+                              {job.conversionRate}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
