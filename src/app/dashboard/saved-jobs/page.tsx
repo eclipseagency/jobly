@@ -44,6 +44,7 @@ export default function SavedJobsPage() {
   const { user, isLoggedIn, isLoading: authLoading } = useAuth();
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function SavedJobsPage() {
         return;
       }
 
+      setError(null);
       try {
         const response = await fetch('/api/saved-jobs', {
           headers: {
@@ -62,9 +64,12 @@ export default function SavedJobsPage() {
         if (response.ok) {
           const data = await response.json();
           setSavedJobs(data.savedJobs || []);
+        } else {
+          setError('Failed to load saved jobs. Please try refreshing the page.');
         }
-      } catch (error) {
-        console.error('Error fetching saved jobs:', error);
+      } catch (err) {
+        console.error('Error fetching saved jobs:', err);
+        setError('Unable to connect. Please check your internet connection.');
       } finally {
         setLoading(false);
       }
@@ -89,9 +94,13 @@ export default function SavedJobsPage() {
 
       if (response.ok) {
         setSavedJobs((prev) => prev.filter((sj) => sj.id !== savedJobId));
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || 'Failed to remove saved job. Please try again.');
       }
     } catch (error) {
       console.error('Error removing saved job:', error);
+      alert('Failed to remove saved job. Please check your connection and try again.');
     } finally {
       setRemoving(null);
     }
@@ -106,6 +115,24 @@ export default function SavedJobsPage() {
           Jobs you&apos;ve bookmarked for later
         </p>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <p className="text-sm text-red-800">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium underline"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -129,7 +156,7 @@ export default function SavedJobsPage() {
             </div>
           ))}
         </div>
-      ) : savedJobs.length === 0 ? (
+      ) : error ? null : savedJobs.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
           <svg
             className="w-16 h-16 text-slate-300 mx-auto mb-4"

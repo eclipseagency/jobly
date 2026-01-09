@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // DELETE /api/saved-jobs/[id] - Remove a saved job
 export async function DELETE(
   request: NextRequest,

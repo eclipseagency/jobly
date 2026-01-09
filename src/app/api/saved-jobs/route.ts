@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Helper to ensure user exists in database
 // Returns the actual user ID to use (may be different from input if email already exists)
 async function ensureUserExists(userId: string, userName?: string, userEmail?: string): Promise<{ success: boolean; finalUserId: string }> {
