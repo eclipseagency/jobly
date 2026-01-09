@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { jobSeekerAPI, Application as APIApplication } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 interface ApplicationTimeline {
   date: string;
@@ -86,6 +87,7 @@ const getTimelineIcon = (event: string) => {
 };
 
 export default function ApplicationsPage() {
+  const toast = useToast();
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -176,7 +178,7 @@ export default function ApplicationsPage() {
       ));
       setShowOfferModal(false);
       setSelectedApp(null);
-      alert('Congratulations! You have accepted the offer. The employer will contact you with next steps.');
+      toast.success('Congratulations! You have accepted the offer. The employer will contact you with next steps.');
     }
   };
 

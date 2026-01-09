@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import ApplicantScreeningForm from '@/components/screening/ApplicantScreeningForm';
+import { useToast } from '@/components/ui/Toast';
 
 interface UserProfile {
   id: string;
@@ -62,6 +63,7 @@ export default function ApplicationWizard({
   onCancel,
   isSubmitting,
 }: ApplicationWizardProps) {
+  const toast = useToast();
   const [currentStep, setCurrentStep] = useState<Step>('eligibility');
   const [coverLetter, setCoverLetter] = useState('');
   const [screeningAnswers, setScreeningAnswers] = useState<ScreeningAnswer[]>([]);
@@ -190,13 +192,13 @@ export default function ApplicationWizard({
     // Validate file type
     const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!validTypes.includes(file.type)) {
-      alert('Please upload a PDF, DOC, or DOCX file');
+      toast.warning('Please upload a PDF, DOC, or DOCX file');
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      toast.warning('File size must be less than 5MB');
       return;
     }
 
@@ -235,7 +237,7 @@ export default function ApplicationWizard({
       };
       reader.readAsDataURL(file);
     } catch {
-      alert('Failed to upload resume. Please try again.');
+      toast.error('Failed to upload resume. Please try again.');
       setUploadingResume(false);
     }
 

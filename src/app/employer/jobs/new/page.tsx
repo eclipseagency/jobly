@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 import ScreeningFormBuilder, { ScreeningQuestion } from '@/components/screening/ScreeningFormBuilder';
 
 const skillOptions = [
@@ -23,6 +24,7 @@ const benefitOptions = [
 export default function PostNewJobPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const toast = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -248,7 +250,7 @@ export default function PostNewJobPage() {
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 500));
     setIsSaving(false);
-    alert('Draft saving is not yet implemented. Please publish the job when ready.');
+    toast.info('Draft saving is not yet implemented. Please publish the job when ready.');
   };
 
   return (

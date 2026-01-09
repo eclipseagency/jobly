@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/Toast';
 
 interface JobSeeker {
   id: string;
@@ -114,6 +115,7 @@ const defaultFilters: Filters = {
 export default function TalentPoolPage() {
   const router = useRouter();
   const { user, isLoggedIn } = useAuth();
+  const toast = useToast();
   const [jobSeekers, setJobSeekers] = useState<JobSeeker[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -305,13 +307,14 @@ export default function TalentPoolPage() {
         setShortlists(prev => [{ ...data.shortlist, candidateCount: 0 }, ...prev]);
         setShowCreateShortlistModal(false);
         setNewShortlist({ name: '', description: '', color: '#3b82f6' });
+        toast.success('Shortlist created successfully');
       } else {
         console.error('Failed to create shortlist:', data);
-        alert(data.error || 'Failed to create shortlist');
+        toast.error(data.error || 'Failed to create shortlist');
       }
     } catch (err) {
       console.error('Error creating shortlist:', err);
-      alert('Failed to create shortlist. Please try again.');
+      toast.error('Failed to create shortlist. Please try again.');
     }
   };
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 
 interface SavedJob {
   id: string;
@@ -42,6 +43,7 @@ function formatDate(dateString: string): string {
 
 export default function SavedJobsPage() {
   const { user, isLoggedIn, isLoading: authLoading } = useAuth();
+  const toast = useToast();
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,13 +96,14 @@ export default function SavedJobsPage() {
 
       if (response.ok) {
         setSavedJobs((prev) => prev.filter((sj) => sj.id !== savedJobId));
+        toast.success('Job removed from saved list');
       } else {
         const data = await response.json().catch(() => ({}));
-        alert(data.error || 'Failed to remove saved job. Please try again.');
+        toast.error(data.error || 'Failed to remove saved job. Please try again.');
       }
     } catch (error) {
       console.error('Error removing saved job:', error);
-      alert('Failed to remove saved job. Please check your connection and try again.');
+      toast.error('Failed to remove saved job. Please check your connection and try again.');
     } finally {
       setRemoving(null);
     }
