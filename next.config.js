@@ -7,7 +7,9 @@ const nextConfig = {
   poweredByHeader: false,
 
   // Exclude Prisma from bundling to prevent query engine issues
-  serverExternalPackages: ['@prisma/client', 'prisma'],
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+  },
 };
 
 module.exports = nextConfig;
