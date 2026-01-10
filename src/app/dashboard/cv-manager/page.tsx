@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseResume, getSkillCategory } from '@/lib/resume-parser';
 import { useToast } from '@/components/ui/Toast';
 
 interface Resume {
   id: string;
-  name: string;
-  size: string;
-  uploadedAt: string;
-  dataUrl?: string;
-  extractedSkills?: string[];
-  isParsing?: boolean;
+  filename: string;
+  fileSize: number;
+  mimeType: string;
+  extractedSkills: string[];
+  isPrimary: boolean;
+  createdAt: string;
 }
 
 export default function CVManagerPage() {
@@ -21,30 +21,37 @@ export default function CVManagerPage() {
   const [dragActive, setDragActive] = useState(false);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [expandedResume, setExpandedResume] = useState<string | null>(null);
   const [addingSkills, setAddingSkills] = useState(false);
+  const [parsingResumeId, setParsingResumeId] = useState<string | null>(null);
 
-  // Load resumes from localStorage on mount
-  useEffect(() => {
-    if (user?.id) {
-      try {
-        const saved = localStorage.getItem(`jobly_resumes_${user.id}`);
-        if (saved) {
-          setResumes(JSON.parse(saved));
-        }
-      } catch (error) {
-        console.error('Error loading resumes:', error);
+  // Fetch resumes from API
+  const fetchResumes = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch('/api/resumes', {
+        headers: { 'x-user-id': user.id },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch resumes');
       }
-    }
-  }, [user?.id]);
 
-  // Save resumes to localStorage
-  const saveResumes = (newResumes: Resume[]) => {
-    if (user?.id) {
-      localStorage.setItem(`jobly_resumes_${user.id}`, JSON.stringify(newResumes));
-      setResumes(newResumes);
+      const data = await response.json();
+      setResumes(data.resumes);
+    } catch (error) {
+      console.error('Error fetching resumes:', error);
+      toast.error('Failed to load resumes');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [user?.id, toast]);
+
+  useEffect(() => {
+    fetchResumes();
+  }, [fetchResumes]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -73,6 +80,8 @@ export default function CVManagerPage() {
   };
 
   const handleFile = async (file: File) => {
+    if (!user?.id) return;
+
     // Validate file type
     const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!validTypes.includes(file.type)) {
@@ -89,62 +98,72 @@ export default function CVManagerPage() {
     setUploading(true);
 
     try {
-      // Read file as data URL for localStorage storage
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const dataUrl = reader.result as string;
-        const resumeId = Date.now().toString();
+      // Read file as data URL
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
 
-        // Create resume with parsing status
-        const newResume: Resume = {
-          id: resumeId,
-          name: file.name,
-          size: formatFileSize(file.size),
-          uploadedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      // Upload to API
+      const response = await fetch('/api/resumes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          fileSize: file.size,
+          mimeType: file.type,
           dataUrl,
-          isParsing: true,
           extractedSkills: [],
-        };
+        }),
+      });
 
-        const updatedResumes = [...resumes, newResume];
-        saveResumes(updatedResumes);
-        setUploading(false);
-        toast.success('Resume uploaded successfully');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload resume');
+      }
 
-        // Parse resume to extract skills (async)
+      const { resume } = await response.json();
+      setResumes(prev => [resume, ...prev]);
+      toast.success('Resume uploaded successfully');
+
+      // Parse resume to extract skills (async)
+      if (file.type === 'application/pdf') {
+        setParsingResumeId(resume.id);
         try {
           const { skills } = await parseResume(dataUrl, file.name);
-          // Update resume with extracted skills
-          const finalResumes = updatedResumes.map(r =>
-            r.id === resumeId
-              ? { ...r, extractedSkills: skills, isParsing: false }
-              : r
-          );
-          saveResumes(finalResumes);
-
           if (skills.length > 0) {
-            setExpandedResume(resumeId);
-            toast.info(`Found ${skills.length} skills in your resume`);
+            // Update resume with extracted skills
+            const updateResponse = await fetch(`/api/resumes/${resume.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': user.id,
+              },
+              body: JSON.stringify({ extractedSkills: skills }),
+            });
+
+            if (updateResponse.ok) {
+              const { resume: updated } = await updateResponse.json();
+              setResumes(prev => prev.map(r => r.id === updated.id ? updated : r));
+              setExpandedResume(updated.id);
+              toast.info(`Found ${skills.length} skills in your resume`);
+            }
           }
         } catch (parseError) {
           console.error('Error parsing resume:', parseError);
-          // Mark parsing as complete even on error
-          const finalResumes = updatedResumes.map(r =>
-            r.id === resumeId
-              ? { ...r, isParsing: false }
-              : r
-          );
-          saveResumes(finalResumes);
+        } finally {
+          setParsingResumeId(null);
         }
-      };
-      reader.onerror = () => {
-        toast.error('Error reading file');
-        setUploading(false);
-      };
-      reader.readAsDataURL(file);
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
-      toast.error('Error uploading file');
+      toast.error(error instanceof Error ? error.message : 'Error uploading file');
+    } finally {
       setUploading(false);
     }
   };
@@ -155,18 +174,88 @@ export default function CVManagerPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this resume?')) {
-      saveResumes(resumes.filter(r => r.id !== id));
+  const formatDate = (dateStr: string): string => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!user?.id) return;
+    if (!confirm('Are you sure you want to delete this resume?')) return;
+
+    try {
+      const response = await fetch(`/api/resumes/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': user.id },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete resume');
+      }
+
+      setResumes(prev => prev.filter(r => r.id !== id));
+      toast.success('Resume deleted');
+    } catch (error) {
+      console.error('Error deleting resume:', error);
+      toast.error('Failed to delete resume');
     }
   };
 
-  const handleDownload = (resume: Resume) => {
-    if (resume.dataUrl) {
+  const handleDownload = async (resume: Resume) => {
+    if (!user?.id) return;
+
+    try {
+      // Fetch the full resume with dataUrl
+      const response = await fetch(`/api/resumes/${resume.id}`, {
+        headers: { 'x-user-id': user.id },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch resume');
+      }
+
+      const { resume: fullResume } = await response.json();
+
+      // Create download link
       const link = document.createElement('a');
-      link.href = resume.dataUrl;
-      link.download = resume.name;
+      link.href = fullResume.dataUrl;
+      link.download = fullResume.filename;
       link.click();
+    } catch (error) {
+      console.error('Error downloading resume:', error);
+      toast.error('Failed to download resume');
+    }
+  };
+
+  const handleSetPrimary = async (id: string) => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch(`/api/resumes/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
+        body: JSON.stringify({ isPrimary: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update resume');
+      }
+
+      // Update local state
+      setResumes(prev => prev.map(r => ({
+        ...r,
+        isPrimary: r.id === id,
+      })));
+      toast.success('Primary resume updated');
+    } catch (error) {
+      console.error('Error setting primary resume:', error);
+      toast.error('Failed to update primary resume');
     }
   };
 
@@ -175,23 +264,26 @@ export default function CVManagerPage() {
 
     setAddingSkills(true);
     try {
-      // Load existing profile data
-      const savedProfile = localStorage.getItem(`jobly_profile_${user.id}`);
-      const profileData = savedProfile ? JSON.parse(savedProfile) : {};
-      const existingSkills: string[] = profileData.skills || [];
+      // Update user profile with skills via API
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
+        body: JSON.stringify({
+          skills: skills,
+          mergeSkills: true, // Tell API to merge with existing skills
+        }),
+      });
 
-      // Merge skills without duplicates
-      const mergedSkills = Array.from(new Set([...existingSkills, ...skills]));
-      const newSkillsCount = skills.length - existingSkills.filter(s => skills.includes(s)).length;
-
-      // Save updated profile
-      const updatedProfile = {
-        ...profileData,
-        skills: mergedSkills,
-      };
-      localStorage.setItem(`jobly_profile_${user.id}`, JSON.stringify(updatedProfile));
-
-      toast.success(`Added ${newSkillsCount} new skill${newSkillsCount !== 1 ? 's' : ''} to your profile!`);
+      if (response.ok) {
+        const data = await response.json();
+        const newSkillsCount = data.newSkillsAdded || skills.length;
+        toast.success(`Added ${newSkillsCount} new skill${newSkillsCount !== 1 ? 's' : ''} to your profile!`);
+      } else {
+        throw new Error('Failed to update profile');
+      }
     } catch (error) {
       console.error('Error adding skills to profile:', error);
       toast.error('Error adding skills to profile');
@@ -216,6 +308,20 @@ export default function CVManagerPage() {
     };
     return colors[category] || colors.other;
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-8 max-w-5xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 bg-slate-200 rounded w-48 mb-2" />
+          <div className="h-4 bg-slate-200 rounded w-64 mb-8" />
+          <div className="bg-white rounded-lg border border-slate-200 p-8">
+            <div className="h-32 bg-slate-100 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">
@@ -285,10 +391,17 @@ export default function CVManagerPage() {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-slate-900 truncate">{resume.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-slate-900 truncate">{resume.filename}</h3>
+                      {resume.isPrimary && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-700">
+                          Primary
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-slate-500">
-                      {resume.size} - Uploaded {resume.uploadedAt}
-                      {resume.isParsing && (
+                      {formatFileSize(resume.fileSize)} - Uploaded {formatDate(resume.createdAt)}
+                      {parsingResumeId === resume.id && (
                         <span className="ml-2 text-primary-600">
                           <svg className="inline w-4 h-4 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -297,7 +410,7 @@ export default function CVManagerPage() {
                           Extracting skills...
                         </span>
                       )}
-                      {!resume.isParsing && resume.extractedSkills && resume.extractedSkills.length > 0 && (
+                      {parsingResumeId !== resume.id && resume.extractedSkills && resume.extractedSkills.length > 0 && (
                         <span className="ml-2 text-green-600">
                           {resume.extractedSkills.length} skills found
                         </span>
@@ -305,6 +418,17 @@ export default function CVManagerPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    {!resume.isPrimary && (
+                      <button
+                        onClick={() => handleSetPrimary(resume.id)}
+                        className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        title="Set as primary"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                      </button>
+                    )}
                     {resume.extractedSkills && resume.extractedSkills.length > 0 && (
                       <button
                         onClick={() => setExpandedResume(expandedResume === resume.id ? null : resume.id)}

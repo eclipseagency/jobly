@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 
 interface CompanyData {
   name: string;
@@ -47,44 +48,94 @@ const defaultCompanyData: CompanyData = {
 
 export default function CompanyProfilePage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [companyData, setCompanyData] = useState<CompanyData>(defaultCompanyData);
   const [newCultureValue, setNewCultureValue] = useState('');
   const [newBenefit, setNewBenefit] = useState('');
 
-  // Load company data from localStorage
-  useEffect(() => {
-    if (user?.id) {
-      try {
-        const saved = localStorage.getItem(`jobly_company_${user.id}`);
-        if (saved) {
-          setCompanyData(JSON.parse(saved));
-        } else {
-          // Initialize with user's company name if available
-          setCompanyData({
-            ...defaultCompanyData,
-            name: user.tenantName || '',
-            email: user.email || '',
-          });
-        }
-      } catch (error) {
-        console.error('Error loading company data:', error);
+  // Fetch company data from API
+  const fetchCompanyData = useCallback(async () => {
+    if (!user?.tenantId) return;
+
+    try {
+      const response = await fetch('/api/employer/company', {
+        headers: { 'x-tenant-id': user.tenantId },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch company data');
       }
-    }
-  }, [user?.id, user?.tenantName, user?.email]);
 
-  // Save company data to localStorage
-  const saveCompanyData = (data: CompanyData) => {
-    if (user?.id) {
-      localStorage.setItem(`jobly_company_${user.id}`, JSON.stringify(data));
-      setCompanyData(data);
-    }
-  };
+      const data = await response.json();
+      const company = data.company;
 
-  const handleSave = () => {
-    saveCompanyData(companyData);
-    setIsEditing(false);
+      setCompanyData({
+        name: company.name || '',
+        tagline: company.description || '',
+        industry: company.industry || '',
+        companySize: company.size || '',
+        founded: company.foundedYear?.toString() || '',
+        website: company.website || '',
+        email: company.email || '',
+        phone: company.phone || '',
+        location: company.address || '',
+        about: company.culture || '',
+        mission: company.mission || '',
+        vision: company.vision || '',
+        culture: [], // Could add a separate cultureValues field later
+        benefits: company.benefits || [],
+        socialLinks: {
+          linkedin: company.linkedinUrl || '',
+          facebook: company.facebookUrl || '',
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching company data:', error);
+      // Initialize with basic data from auth context
+      setCompanyData({
+        ...defaultCompanyData,
+        name: user.tenantName || '',
+        email: user.email || '',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.tenantId, user?.tenantName, user?.email]);
+
+  useEffect(() => {
+    fetchCompanyData();
+  }, [fetchCompanyData]);
+
+  const handleSave = async () => {
+    if (!user?.tenantId) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch('/api/employer/company', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': user.tenantId,
+        },
+        body: JSON.stringify(companyData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save company data');
+      }
+
+      toast.success('Company profile updated successfully');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving company data:', error);
+      toast.error('Failed to save company profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addCultureValue = () => {
@@ -133,6 +184,23 @@ export default function CompanyProfilePage() {
     return user?.tenantName?.substring(0, 2).toUpperCase() || 'CO';
   };
 
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-8 max-w-5xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 bg-slate-200 rounded w-48 mb-2" />
+          <div className="h-4 bg-slate-200 rounded w-64 mb-8" />
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
+            <div className="h-40 bg-slate-200" />
+            <div className="p-6">
+              <div className="h-24 bg-slate-100 rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">
       {/* Header */}
@@ -160,9 +228,10 @@ export default function CompanyProfilePage() {
             </div>
             <button
               onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+              disabled={saving}
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
             >
-              {isEditing ? 'Save Changes' : 'Edit Profile'}
+              {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Edit Profile'}
             </button>
           </div>
         </div>
