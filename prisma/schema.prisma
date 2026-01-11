@@ -20,16 +20,17 @@ enum UserRole {
 
 // Multi-tenant architecture: Tenant/Organization model
 model Tenant {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  logo        String?
-  coverImage  String?
-  website     String?
-  industry    String?
-  size        String?  // e.g., "1-10", "11-50", "51-200", "201-500", "500+"
-  foundedYear Int?
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  customDomain String?  @unique  // Custom domain for white-label access (e.g., "jobs.acme.com")
+  description  String?
+  logo         String?
+  coverImage   String?
+  website      String?
+  industry     String?
+  size         String?  // e.g., "1-10", "11-50", "51-200", "201-500", "500+"
+  foundedYear  Int?
 
   // Contact Information
   email       String?
