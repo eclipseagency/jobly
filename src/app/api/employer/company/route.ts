@@ -68,6 +68,7 @@ export async function PATCH(request: NextRequest) {
       culture,
       benefits,
       socialLinks,
+      customDomain,
     } = body;
 
     const updateData: Record<string, unknown> = {};
@@ -85,6 +86,7 @@ export async function PATCH(request: NextRequest) {
     if (mission !== undefined) updateData.mission = mission;
     if (vision !== undefined) updateData.vision = vision;
     if (benefits !== undefined) updateData.benefits = benefits;
+    if (customDomain !== undefined) updateData.customDomain = customDomain || null;
 
     // Handle social links
     if (socialLinks) {
@@ -119,6 +121,7 @@ export async function PATCH(request: NextRequest) {
           linkedin: company.linkedinUrl || '',
           facebook: company.facebookUrl || '',
         },
+        customDomain: company.customDomain || '',
       },
     };
 

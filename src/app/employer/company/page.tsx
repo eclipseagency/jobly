@@ -23,6 +23,7 @@ interface CompanyData {
     linkedin: string;
     facebook: string;
   };
+  customDomain: string;
 }
 
 const defaultCompanyData: CompanyData = {
@@ -44,6 +45,7 @@ const defaultCompanyData: CompanyData = {
     linkedin: '',
     facebook: '',
   },
+  customDomain: '',
 };
 
 export default function CompanyProfilePage() {
@@ -92,6 +94,7 @@ export default function CompanyProfilePage() {
           linkedin: company.linkedinUrl || '',
           facebook: company.facebookUrl || '',
         },
+        customDomain: company.customDomain || '',
       });
     } catch (error) {
       console.error('Error fetching company data:', error);
@@ -175,6 +178,7 @@ export default function CompanyProfilePage() {
   const tabs = [
     { id: 'profile', label: 'Company Profile' },
     { id: 'culture', label: 'Culture & Benefits' },
+    { id: 'domain', label: 'Custom Domain' },
   ];
 
   const getInitials = () => {
@@ -543,6 +547,96 @@ export default function CompanyProfilePage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Domain Tab */}
+      {activeTab === 'domain' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Custom Domain</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Use your own domain for a white-label experience. Your employees and candidates will access the platform through your custom domain.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Your Custom Domain</label>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      value={companyData.customDomain}
+                      onChange={(e) => setCompanyData({ ...companyData, customDomain: e.target.value.toLowerCase().trim() })}
+                      disabled={!isEditing}
+                      placeholder="jobs.yourcompany.com"
+                      className="w-full pl-12 pr-4 py-2.5 border border-slate-200 rounded-lg text-slate-900 disabled:bg-slate-50 disabled:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Enter your domain without http:// or https:// (e.g., jobs.acme.com)
+                </p>
+              </div>
+
+              {companyData.customDomain && (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <h4 className="font-medium text-amber-800">DNS Configuration Required</h4>
+                      <p className="text-sm text-amber-700 mt-1">
+                        To use your custom domain, add a CNAME record pointing to:
+                      </p>
+                      <code className="block mt-2 px-3 py-2 bg-amber-100 rounded text-amber-900 text-sm font-mono">
+                        cname.vercel-dns.com
+                      </code>
+                      <p className="text-xs text-amber-600 mt-2">
+                        DNS changes may take up to 48 hours to propagate.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-slate-50 rounded-xl p-6">
+            <h4 className="font-medium text-slate-900 mb-3">How Custom Domains Work</h4>
+            <ul className="space-y-2 text-sm text-slate-600">
+              <li className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Visitors to your custom domain will be directed to log in
+              </li>
+              <li className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Your company branding will be displayed throughout the platform
+              </li>
+              <li className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                SSL certificate is automatically provisioned for your domain
+              </li>
+              <li className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                All data remains secure and isolated to your organization
+              </li>
+            </ul>
           </div>
         </div>
       )}
