@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { addDomainToVercel, removeDomainFromVercel } from '@/lib/vercel-domains';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -86,12 +87,48 @@ export async function PATCH(request: NextRequest) {
     if (mission !== undefined) updateData.mission = mission;
     if (vision !== undefined) updateData.vision = vision;
     if (benefits !== undefined) updateData.benefits = benefits;
-    if (customDomain !== undefined) updateData.customDomain = customDomain || null;
 
     // Handle social links
     if (socialLinks) {
       if (socialLinks.linkedin !== undefined) updateData.linkedinUrl = socialLinks.linkedin;
       if (socialLinks.facebook !== undefined) updateData.facebookUrl = socialLinks.facebook;
+    }
+
+    // Handle custom domain changes with Vercel integration
+    let domainResult = null;
+    if (customDomain !== undefined) {
+      const newDomain = customDomain?.trim().toLowerCase() || null;
+
+      // Get current domain to check if it's changing
+      const currentTenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { customDomain: true },
+      });
+
+      const currentDomain = currentTenant?.customDomain;
+
+      // If domain is changing
+      if (newDomain !== currentDomain) {
+        // Remove old domain from Vercel if it existed
+        if (currentDomain) {
+          await removeDomainFromVercel(currentDomain);
+        }
+
+        // Add new domain to Vercel if provided
+        if (newDomain) {
+          domainResult = await addDomainToVercel(newDomain);
+
+          // If Vercel rejected the domain, don't save it
+          if (!domainResult.success && !domainResult.error?.includes('not configured')) {
+            return NextResponse.json(
+              { error: domainResult.error || 'Failed to configure domain' },
+              { status: 400 }
+            );
+          }
+        }
+
+        updateData.customDomain = newDomain;
+      }
     }
 
     const company = await prisma.tenant.update({
@@ -100,7 +137,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     // Return company with frontend-friendly field names
-    const response = {
+    const response: Record<string, unknown> = {
       company: {
         id: company.id,
         name: company.name,
@@ -124,6 +161,16 @@ export async function PATCH(request: NextRequest) {
         customDomain: company.customDomain || '',
       },
     };
+
+    // Include domain configuration result if domain was updated
+    if (domainResult) {
+      response.domainStatus = {
+        configured: domainResult.success,
+        verified: domainResult.verified || false,
+        verificationRecords: domainResult.verificationRecords || null,
+        message: domainResult.error || (domainResult.verified ? 'Domain verified and active' : 'Domain added, awaiting DNS verification'),
+      };
+    }
 
     return NextResponse.json(response);
   } catch (error) {
