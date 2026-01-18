@@ -179,8 +179,25 @@ export async function PATCH(
       return NextResponse.json({ success: true, message: 'Job unfeatured' });
     }
 
+    if (action === 'request_changes') {
+      if (!reason) {
+        return NextResponse.json({ error: 'Change request message is required' }, { status: 400 });
+      }
+
+      await prisma.job.update({
+        where: { id },
+        data: {
+          approvalStatus: 'CHANGES_REQUESTED',
+          rejectionReason: reason, // Store the change request message
+          isActive: false,
+        },
+      });
+
+      return NextResponse.json({ success: true, message: 'Change request sent to employer' });
+    }
+
     // General update
-    const allowedFields = ['title', 'description', 'location', 'salary', 'isActive'];
+    const allowedFields = ['title', 'description', 'location', 'salary', 'jobType', 'isActive'];
     const filteredData: any = {};
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {

@@ -20,6 +20,8 @@ import {
   X,
   AlertTriangle,
   Loader2,
+  Edit,
+  Save,
 } from 'lucide-react';
 
 interface User {
@@ -59,6 +61,8 @@ export default function UsersPage() {
   const [status, setStatus] = useState(searchParams.get('status') || '');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', location: '' });
   const [showActionModal, setShowActionModal] = useState<{ type: string; user: User } | null>(null);
   const [actionReason, setActionReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
@@ -138,6 +142,46 @@ export default function UsersPage() {
       setShowUserModal(true);
     } catch (error) {
       console.error('Error fetching user:', error);
+    }
+  };
+
+  const openEditModal = (user: User) => {
+    setEditForm({
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      location: user.location || '',
+    });
+    setSelectedUser(user);
+    setShowEditModal(true);
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('superadmin_token');
+      const response = await fetch(`/api/superadmin/users/${selectedUser.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update user');
+      }
+
+      await fetchUsers(pagination.page);
+      setShowEditModal(false);
+      setSelectedUser(null);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -290,6 +334,16 @@ export default function UsersPage() {
                               >
                                 <Eye className="w-4 h-4" />
                                 View Details
+                              </button>
+                              <button
+                                onClick={() => {
+                                  openEditModal(user);
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <Edit className="w-4 h-4" />
+                                Edit Profile
                               </button>
                               {user.isSuspended ? (
                                 <button
@@ -589,6 +643,98 @@ export default function UsersPage() {
               >
                 {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {showActionModal.type === 'delete' ? 'Delete' : 'Suspend'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Edit className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold">Edit User Profile</h2>
+                  <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter email"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={editForm.location}
+                  onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter location"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-xl">
+              <button
+                onClick={() => setShowEditModal(false)}
+                disabled={actionLoading}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditUser}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 disabled:opacity-50"
+              >
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save Changes
               </button>
             </div>
           </div>

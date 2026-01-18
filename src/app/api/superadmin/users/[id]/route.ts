@@ -129,7 +129,7 @@ export async function PATCH(
     }
 
     // General update
-    const allowedFields = ['name', 'phone', 'location', 'isActive'];
+    const allowedFields = ['name', 'email', 'phone', 'location', 'isActive'];
     const filteredData: any = {};
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {

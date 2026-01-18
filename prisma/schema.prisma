@@ -23,6 +23,7 @@ enum JobApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+  CHANGES_REQUESTED
 }
 
 // Super Admin model for platform administrators
