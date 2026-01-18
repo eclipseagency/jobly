@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { generateAuthToken } from '@/lib/auth';
 
 // POST /api/auth/login - Authenticate user
 export async function POST(request: NextRequest) {
@@ -77,9 +78,18 @@ export async function POST(request: NextRequest) {
       data: { lastLoginAt: new Date() },
     });
 
-    // Return user data (without password)
+    // Generate auth token
+    const token = generateAuthToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenant?.id,
+    });
+
+    // Return user data with token
     return NextResponse.json({
       success: true,
+      token,
       user: {
         id: user.id,
         email: user.email,
@@ -91,7 +101,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[Auth] Login error:', error);
     return NextResponse.json(
       { error: 'An error occurred during login' },
       { status: 500 }

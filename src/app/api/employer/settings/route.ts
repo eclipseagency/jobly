@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -103,6 +104,14 @@ export async function PATCH(request: NextRequest) {
 
     // Handle password change if requested
     if (currentPassword && newPassword) {
+      // Validate new password strength
+      if (newPassword.length < 8) {
+        return NextResponse.json(
+          { error: 'New password must be at least 8 characters' },
+          { status: 400 }
+        );
+      }
+
       // Get current user to verify password
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -116,12 +125,17 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      // Note: In a real app, you'd use bcrypt to compare passwords
-      // For now, we'll just check if passwords match (insecure but for demo)
-      // TODO: Implement proper password hashing comparison
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isValidPassword) {
+        return NextResponse.json(
+          { error: 'Current password is incorrect' },
+          { status: 400 }
+        );
+      }
 
-      // Hash the new password (placeholder - use bcrypt in production)
-      userUpdateData.passwordHash = newPassword; // In production: await bcrypt.hash(newPassword, 10)
+      // Hash the new password with bcrypt
+      userUpdateData.passwordHash = await bcrypt.hash(newPassword, 10);
     }
 
     // Update user
