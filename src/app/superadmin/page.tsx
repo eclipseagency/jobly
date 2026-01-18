@@ -17,47 +17,42 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-interface DashboardStats {
-  users: {
-    total: number;
-    active: number;
-    suspended: number;
-    newThisWeek: number;
-    newThisMonth: number;
+interface DashboardData {
+  stats: {
+    users: {
+      total: number;
+      employers: number;
+      jobSeekers: number;
+      suspended: number;
+      newThisWeek: number;
+      newThisMonth: number;
+      growthPercent: number;
+    };
+    jobs: {
+      total: number;
+      pending: number;
+      approved: number;
+      rejected: number;
+      newThisWeek: number;
+    };
+    applications: {
+      total: number;
+      newThisWeek: number;
+    };
+    tenants: {
+      total: number;
+      suspended: number;
+    };
   };
-  jobs: {
-    total: number;
-    active: number;
-    pending: number;
-    approved: number;
-    rejected: number;
-    featured: number;
+  recentActivity: {
+    users: Array<any>;
+    jobs: Array<any>;
+    applications: Array<any>;
   };
-  applications: {
-    total: number;
-    pending: number;
-    reviewing: number;
-    accepted: number;
-    rejected: number;
-    newToday: number;
-    newThisWeek: number;
-  };
-  tenants: {
-    total: number;
-    verified: number;
-    unverified: number;
-    suspended: number;
-  };
-  recentActivity: Array<{
-    id: string;
-    type: string;
-    message: string;
-    createdAt: string;
-  }>;
 }
 
 export default function SuperAdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -75,18 +70,18 @@ export default function SuperAdminDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch stats');
+        throw new Error(responseData.error || 'Failed to fetch stats');
       }
 
       // Validate that we have the expected data structure
-      if (!data.users || !data.jobs || !data.applications || !data.tenants) {
+      if (!responseData.stats || !responseData.stats.users || !responseData.stats.jobs) {
         throw new Error('Invalid response from server');
       }
 
-      setStats(data);
+      setData(responseData);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -121,7 +116,9 @@ export default function SuperAdminDashboard() {
     );
   }
 
-  if (!stats) return null;
+  if (!data) return null;
+
+  const stats = data.stats;
 
   const statCards = [
     {
@@ -131,8 +128,8 @@ export default function SuperAdminDashboard() {
       color: 'bg-blue-500',
       link: '/superadmin/users',
       subStats: [
-        { label: 'Active', value: stats.users.active },
-        { label: 'Suspended', value: stats.users.suspended },
+        { label: 'Job Seekers', value: stats.users.jobSeekers },
+        { label: 'Employers', value: stats.users.employers },
       ],
     },
     {
@@ -142,7 +139,7 @@ export default function SuperAdminDashboard() {
       color: 'bg-green-500',
       link: '/superadmin/jobs',
       subStats: [
-        { label: 'Active', value: stats.jobs.active },
+        { label: 'Approved', value: stats.jobs.approved },
         { label: 'Pending', value: stats.jobs.pending, highlight: stats.jobs.pending > 0 },
       ],
     },
@@ -153,8 +150,8 @@ export default function SuperAdminDashboard() {
       color: 'bg-purple-500',
       link: '/superadmin/employers',
       subStats: [
-        { label: 'Verified', value: stats.tenants.verified },
-        { label: 'Unverified', value: stats.tenants.unverified },
+        { label: 'Active', value: stats.tenants.total - stats.tenants.suspended },
+        { label: 'Suspended', value: stats.tenants.suspended },
       ],
     },
     {
@@ -164,8 +161,8 @@ export default function SuperAdminDashboard() {
       color: 'bg-orange-500',
       link: '/superadmin/users',
       subStats: [
-        { label: 'Today', value: stats.applications.newToday },
         { label: 'This Week', value: stats.applications.newThisWeek },
+        { label: 'Total', value: stats.applications.total },
       ],
     },
   ];
@@ -316,35 +313,35 @@ export default function SuperAdminDashboard() {
                   <FileText className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Pending</p>
-                  <p className="text-sm text-gray-500">New applications</p>
+                  <p className="font-medium text-gray-900">Total Applications</p>
+                  <p className="text-sm text-gray-500">All time</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-blue-600">{stats.applications.pending}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Reviewing</p>
-                  <p className="text-sm text-gray-500">Under consideration</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-purple-600">{stats.applications.reviewing}</span>
+              <span className="text-2xl font-bold text-blue-600">{stats.applications.total}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <TrendingUp className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Accepted</p>
-                  <p className="text-sm text-gray-500">Successful applications</p>
+                  <p className="font-medium text-gray-900">This Week</p>
+                  <p className="text-sm text-gray-500">New applications</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-green-600">{stats.applications.accepted}</span>
+              <span className="text-2xl font-bold text-green-600">{stats.applications.newThisWeek}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">User Growth</p>
+                  <p className="text-sm text-gray-500">This month</p>
+                </div>
+              </div>
+              <span className="text-2xl font-bold text-purple-600">{stats.users.growthPercent}%</span>
             </div>
           </div>
         </div>
@@ -353,38 +350,55 @@ export default function SuperAdminDashboard() {
       {/* Recent Activity */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-        {stats.recentActivity && stats.recentActivity.length > 0 ? (
+        {data.recentActivity && (data.recentActivity.users?.length > 0 || data.recentActivity.jobs?.length > 0) ? (
           <div className="space-y-3">
-            {stats.recentActivity.map((activity) => (
+            {/* Recent Users */}
+            {data.recentActivity.users?.slice(0, 3).map((user: any) => (
               <div
-                key={activity.id}
+                key={user.id}
                 className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
               >
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    activity.type === 'job'
-                      ? 'bg-green-100'
-                      : activity.type === 'user'
-                      ? 'bg-blue-100'
-                      : activity.type === 'application'
-                      ? 'bg-orange-100'
-                      : 'bg-gray-100'
-                  }`}
-                >
-                  {activity.type === 'job' ? (
-                    <Briefcase className="w-5 h-5 text-green-600" />
-                  ) : activity.type === 'user' ? (
-                    <Users className="w-5 h-5 text-blue-600" />
-                  ) : activity.type === 'application' ? (
-                    <FileText className="w-5 h-5 text-orange-600" />
-                  ) : (
-                    <Building2 className="w-5 h-5 text-gray-600" />
-                  )}
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100">
+                  <Users className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-900">{activity.message}</p>
+                  <p className="text-sm text-gray-900">New user: {user.name || user.email}</p>
                   <p className="text-xs text-gray-500">
-                    {new Date(activity.createdAt).toLocaleString()}
+                    {new Date(user.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {/* Recent Jobs */}
+            {data.recentActivity.jobs?.slice(0, 3).map((job: any) => (
+              <div
+                key={job.id}
+                className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100">
+                  <Briefcase className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900">New job: {job.title} at {job.company}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(job.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {/* Recent Applications */}
+            {data.recentActivity.applications?.slice(0, 3).map((app: any) => (
+              <div
+                key={app.id}
+                className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-100">
+                  <FileText className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-900">{app.applicant} applied for {app.jobTitle}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(app.createdAt).toLocaleString()}
                   </p>
                 </div>
               </div>
