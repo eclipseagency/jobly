@@ -66,13 +66,26 @@ export default function SuperAdminDashboard() {
     if (isRefresh) setRefreshing(true);
     try {
       const token = localStorage.getItem('superadmin_token');
+      if (!token) {
+        setError('Not authenticated. Please log in.');
+        return;
+      }
+
       const response = await fetch('/api/superadmin/dashboard', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) throw new Error('Failed to fetch stats');
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch stats');
+      }
+
+      // Validate that we have the expected data structure
+      if (!data.users || !data.jobs || !data.applications || !data.tenants) {
+        throw new Error('Invalid response from server');
+      }
+
       setStats(data);
     } catch (err: any) {
       setError(err.message);
@@ -100,7 +113,10 @@ export default function SuperAdminDashboard() {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-        {error}
+        <p className="font-medium">{error}</p>
+        <a href="/superadmin/login" className="text-red-600 underline mt-2 inline-block">
+          Go to Login
+        </a>
       </div>
     );
   }
