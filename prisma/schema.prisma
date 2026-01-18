@@ -18,6 +18,34 @@ enum UserRole {
   EMPLOYER
 }
 
+// Job approval status
+enum JobApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Super Admin model for platform administrators
+model SuperAdmin {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          String   @default("super_admin") // super_admin, moderator
+  avatar        String?
+
+  // Permissions (JSON for flexibility)
+  permissions   Json?    // { canApproveJobs: true, canManageUsers: true, ... }
+
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("super_admins")
+}
+
 // Multi-tenant architecture: Tenant/Organization model
 model Tenant {
   id          String   @id @default(cuid())
@@ -57,6 +85,11 @@ model Tenant {
   // Verification
   isVerified   Boolean  @default(false)
   verifiedAt   DateTime?
+
+  // Admin control
+  isSuspended      Boolean  @default(false)
+  suspendedAt      DateTime?
+  suspensionReason String?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -118,6 +151,11 @@ model User {
   lastLoginAt   DateTime?
   isActive      Boolean   @default(true)
 
+  // Admin control
+  isSuspended      Boolean  @default(false)
+  suspendedAt      DateTime?
+  suspensionReason String?
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -165,6 +203,16 @@ model Job {
   isActive     Boolean  @default(true)
   expiresAt    DateTime?
 
+  // Admin approval workflow
+  approvalStatus   JobApprovalStatus @default(PENDING)
+  approvedAt       DateTime?
+  approvedBy       String?           // SuperAdmin ID who approved
+  rejectionReason  String?
+
+  // Featured/promoted
+  isFeatured       Boolean  @default(false)
+  featuredUntil    DateTime?
+
   tenantId     String
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -178,6 +226,7 @@ model Job {
 
   @@index([tenantId])
   @@index([isActive])
+  @@index([approvalStatus])
   @@map("jobs")
 }
 
