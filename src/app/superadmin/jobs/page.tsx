@@ -57,6 +57,10 @@ interface Job {
     isVerified: boolean;
     isSuspended: boolean;
   };
+  _count?: {
+    applications: number;
+    savedJobs: number;
+  };
 }
 
 interface Pagination {
