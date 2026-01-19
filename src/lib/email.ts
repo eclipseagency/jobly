@@ -1,7 +1,17 @@
 import { Resend } from 'resend';
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization of Resend client
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend | null {
+  if (!process.env.RESEND_API_KEY) {
+    return null;
+  }
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Jobly <noreply@jobly.ph>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.jobly.ph';
@@ -122,7 +132,9 @@ interface NewApplicationEmailData {
 // Send email function
 async function sendEmail({ to, subject, html }: SendEmailOptions): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!process.env.RESEND_API_KEY) {
+    const resend = getResendClient();
+
+    if (!resend) {
       console.log('[Email] Resend API key not configured, skipping email send');
       console.log('[Email] Would send to:', to, 'Subject:', subject);
       return { success: true };
