@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
           password: hashedPassword,
           role: userType === 'employer' ? 'EMPLOYER' : 'EMPLOYEE',
           avatar: userInfo.avatar,
-          emailVerified: true, // OAuth emails are verified
+          emailVerified: new Date(), // OAuth emails are verified
         },
       });
     }
