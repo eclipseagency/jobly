@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -55,7 +55,7 @@ function formatDate(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function PublicJobsPage() {
+function JobsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -466,5 +466,17 @@ export default function PublicJobsPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function PublicJobsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <JobsContent />
+    </Suspense>
   );
 }
