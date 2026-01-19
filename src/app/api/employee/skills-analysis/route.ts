@@ -123,20 +123,19 @@ export async function GET(request: NextRequest) {
       where: { id: userId },
       select: {
         skills: true,
-        headline: true,
+        title: true,
         applications: {
           select: {
             job: {
               select: {
                 requirements: true,
                 title: true,
-                salaryMin: true,
-                salaryMax: true,
+                salary: true,
               },
             },
           },
           take: 20,
-          orderBy: { appliedAt: 'desc' },
+          orderBy: { createdAt: 'desc' },
         },
         careerGoals: {
           where: { status: 'active' },
