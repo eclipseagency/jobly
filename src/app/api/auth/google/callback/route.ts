@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
           email: userInfo.email,
           name: userInfo.name,
           password: hashedPassword,
-          role: userType === 'employer' ? 'employer' : 'employee',
+          role: userType === 'employer' ? 'EMPLOYER' : 'EMPLOYEE',
           avatar: userInfo.avatar,
           emailVerified: true, // OAuth emails are verified
         },
