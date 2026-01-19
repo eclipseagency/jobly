@@ -22,7 +22,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { question, category, answer, tip } = body;
+    const { question, category, myAnswer } = body;
 
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
@@ -33,8 +33,7 @@ export async function POST(
         prepId: params.id,
         question,
         category: category || 'general',
-        answer,
-        tip,
+        myAnswer,
       },
     });
 
@@ -79,11 +78,10 @@ export async function PUT(
     }
 
     const createdQuestions = await prisma.interviewQuestion.createMany({
-      data: questions.map((q: { question: string; category?: string; tip?: string }) => ({
+      data: questions.map((q: { question: string; category?: string }) => ({
         prepId: params.id,
         question: q.question,
         category: q.category || 'general',
-        tip: q.tip,
       })),
     });
 
