@@ -7,17 +7,25 @@ import Image from 'next/image';
 import { LocationDropdown } from '@/components/ui/LocationDropdown';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Job categories data
-const jobCategories = [
-  { name: 'Technology', icon: '💻', count: '12,500+', color: 'bg-blue-50 text-blue-600' },
-  { name: 'Healthcare', icon: '🏥', count: '8,200+', color: 'bg-green-50 text-green-600' },
-  { name: 'Finance', icon: '💰', count: '6,800+', color: 'bg-yellow-50 text-yellow-600' },
-  { name: 'Marketing', icon: '📈', count: '5,400+', color: 'bg-purple-50 text-purple-600' },
-  { name: 'Education', icon: '📚', count: '4,100+', color: 'bg-red-50 text-red-600' },
-  { name: 'Engineering', icon: '⚙️', count: '7,300+', color: 'bg-orange-50 text-orange-600' },
-  { name: 'Sales', icon: '🤝', count: '9,600+', color: 'bg-indigo-50 text-indigo-600' },
-  { name: 'Design', icon: '🎨', count: '3,200+', color: 'bg-pink-50 text-pink-600' },
-];
+// Category icons and colors mapping
+const categoryConfig: Record<string, { icon: string; color: string }> = {
+  'Technology': { icon: '💻', color: 'bg-blue-50 text-blue-600' },
+  'IT': { icon: '💻', color: 'bg-blue-50 text-blue-600' },
+  'Healthcare': { icon: '🏥', color: 'bg-green-50 text-green-600' },
+  'Finance': { icon: '💰', color: 'bg-yellow-50 text-yellow-600' },
+  'Accounting': { icon: '💰', color: 'bg-yellow-50 text-yellow-600' },
+  'Marketing': { icon: '📈', color: 'bg-purple-50 text-purple-600' },
+  'Education': { icon: '📚', color: 'bg-red-50 text-red-600' },
+  'Engineering': { icon: '⚙️', color: 'bg-orange-50 text-orange-600' },
+  'Sales': { icon: '🤝', color: 'bg-indigo-50 text-indigo-600' },
+  'Design': { icon: '🎨', color: 'bg-pink-50 text-pink-600' },
+  'Customer Service': { icon: '🎧', color: 'bg-teal-50 text-teal-600' },
+  'BPO': { icon: '📞', color: 'bg-cyan-50 text-cyan-600' },
+  'Human Resources': { icon: '👥', color: 'bg-violet-50 text-violet-600' },
+  'Operations': { icon: '📋', color: 'bg-slate-50 text-slate-600' },
+  'Admin': { icon: '📁', color: 'bg-gray-50 text-gray-600' },
+  'default': { icon: '💼', color: 'bg-slate-50 text-slate-600' },
+};
 
 // Testimonials data
 const testimonials = [
@@ -57,32 +65,79 @@ const featuredCompanies = [
   { name: 'Ayala', logo: '/companies/ayala.svg' },
 ];
 
+// Job type interface
+interface FeaturedJob {
+  id: string;
+  title: string;
+  company: { name: string; logo: string | null };
+  location: string | null;
+  salary: string | null;
+  jobType: string | null;
+  createdAt: string;
+}
+
+// Category type interface
+interface JobCategory {
+  name: string;
+  count: number;
+  icon: string;
+  color: string;
+}
+
 export default function Home() {
   const router = useRouter();
   const { isLoggedIn, user, getDashboardPath, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
-  const [featuredJobs, setFeaturedJobs] = useState<Array<{
-    id: string;
-    title: string;
-    company: string;
-    location: string;
-    salary: string;
-    type: string;
-    logo: string;
-    isNew: boolean;
-  }>>([]);
+  const [featuredJobs, setFeaturedJobs] = useState<FeaturedJob[]>([]);
+  const [jobCategories, setJobCategories] = useState<JobCategory[]>([]);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch featured jobs
+  // Fetch featured jobs and categories from API
   useEffect(() => {
-    // Simulated featured jobs - in production, fetch from API
-    setFeaturedJobs([
-      { id: '1', title: 'Senior Software Engineer', company: 'Tech Solutions PH', location: 'Makati City', salary: '₱80,000 - ₱120,000', type: 'Full-time', logo: '/companies/default.svg', isNew: true },
-      { id: '2', title: 'Marketing Manager', company: 'Brand Corp', location: 'BGC, Taguig', salary: '₱60,000 - ₱90,000', type: 'Full-time', logo: '/companies/default.svg', isNew: true },
-      { id: '3', title: 'UI/UX Designer', company: 'Creative Studio', location: 'Remote', salary: '₱50,000 - ₱70,000', type: 'Full-time', logo: '/companies/default.svg', isNew: false },
-      { id: '4', title: 'Data Analyst', company: 'Analytics PH', location: 'Ortigas Center', salary: '₱45,000 - ₱65,000', type: 'Full-time', logo: '/companies/default.svg', isNew: false },
-    ]);
+    const fetchData = async () => {
+      try {
+        // Fetch featured jobs (latest 4)
+        const jobsResponse = await fetch('/api/jobs?limit=4');
+        if (jobsResponse.ok) {
+          const jobsData = await jobsResponse.json();
+          setFeaturedJobs(jobsData.jobs || []);
+          setTotalJobs(jobsData.pagination?.total || 0);
+        }
+
+        // Fetch job categories with counts
+        const categoriesResponse = await fetch('/api/jobs/categories');
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
+          const categoriesWithConfig = (categoriesData.categories || []).map((cat: { name: string; count: number }) => {
+            const config = categoryConfig[cat.name] || categoryConfig['default'];
+            return {
+              name: cat.name,
+              count: cat.count,
+              icon: config.icon,
+              color: config.color,
+            };
+          });
+          setJobCategories(categoriesWithConfig.slice(0, 8)); // Show top 8 categories
+        }
+      } catch (error) {
+        console.error('Error fetching homepage data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
+
+  // Check if a job is new (posted within last 7 days)
+  const isNewJob = (createdAt: string) => {
+    const jobDate = new Date(createdAt);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - jobDate.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays <= 7;
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,7 +232,7 @@ export default function Home() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
                 </span>
-                Over 50,000+ jobs available now
+                {totalJobs > 0 ? `${totalJobs.toLocaleString()}+ jobs available now` : 'Jobs available now'}
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-[1.1] tracking-tight">
@@ -244,7 +299,7 @@ export default function Home() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <div className="text-3xl font-bold text-slate-900">50,000+</div>
+                    <div className="text-3xl font-bold text-slate-900">{totalJobs > 0 ? totalJobs.toLocaleString() : '—'}</div>
                     <div className="text-slate-500 text-sm">Active Job Listings</div>
                   </div>
                   <div className="bg-white rounded-2xl p-6 shadow-lg shadow-slate-200/50 border border-slate-100 transform hover:-translate-y-1 transition-transform">
@@ -323,19 +378,36 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {jobCategories.map((category) => (
-              <Link
-                key={category.name}
-                href={`/jobs?category=${encodeURIComponent(category.name)}`}
-                className="group bg-white border border-slate-200 rounded-2xl p-6 hover:border-primary-300 hover:shadow-lg hover:shadow-primary-100/50 transition-all"
-              >
-                <div className={`w-12 h-12 ${category.color} rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}>
-                  {category.icon}
+            {loading ? (
+              // Loading skeleton
+              [...Array(8)].map((_, i) => (
+                <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 animate-pulse">
+                  <div className="w-12 h-12 bg-slate-200 rounded-xl mb-4"></div>
+                  <div className="h-5 bg-slate-200 rounded w-24 mb-2"></div>
+                  <div className="h-4 bg-slate-100 rounded w-16"></div>
                 </div>
-                <h3 className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors">{category.name}</h3>
-                <p className="text-sm text-slate-500 mt-1">{category.count} jobs</p>
-              </Link>
-            ))}
+              ))
+            ) : jobCategories.length > 0 ? (
+              jobCategories.map((category) => (
+                <Link
+                  key={category.name}
+                  href={`/jobs?department=${encodeURIComponent(category.name)}`}
+                  className="group bg-white border border-slate-200 rounded-2xl p-6 hover:border-primary-300 hover:shadow-lg hover:shadow-primary-100/50 transition-all"
+                >
+                  <div className={`w-12 h-12 ${category.color} rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}>
+                    {category.icon}
+                  </div>
+                  <h3 className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors">{category.name}</h3>
+                  <p className="text-sm text-slate-500 mt-1">{category.count} {category.count === 1 ? 'job' : 'jobs'}</p>
+                </Link>
+              ))
+            ) : (
+              // Fallback if no categories found
+              <div className="col-span-4 text-center py-8 text-slate-500">
+                <p>Browse all available jobs</p>
+                <Link href="/jobs" className="text-primary-600 hover:underline mt-2 inline-block">View Jobs</Link>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -357,46 +429,75 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            {featuredJobs.map((job) => (
-              <Link
-                key={job.id}
-                href={`/jobs/${job.id}`}
-                className="group bg-white rounded-2xl p-6 border border-slate-200 hover:border-primary-300 hover:shadow-lg transition-all"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
-                    <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors truncate">{job.title}</h3>
-                      {job.isNew && (
-                        <span className="shrink-0 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">New</span>
-                      )}
+            {loading ? (
+              // Loading skeleton
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl p-6 border border-slate-200 animate-pulse">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-slate-200 rounded-xl shrink-0"></div>
+                    <div className="flex-1">
+                      <div className="h-5 bg-slate-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-slate-100 rounded w-1/2 mb-3"></div>
+                      <div className="h-4 bg-slate-100 rounded w-2/3"></div>
                     </div>
-                    <p className="text-slate-600 text-sm">{job.company}</p>
-                    <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {job.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        {job.type}
-                      </span>
-                    </div>
-                    <div className="mt-3 text-primary-600 font-semibold">{job.salary}</div>
                   </div>
                 </div>
-              </Link>
-            ))}
+              ))
+            ) : featuredJobs.length > 0 ? (
+              featuredJobs.map((job) => (
+                <Link
+                  key={job.id}
+                  href={`/jobs/${job.id}`}
+                  className="group bg-white rounded-2xl p-6 border border-slate-200 hover:border-primary-300 hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-slate-100 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+                      {job.company.logo ? (
+                        <Image src={job.company.logo} alt={job.company.name} width={56} height={56} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-bold text-slate-400">{job.company.name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors truncate">{job.title}</h3>
+                        {isNewJob(job.createdAt) && (
+                          <span className="shrink-0 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">New</span>
+                        )}
+                      </div>
+                      <p className="text-slate-600 text-sm">{job.company.name}</p>
+                      <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-slate-500">
+                        {job.location && (
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {job.location}
+                          </span>
+                        )}
+                        {job.jobType && (
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {job.jobType}
+                          </span>
+                        )}
+                      </div>
+                      {job.salary && (
+                        <div className="mt-3 text-primary-600 font-semibold">{job.salary}</div>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-8 text-slate-500">
+                <p>No jobs available at the moment</p>
+                <Link href="/jobs" className="text-primary-600 hover:underline mt-2 inline-block">Check back later</Link>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -533,10 +634,10 @@ export default function Home() {
                   Start Hiring Free
                 </Link>
                 <Link
-                  href="/pricing"
+                  href="/employer"
                   className="px-6 py-3 border border-slate-200 text-slate-700 hover:border-slate-300 font-semibold rounded-xl transition-colors"
                 >
-                  View Pricing
+                  Learn More
                 </Link>
               </div>
             </div>
@@ -648,7 +749,6 @@ export default function Home() {
               <h4 className="font-semibold text-slate-900 mb-4 text-sm">For Employers</h4>
               <ul className="space-y-3 text-sm text-slate-500">
                 <li><Link href="/auth/employer/register" className="hover:text-primary-600 transition-colors">Post a Job</Link></li>
-                <li><Link href="/pricing" className="hover:text-primary-600 transition-colors">Pricing</Link></li>
                 <li><Link href="/employer" className="hover:text-primary-600 transition-colors">Talent Solutions</Link></li>
                 <li><Link href="/resources" className="hover:text-primary-600 transition-colors">Resources</Link></li>
               </ul>
