@@ -15,7 +15,7 @@ export async function GET(
     const prep = await prisma.interviewPrep.findFirst({
       where: { id: params.id, userId },
       include: {
-        questions: {
+        practiceQuestions: {
           orderBy: { createdAt: 'asc' },
         },
       },
@@ -55,20 +55,21 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, companyName, jobTitle, interviewDate, notes, status } = body;
+    const { companyName, jobTitle, interviewDate, interviewType, companyNotes, roleNotes, status } = body;
 
     const prep = await prisma.interviewPrep.update({
       where: { id: params.id },
       data: {
-        title,
         companyName,
         jobTitle,
         interviewDate: interviewDate ? new Date(interviewDate) : null,
-        notes,
+        interviewType,
+        companyNotes,
+        roleNotes,
         status,
       },
       include: {
-        questions: true,
+        practiceQuestions: true,
       },
     });
 
