@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         data: {
           email: userInfo.email,
           name: userInfo.name,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           role: userType === 'employer' ? 'EMPLOYER' : 'EMPLOYEE',
           avatar: userInfo.avatar,
           emailVerified: new Date(), // OAuth emails are verified
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         data: {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
-          accessTokenExpires: tokens.expiresIn
+          expiresAt: tokens.expiresIn
             ? new Date(Date.now() + tokens.expiresIn * 1000)
             : null,
         },
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
           providerAccountId: userInfo.id,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
-          accessTokenExpires: tokens.expiresIn
+          expiresAt: tokens.expiresIn
             ? new Date(Date.now() + tokens.expiresIn * 1000)
             : null,
         },

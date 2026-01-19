@@ -64,10 +64,10 @@ export async function GET(request: NextRequest) {
         data: {
           email: userInfo.email,
           name: userInfo.name,
-          password: hashedPassword,
-          role: userType === 'employer' ? 'employer' : 'employee',
+          passwordHash: hashedPassword,
+          role: userType === 'employer' ? 'EMPLOYER' : 'EMPLOYEE',
           avatar: userInfo.avatar,
-          emailVerified: true,
+          emailVerified: new Date(),
         },
       });
     }
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
         data: {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
-          accessTokenExpires: tokens.expiresIn
+          expiresAt: tokens.expiresIn
             ? new Date(Date.now() + tokens.expiresIn * 1000)
             : null,
         },
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
           providerAccountId: userInfo.id,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
-          accessTokenExpires: tokens.expiresIn
+          expiresAt: tokens.expiresIn
             ? new Date(Date.now() + tokens.expiresIn * 1000)
             : null,
         },
