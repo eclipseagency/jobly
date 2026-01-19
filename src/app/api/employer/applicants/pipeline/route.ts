@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
             name: true,
             email: true,
             avatar: true,
-            headline: true,
+            title: true,
             skills: true,
           },
         },
@@ -56,7 +56,11 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             title: true,
-            company: true,
+            tenant: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
@@ -67,16 +71,16 @@ export async function GET(request: NextRequest) {
     const pipeline: Record<string, Array<{
       id: string;
       userId: string;
-      name: string;
+      name: string | null;
       email: string;
       avatar: string | null;
-      headline: string | null;
+      title: string | null;
       skills: string[];
       jobId: string;
       jobTitle: string;
-      company: string;
+      company: string | null;
       status: string;
-      appliedAt: string;
+      createdAt: string;
       updatedAt: string;
     }>> = {};
 
@@ -94,13 +98,13 @@ export async function GET(request: NextRequest) {
         name: app.user.name,
         email: app.user.email,
         avatar: app.user.avatar,
-        headline: app.user.headline,
+        title: app.user.title,
         skills: app.user.skills,
         jobId: app.job.id,
         jobTitle: app.job.title,
-        company: app.job.company,
+        company: app.job.tenant?.name || null,
         status: app.status,
-        appliedAt: app.appliedAt.toISOString(),
+        createdAt: app.createdAt.toISOString(),
         updatedAt: app.updatedAt.toISOString(),
       });
     });
@@ -211,14 +215,10 @@ export async function PUT(request: NextRequest) {
     await prisma.notification.create({
       data: {
         userId: updatedApplication.userId,
-        type: 'application',
+        type: 'application_status',
         title: 'Application Status Updated',
         message: `Your application for ${application.job.title} has been moved to ${formattedStatus}`,
-        data: {
-          applicationId: updatedApplication.id,
-          jobId: application.job.id,
-          newStatus: formattedStatus,
-        },
+        link: `/dashboard/applications/${updatedApplication.id}`,
       },
     });
 
