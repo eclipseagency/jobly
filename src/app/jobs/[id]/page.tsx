@@ -583,37 +583,18 @@ export default function JobDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        {/* Header */}
-        <header className="bg-white border-b border-slate-200">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <Link href="/jobs" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to Jobs
-              </Link>
-              <Link href="/">
-                <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="bg-white rounded-xl border border-slate-200 p-8">
-              <div className="flex gap-6">
-                <div className="w-20 h-20 bg-slate-200 rounded-xl" />
-                <div className="flex-1">
-                  <div className="h-8 bg-slate-200 rounded w-1/2 mb-3" />
-                  <div className="h-5 bg-slate-200 rounded w-1/3 mb-4" />
-                  <div className="flex gap-2">
-                    <div className="h-6 bg-slate-200 rounded w-24" />
-                    <div className="h-6 bg-slate-200 rounded w-24" />
-                    <div className="h-6 bg-slate-200 rounded w-24" />
-                  </div>
+      <div className="min-h-full p-6">
+        <div className="animate-pulse max-w-4xl">
+          <div className="bg-white rounded-xl border border-slate-200 p-8">
+            <div className="flex gap-6">
+              <div className="w-20 h-20 bg-slate-200 rounded-xl" />
+              <div className="flex-1">
+                <div className="h-8 bg-slate-200 rounded w-1/2 mb-3" />
+                <div className="h-5 bg-slate-200 rounded w-1/3 mb-4" />
+                <div className="flex gap-2">
+                  <div className="h-6 bg-slate-200 rounded w-24" />
+                  <div className="h-6 bg-slate-200 rounded w-24" />
+                  <div className="h-6 bg-slate-200 rounded w-24" />
                 </div>
               </div>
             </div>
@@ -625,89 +606,29 @@ export default function JobDetailPage() {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <header className="bg-white border-b border-slate-200">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <Link href="/jobs" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to Jobs
-              </Link>
-              <Link href="/">
-                <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <svg className="w-20 h-20 text-slate-300 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h1 className="text-2xl font-bold text-slate-900 mb-3">Job Not Found</h1>
-            <p className="text-slate-600 mb-8">
-              This job posting may have been removed or is no longer available.
-            </p>
-            <Link
-              href="/jobs"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
-            >
-              Browse All Jobs
-            </Link>
-          </div>
+      <div className="min-h-full p-6 flex items-center justify-center">
+        <div className="text-center">
+          <svg className="w-20 h-20 text-slate-300 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h1 className="text-2xl font-bold text-slate-900 mb-3">Job Not Found</h1>
+          <p className="text-slate-600 mb-8">
+            This job posting may have been removed or is no longer available.
+          </p>
+          <Link
+            href="/jobs"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Browse All Jobs
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/jobs" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Jobs
-            </Link>
-            <Link href="/">
-              <Image src="/logo.svg" alt="Jobly" width={90} height={25} />
-            </Link>
-            <div className="flex items-center gap-3">
-              {isLoggedIn ? (
-                <Link
-                  href="/dashboard"
-                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                  My Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/employee/login"
-                    className="text-sm font-medium text-slate-600 hover:text-slate-900"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/auth/employee/register"
-                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
-                  >
-                    Get Started
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-full">
+      <main className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -1541,23 +1462,6 @@ export default function JobDetailPage() {
 
       {/* Spacer for mobile bottom bar */}
       <div className="lg:hidden h-20" />
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-8 mt-12 lg:mt-12">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-              <Image src="/logo.svg" alt="Jobly" width={80} height={22} />
-              <p className="text-sm text-slate-500">Find your dream job in the Philippines</p>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-slate-500">
-              <Link href="/terms" className="hover:text-slate-900">Terms</Link>
-              <Link href="/privacy" className="hover:text-slate-900">Privacy</Link>
-              <Link href="/jobs" className="hover:text-slate-900">Browse Jobs</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

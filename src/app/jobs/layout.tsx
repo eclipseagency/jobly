@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { JobsLayoutClient } from '@/components/jobs/JobsLayoutClient';
 
 export const metadata: Metadata = {
   title: 'Browse Jobs in the Philippines - Find Your Next Career',
@@ -31,5 +32,5 @@ export default function JobsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <JobsLayoutClient>{children}</JobsLayoutClient>;
 }
