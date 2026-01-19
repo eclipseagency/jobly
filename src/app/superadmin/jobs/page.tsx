@@ -296,6 +296,32 @@ export default function JobsPage() {
     }
   };
 
+  const updateExistingJobs = async () => {
+    if (!confirm('This will update the first 3 jobs with better realistic data. Continue?')) return;
+    setSeedingJobs(true);
+    try {
+      const token = localStorage.getItem('superadmin_token');
+      const response = await fetch('/api/superadmin/jobs/update-sample', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update jobs');
+      }
+
+      alert(data.message);
+      await fetchJobs(1);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setSeedingJobs(false);
+    }
+  };
+
   const openEditModal = (job: Job) => {
     setEditForm({
       title: job.title || '',
@@ -425,12 +451,20 @@ export default function JobsPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={updateExistingJobs}
+            disabled={seedingJobs}
+            className="px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 flex items-center gap-2 disabled:opacity-50"
+          >
+            {seedingJobs ? <Loader2 className="w-5 h-5 animate-spin" /> : <Edit className="w-5 h-5" />}
+            Update 3 Jobs
+          </button>
+          <button
             onClick={seedSampleJobs}
             disabled={seedingJobs}
             className="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 flex items-center gap-2 disabled:opacity-50"
           >
             {seedingJobs ? <Loader2 className="w-5 h-5 animate-spin" /> : <Star className="w-5 h-5" />}
-            Seed Sample Jobs
+            Seed 6 New Jobs
           </button>
           <button
             onClick={openCreateModal}
