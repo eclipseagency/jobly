@@ -74,7 +74,7 @@ export default function NotificationsPage() {
         body: JSON.stringify({ action: 'markRead', notificationIds: ids }),
       });
       setNotifications(prev =>
-        prev.map(n => (ids.includes(n.id) ? { ...n, isRead: true } : n))
+        prev.map(n => (ids.includes(n.id) ? { ...n, read: true } : n))
       );
       setUnreadCount(prev => Math.max(0, prev - ids.length));
       setSelectedIds(new Set());
@@ -90,7 +90,7 @@ export default function NotificationsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'markAllRead' }),
       });
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
