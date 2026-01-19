@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [
         { role: 'asc' },
-        { joinedAt: 'asc' },
+        { invitedAt: 'asc' },
       ],
     });
 
@@ -49,7 +49,6 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        ownerId: true,
       },
     });
 
@@ -62,9 +61,9 @@ export async function GET(request: NextRequest) {
         avatar: m.user.avatar,
         role: m.role,
         isActive: m.isActive,
-        joinedAt: m.joinedAt,
-        lastActiveAt: m.lastActiveAt,
-        isOwner: tenant?.ownerId === m.userId,
+        invitedAt: m.invitedAt,
+        acceptedAt: m.acceptedAt,
+        isOwner: m.role === 'EMPLOYER_OWNER',
       })),
       invitations: invitations.map((i) => ({
         id: i.id,
@@ -172,7 +171,7 @@ export async function POST(request: NextRequest) {
         email,
         role,
         token,
-        invitedById: userId,
+        invitedBy: userId,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
     });
