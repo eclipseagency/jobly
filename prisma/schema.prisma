@@ -602,12 +602,13 @@ model Notification {
   title     String
   message   String
   link      String?  // Optional link to relevant page
-  isRead    Boolean  @default(false)
+  data      Json?    // Additional notification data
+  read      Boolean  @default(false)
 
   createdAt DateTime @default(now())
 
   @@index([userId])
-  @@index([isRead])
+  @@index([read])
   @@map("notifications")
 }
 

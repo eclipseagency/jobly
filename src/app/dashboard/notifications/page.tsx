@@ -9,7 +9,7 @@ interface Notification {
   title: string;
   message: string;
   link: string | null;
-  isRead: boolean;
+  read: boolean;
   createdAt: string;
 }
 
@@ -105,7 +105,7 @@ export default function NotificationsPage() {
         body: JSON.stringify({ action: 'delete', notificationIds: ids }),
       });
       setNotifications(prev => prev.filter(n => !ids.includes(n.id)));
-      const deletedUnread = notifications.filter(n => ids.includes(n.id) && !n.isRead).length;
+      const deletedUnread = notifications.filter(n => ids.includes(n.id) && !n.read).length;
       setUnreadCount(prev => Math.max(0, prev - deletedUnread));
       setSelectedIds(new Set());
     } catch (error) {
@@ -271,7 +271,7 @@ export default function NotificationsPage() {
               {notifications.map((notification) => {
                 const colors = getColors(notification.type);
                 const handleClick = () => {
-                  if (!notification.isRead) {
+                  if (!notification.read) {
                     markAsRead([notification.id]);
                   }
                 };
@@ -289,11 +289,11 @@ export default function NotificationsPage() {
                         <div>
                           <h3
                             className={`font-medium ${
-                              notification.isRead ? 'text-slate-700' : 'text-slate-900'
+                              notification.read ? 'text-slate-700' : 'text-slate-900'
                             }`}
                           >
                             {notification.title}
-                            {!notification.isRead && (
+                            {!notification.read && (
                               <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
                             )}
                           </h3>
@@ -313,7 +313,7 @@ export default function NotificationsPage() {
                   <div
                     key={notification.id}
                     className={`bg-white rounded-xl border ${
-                      notification.isRead ? 'border-slate-200' : 'border-blue-300 shadow-sm'
+                      notification.read ? 'border-slate-200' : 'border-blue-300 shadow-sm'
                     } overflow-hidden transition hover:shadow-md`}
                   >
                     <div className="flex items-start gap-4 p-4">

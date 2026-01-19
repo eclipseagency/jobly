@@ -12,9 +12,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const whereClause: { userId: string; isRead?: boolean } = { userId };
+    const whereClause: { userId: string; read?: boolean } = { userId };
     if (unreadOnly) {
-      whereClause.isRead = false;
+      whereClause.read = false;
     }
 
     const notifications = await prisma.notification.findMany({
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const unreadCount = await prisma.notification.count({
       where: {
         userId,
-        isRead: false,
+        read: false,
       },
     });
 
@@ -58,9 +58,9 @@ export async function POST(request: NextRequest) {
       await prisma.notification.updateMany({
         where: {
           userId,
-          isRead: false,
+          read: false,
         },
-        data: { isRead: true },
+        data: { read: true },
       });
 
       return NextResponse.json({ success: true });
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           id: { in: notificationIds },
           userId,
         },
-        data: { isRead: true },
+        data: { read: true },
       });
 
       return NextResponse.json({ success: true });
