@@ -31,19 +31,18 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { question, category, answer, tip, practiced, confidenceLevel, notes } = body;
+    const { question, category, myAnswer, practiced, confidence, notes } = body;
 
     const updatedQuestion = await prisma.interviewQuestion.update({
       where: { id: params.questionId },
       data: {
         question,
         category,
-        answer,
-        tip,
-        practiced: practiced ?? existingQuestion.practiced,
-        confidenceLevel: confidenceLevel ?? existingQuestion.confidenceLevel,
+        myAnswer,
         notes,
-        practicedAt: practiced && !existingQuestion.practiced ? new Date() : existingQuestion.practicedAt,
+        confidence: confidence ?? existingQuestion.confidence,
+        practiceCount: practiced ? (existingQuestion.practiceCount + 1) : existingQuestion.practiceCount,
+        lastPracticedAt: practiced ? new Date() : existingQuestion.lastPracticedAt,
       },
     });
 
