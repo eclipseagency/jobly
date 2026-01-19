@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -24,6 +25,23 @@ interface Job {
   applicationsCount: number;
 }
 
+// Department categories
+const departments = [
+  'Technology',
+  'Engineering',
+  'Marketing',
+  'Sales',
+  'Finance',
+  'Human Resources',
+  'Operations',
+  'Customer Service',
+  'Design',
+  'Healthcare',
+  'Education',
+  'BPO',
+  'Admin',
+];
+
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -38,20 +56,27 @@ function formatDate(dateString: string): string {
 }
 
 export default function PublicJobsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
-  const [jobTypeFilter, setJobTypeFilter] = useState('');
-  const [workSetupFilter, setWorkSetupFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || searchParams.get('search') || '');
+  const [locationFilter, setLocationFilter] = useState(searchParams.get('location') || '');
+  const [jobTypeFilter, setJobTypeFilter] = useState(searchParams.get('jobType') || '');
+  const [workSetupFilter, setWorkSetupFilter] = useState(searchParams.get('locationType') || '');
+  const [departmentFilter, setDepartmentFilter] = useState(searchParams.get('department') || '');
 
   useEffect(() => {
     async function fetchJobs() {
+      setLoading(true);
       try {
         const params = new URLSearchParams();
         if (searchQuery) params.set('search', searchQuery);
         if (locationFilter) params.set('location', locationFilter);
         if (jobTypeFilter) params.set('jobType', jobTypeFilter);
+        if (workSetupFilter) params.set('locationType', workSetupFilter);
+        if (departmentFilter) params.set('department', departmentFilter);
 
         const response = await fetch(`/api/jobs?${params.toString()}`);
         const data = await response.json();
@@ -65,12 +90,28 @@ export default function PublicJobsPage() {
     }
 
     fetchJobs();
-  }, [searchQuery, locationFilter, jobTypeFilter]);
+  }, [searchQuery, locationFilter, jobTypeFilter, workSetupFilter, departmentFilter]);
 
-  const filteredJobs = jobs.filter((job) => {
-    if (workSetupFilter && job.locationType !== workSetupFilter) return false;
-    return true;
-  });
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (locationFilter) params.set('location', locationFilter);
+    if (jobTypeFilter) params.set('jobType', jobTypeFilter);
+    if (workSetupFilter) params.set('locationType', workSetupFilter);
+    if (departmentFilter) params.set('department', departmentFilter);
+
+    const newUrl = params.toString() ? `/jobs?${params.toString()}` : '/jobs';
+    window.history.replaceState({}, '', newUrl);
+  }, [searchQuery, locationFilter, jobTypeFilter, workSetupFilter, departmentFilter]);
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setLocationFilter('');
+    setJobTypeFilter('');
+    setWorkSetupFilter('');
+    setDepartmentFilter('');
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -180,6 +221,23 @@ export default function PublicJobsPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-6 sticky top-24">
               <h3 className="font-semibold text-slate-900 mb-4">Filters</h3>
 
+              {/* Department/Category */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Category
+                </label>
+                <select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">All Categories</option>
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Job Type */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -191,10 +249,11 @@ export default function PublicJobsPage() {
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">All Types</option>
-                  <option value="full-time">Full-time</option>
-                  <option value="part-time">Part-time</option>
-                  <option value="contract">Contract</option>
-                  <option value="internship">Internship</option>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Freelance">Freelance</option>
                 </select>
               </div>
 
@@ -217,12 +276,7 @@ export default function PublicJobsPage() {
 
               {/* Clear Filters */}
               <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setLocationFilter('');
-                  setJobTypeFilter('');
-                  setWorkSetupFilter('');
-                }}
+                onClick={clearAllFilters}
                 className="w-full px-4 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
               >
                 Clear All Filters
@@ -234,7 +288,7 @@ export default function PublicJobsPage() {
           <main className="flex-1">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-slate-900">
-                {loading ? 'Loading...' : `${filteredJobs.length} Jobs Found`}
+                {loading ? 'Loading...' : `${jobs.length} Jobs Found`}
               </h2>
               <select className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option>Most Recent</option>
@@ -262,7 +316,7 @@ export default function PublicJobsPage() {
                   </div>
                 ))}
               </div>
-            ) : filteredJobs.length === 0 ? (
+            ) : jobs.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
                 <svg
                   className="w-16 h-16 text-slate-300 mx-auto mb-4"
@@ -282,12 +336,7 @@ export default function PublicJobsPage() {
                   Try adjusting your search or filters to find more opportunities
                 </p>
                 <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setLocationFilter('');
-                    setJobTypeFilter('');
-                    setWorkSetupFilter('');
-                  }}
+                  onClick={clearAllFilters}
                   className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   Clear Filters
@@ -295,7 +344,7 @@ export default function PublicJobsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredJobs.map((job) => (
+                {jobs.map((job) => (
                   <Link
                     key={job.id}
                     href={`/jobs/${job.id}`}

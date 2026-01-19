@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
+    const department = searchParams.get('department') || '';
+    const locationType = searchParams.get('locationType') || '';
+
     const where = {
       isActive: true,
       approvalStatus: JobApprovalStatus.APPROVED,
@@ -25,7 +28,9 @@ export async function GET(request: NextRequest) {
         ],
       }),
       ...(location && { location: { contains: location, mode: 'insensitive' as const } }),
-      ...(jobType && { jobType }),
+      ...(jobType && { jobType: { contains: jobType, mode: 'insensitive' as const } }),
+      ...(department && { department: { contains: department, mode: 'insensitive' as const } }),
+      ...(locationType && { locationType: { contains: locationType, mode: 'insensitive' as const } }),
     };
 
     const [jobs, total] = await Promise.all([

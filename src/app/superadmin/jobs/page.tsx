@@ -113,6 +113,7 @@ export default function JobsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [seedingJobs, setSeedingJobs] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [createForm, setCreateForm] = useState({
     tenantId: '',
@@ -269,6 +270,32 @@ export default function JobsPage() {
     }
   };
 
+  const seedSampleJobs = async () => {
+    if (!confirm('This will create 6 sample jobs. Continue?')) return;
+    setSeedingJobs(true);
+    try {
+      const token = localStorage.getItem('superadmin_token');
+      const response = await fetch('/api/superadmin/jobs/seed', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to seed jobs');
+      }
+
+      alert(data.message);
+      await fetchJobs(1);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setSeedingJobs(false);
+    }
+  };
+
   const openEditModal = (job: Job) => {
     setEditForm({
       title: job.title || '',
@@ -396,13 +423,23 @@ export default function JobsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Jobs Management</h1>
           <p className="text-gray-500">Manage and approve job listings</p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Create Job
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={seedSampleJobs}
+            disabled={seedingJobs}
+            className="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 flex items-center gap-2 disabled:opacity-50"
+          >
+            {seedingJobs ? <Loader2 className="w-5 h-5 animate-spin" /> : <Star className="w-5 h-5" />}
+            Seed Sample Jobs
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Create Job
+          </button>
+        </div>
       </div>
 
       {/* Stats Bar */}
