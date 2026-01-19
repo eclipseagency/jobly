@@ -164,9 +164,6 @@ export default function Home() {
               <Link href="/companies" className="text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors">
                 Companies
               </Link>
-              <Link href="/salaries" className="text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors">
-                Salaries
-              </Link>
               {isLoggedIn && user?.role === 'employer' ? (
                 <Link href="/employer/dashboard" className="text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors">
                   Employer Dashboard
@@ -740,7 +737,6 @@ export default function Home() {
               <ul className="space-y-3 text-sm text-slate-500">
                 <li><Link href="/jobs" className="hover:text-primary-600 transition-colors">Browse Jobs</Link></li>
                 <li><Link href="/companies" className="hover:text-primary-600 transition-colors">Companies</Link></li>
-                <li><Link href="/salaries" className="hover:text-primary-600 transition-colors">Salary Guide</Link></li>
                 <li><Link href="/blog" className="hover:text-primary-600 transition-colors">Career Advice</Link></li>
               </ul>
             </div>

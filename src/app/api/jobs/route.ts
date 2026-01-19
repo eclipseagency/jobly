@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
 
     const where = {
       isActive: true,
+      approvalStatus: 'APPROVED',
       ...(search && {
         OR: [
           { title: { contains: search, mode: 'insensitive' as const } },

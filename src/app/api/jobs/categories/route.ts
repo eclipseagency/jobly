@@ -12,6 +12,7 @@ export async function GET() {
       by: ['department'],
       where: {
         isActive: true,
+        approvalStatus: 'APPROVED',
         department: {
           not: null,
         },
