@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     const preps = await prisma.interviewPrep.findMany({
       where: { userId },
       include: {
-        questions: {
+        practiceQuestions: {
           orderBy: { createdAt: 'asc' },
         },
       },
@@ -85,7 +85,11 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             title: true,
-            company: true,
+            tenant: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
@@ -94,13 +98,13 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate stats
-    const totalQuestions = preps.reduce((sum, p) => sum + p.questions.length, 0);
+    const totalQuestions = preps.reduce((sum, p) => sum + p.practiceQuestions.length, 0);
     const practicedQuestions = preps.reduce(
-      (sum, p) => sum + p.questions.filter((q) => q.practiced).length,
+      (sum, p) => sum + p.practiceQuestions.filter((q) => q.practiceCount > 0).length,
       0
     );
     const confidentQuestions = preps.reduce(
-      (sum, p) => sum + p.questions.filter((q) => q.confidenceLevel >= 4).length,
+      (sum, p) => sum + p.practiceQuestions.filter((q) => (q.confidence ?? 0) >= 4).length,
       0
     );
 
@@ -136,21 +140,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, companyName, jobTitle, interviewDate, notes, category, questions } = body;
-
-    if (!title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
-    }
+    const { companyName, jobTitle, interviewDate, interviewType, companyNotes, roleNotes, category, questions } = body;
 
     const prep = await prisma.interviewPrep.create({
       data: {
         userId,
-        title,
         companyName,
         jobTitle,
         interviewDate: interviewDate ? new Date(interviewDate) : null,
-        notes,
-        questions: questions?.length > 0
+        interviewType,
+        companyNotes,
+        roleNotes,
+        practiceQuestions: questions?.length > 0
           ? {
               create: questions.map((q: { question: string; category?: string }) => ({
                 question: q.question,
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
           : undefined,
       },
       include: {
-        questions: true,
+        practiceQuestions: true,
       },
     });
 
