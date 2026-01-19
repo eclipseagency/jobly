@@ -15,10 +15,10 @@ export async function POST(request: NextRequest) {
     await prisma.notification.updateMany({
       where: {
         userId,
-        read: false,
+        isRead: false,
       },
       data: {
-        read: true,
+        isRead: true,
       },
     });
 
