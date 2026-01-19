@@ -186,7 +186,7 @@ export const GET_ExportApplicants = employerRoute(
  *
  * Demonstrates bulk operation security
  */
-export const POST_BulkReject = employerRoute(
+export const POST_BulkReject = employerRoute<{ error?: string; success?: boolean; affected?: number }>(
   {
     resource: 'applicant',
     action: 'bulk_update',
