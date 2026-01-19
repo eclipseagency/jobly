@@ -1,0 +1,149 @@
+// ==========================================
+// SECURITY SCHEMA UPDATES
+// ==========================================
+// Add these models/fields to your main schema.prisma
+
+// New enum for employer roles within a tenant
+enum EmployerRole {
+  EMPLOYER_OWNER      // Full control, can delete tenant
+  EMPLOYER_ADMIN      // Manage team, settings, all operations
+  EMPLOYER_RECRUITER  // Manage jobs, applicants, messages
+  EMPLOYER_VIEWER     // Read-only access
+}
+
+// Employer Team Membership - Links users to tenants with specific roles
+model TenantMember {
+  id          String   @id @default(cuid())
+
+  // User (must be EMPLOYER type)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Tenant they belong to
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Role within the tenant
+  role        EmployerRole @default(EMPLOYER_VIEWER)
+
+  // Invitation tracking
+  invitedBy   String?      // User ID who sent the invite
+  invitedAt   DateTime     @default(now())
+  acceptedAt  DateTime?
+
+  // Status
+  isActive    Boolean  @default(true)
+  deactivatedAt DateTime?
+  deactivatedBy String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([role])
+  @@map("tenant_members")
+}
+
+// Invitation for joining a tenant
+model TenantInvitation {
+  id          String   @id @default(cuid())
+
+  // Target tenant
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Invitation details
+  email       String
+  role        EmployerRole @default(EMPLOYER_VIEWER)
+
+  // Token for accepting invitation
+  token       String   @unique @default(cuid())
+  expiresAt   DateTime
+
+  // Who sent it
+  invitedBy   String
+
+  // Status
+  status      String   @default("pending") // pending, accepted, expired, revoked
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([token])
+  @@map("tenant_invitations")
+}
+
+// Security Session - Track active sessions for audit
+model SecuritySession {
+  id          String   @id @default(cuid())
+
+  // User or Super Admin
+  userType    String   // user, super_admin
+  userId      String
+
+  // Session details
+  tokenHash   String   // Hashed JWT token
+  ipAddress   String?
+  userAgent   String?
+  deviceInfo  Json?    // { browser, os, device }
+
+  // Activity tracking
+  lastActiveAt DateTime @default(now())
+  expiresAt    DateTime
+
+  // Revocation
+  isRevoked    Boolean  @default(false)
+  revokedAt    DateTime?
+  revokedBy    String?
+  revokeReason String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([isRevoked])
+  @@map("security_sessions")
+}
+
+// Rate Limiting - Track request rates per user/IP
+model RateLimitEntry {
+  id          String   @id @default(cuid())
+
+  // Identifier (can be user ID, IP, or combination)
+  identifier  String
+  endpoint    String
+
+  // Counters
+  requestCount Int     @default(1)
+  windowStart  DateTime @default(now())
+  windowEnd    DateTime
+
+  // Blocking
+  isBlocked    Boolean  @default(false)
+  blockedUntil DateTime?
+
+  @@unique([identifier, endpoint])
+  @@index([identifier])
+  @@index([windowEnd])
+  @@map("rate_limit_entries")
+}
+
+// ==========================================
+// UPDATES TO EXISTING MODELS
+// ==========================================
+
+// Add to User model:
+// - tenantMembers   TenantMember[]  // For employer users with multiple tenants
+// - Add index on tenantId for faster queries
+
+// Add to Tenant model:
+// - members         TenantMember[]
+// - invitations     TenantInvitation[]
+
+// Add to AuditLog model (if not already present):
+// - tenantId        String?  // For tenant-scoped logs
+// - sessionId       String?  // Link to security session

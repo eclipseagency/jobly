@@ -1,6 +1,6 @@
 // Prisma schema for Jobly
 // Using PostgreSQL via Neon.tech with connection pooling
-// Schema version: 2026-01-08 - Added screeningFormId to applications
+// Schema version: 2026-01-19 - Added security models for RBAC and tenant isolation
 
 generator client {
   provider      = "prisma-client-js"
@@ -18,12 +18,28 @@ enum UserRole {
   EMPLOYER
 }
 
+// Employer role within a tenant (hierarchical)
+enum EmployerRole {
+  EMPLOYER_OWNER      // Full control, can delete tenant
+  EMPLOYER_ADMIN      // Manage team, settings, all operations
+  EMPLOYER_RECRUITER  // Manage jobs, applicants, messages
+  EMPLOYER_VIEWER     // Read-only access
+}
+
 // Job approval status
 enum JobApprovalStatus {
   PENDING
   APPROVED
   REJECTED
   CHANGES_REQUESTED
+}
+
+// Invitation status
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
 }
 
 // Super Admin model for platform administrators
@@ -95,9 +111,11 @@ model Tenant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users   User[]
-  jobs    Job[]
-  reviews CompanyReview[]
+  users       User[]
+  jobs        Job[]
+  reviews     CompanyReview[]
+  members     TenantMember[]
+  invitations TenantInvitation[]
 
   @@map("tenants")
 }
@@ -189,6 +207,10 @@ model User {
   jobAlerts            JobAlert[]
   companyReviews       CompanyReview[]
   salaryReports        SalaryReport[]
+
+  // Security: Tenant memberships (for employers with team access)
+  tenantMemberships    TenantMember[]
+  securitySessions     SecuritySession[]
 
   @@index([tenantId])
   @@index([role])
@@ -1051,3 +1073,162 @@ model SalaryReport {
   @@index([tenantId])
   @@map("salary_reports")
 }
+
+// ==========================================
+// SECURITY: TENANT TEAM MANAGEMENT
+// ==========================================
+
+// Employer Team Membership - Links users to tenants with specific roles
+model TenantMember {
+  id          String   @id @default(cuid())
+
+  // User (must be EMPLOYER type)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Tenant they belong to
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Role within the tenant
+  role        EmployerRole @default(EMPLOYER_VIEWER)
+
+  // Invitation tracking
+  invitedBy   String?      // User ID who sent the invite
+  invitedAt   DateTime     @default(now())
+  acceptedAt  DateTime?
+
+  // Status
+  isActive    Boolean  @default(true)
+  deactivatedAt DateTime?
+  deactivatedBy String?
+  deactivationReason String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([role])
+  @@index([isActive])
+  @@map("tenant_members")
+}
+
+// Invitation for joining a tenant
+model TenantInvitation {
+  id          String   @id @default(cuid())
+
+  // Target tenant
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Invitation details
+  email       String
+  role        EmployerRole @default(EMPLOYER_VIEWER)
+
+  // Token for accepting invitation
+  token       String   @unique @default(cuid())
+  expiresAt   DateTime
+
+  // Who sent it
+  invitedBy   String
+  inviterName String?
+
+  // Personalized message
+  message     String?
+
+  // Status
+  status      InvitationStatus @default(PENDING)
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  revokedBy   String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([token])
+  @@index([status])
+  @@map("tenant_invitations")
+}
+
+// ==========================================
+// SECURITY: SESSION MANAGEMENT
+// ==========================================
+
+// Security Session - Track active sessions for audit and revocation
+model SecuritySession {
+  id          String   @id @default(cuid())
+
+  // User or Super Admin
+  userType    String   // user, super_admin
+  userId      String
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Session details
+  tokenHash   String   // Hashed JWT token for identification
+  ipAddress   String?
+  userAgent   String?
+  deviceInfo  Json?    // { browser, os, device, location }
+
+  // Activity tracking
+  lastActiveAt DateTime @default(now())
+  expiresAt    DateTime
+
+  // Revocation
+  isRevoked    Boolean  @default(false)
+  revokedAt    DateTime?
+  revokedBy    String?  // User/Admin who revoked
+  revokeReason String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([userType])
+  @@index([tokenHash])
+  @@index([isRevoked])
+  @@index([expiresAt])
+  @@map("security_sessions")
+}
+
+// ==========================================
+// SECURITY: RATE LIMITING
+// ==========================================
+
+// Rate Limiting - Track request rates per user/IP to prevent abuse
+model RateLimitEntry {
+  id          String   @id @default(cuid())
+
+  // Identifier (can be user ID, IP, or combination like "user:123" or "ip:1.2.3.4")
+  identifier  String
+  endpoint    String   // API endpoint being rate limited
+
+  // Counters
+  requestCount Int     @default(1)
+  windowStart  DateTime @default(now())
+  windowEnd    DateTime
+
+  // Blocking
+  isBlocked    Boolean  @default(false)
+  blockedUntil DateTime?
+  blockReason  String?
+
+  createdAt    DateTime @default(now())
+
+  @@unique([identifier, endpoint])
+  @@index([identifier])
+  @@index([endpoint])
+  @@index([windowEnd])
+  @@index([isBlocked])
+  @@map("rate_limit_entries")
+}
+
+// ==========================================
+// SECURITY: AUDIT LOG ENHANCEMENTS
+// ==========================================
+
+// Add tenantId to AuditLog for tenant-scoped logs
+// Note: The AuditLog model already exists, we're documenting the intended enhancement
+// The metadata JSON field can store tenantId for filtering
