@@ -6,18 +6,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Job categories for navigation
-const jobCategories = [
-  { label: 'Technology', icon: '💻', href: '/jobs?department=Technology' },
-  { label: 'Engineering', icon: '⚙️', href: '/jobs?department=Engineering' },
-  { label: 'Marketing', icon: '📣', href: '/jobs?department=Marketing' },
-  { label: 'Sales', icon: '💼', href: '/jobs?department=Sales' },
-  { label: 'Design', icon: '🎨', href: '/jobs?department=Design' },
-  { label: 'Finance', icon: '📊', href: '/jobs?department=Finance' },
-  { label: 'Healthcare', icon: '🏥', href: '/jobs?department=Healthcare' },
-  { label: 'Education', icon: '📚', href: '/jobs?department=Education' },
-];
-
 // Quick filters
 const quickFilters = [
   { label: 'Remote Jobs', href: '/jobs?locationType=remote', icon: '🌐' },
@@ -147,26 +135,6 @@ export function JobsLayoutClient({ children }: JobsLayoutClientProps) {
                   >
                     <span className="text-base">{filter.icon}</span>
                     {filter.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Categories */}
-            <div className="mt-8">
-              <p className="px-4 mb-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Categories
-              </p>
-              <div className="space-y-1">
-                {jobCategories.map((category) => (
-                  <Link
-                    key={category.href}
-                    href={category.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
-                  >
-                    <span className="text-base">{category.icon}</span>
-                    {category.label}
                   </Link>
                 ))}
               </div>
