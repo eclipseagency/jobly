@@ -95,8 +95,9 @@ model Tenant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users User[]
-  jobs  Job[]
+  users   User[]
+  jobs    Job[]
+  reviews CompanyReview[]
 
   @@map("tenants")
 }
@@ -183,6 +184,11 @@ model User {
   profileViews         ProfileView[]       @relation("ViewerProfile")
   profileViewsReceived ProfileView[]       @relation("ViewedProfile")
   candidateBlocks      CandidateBlock[]
+
+  // New feature relations
+  jobAlerts            JobAlert[]
+  companyReviews       CompanyReview[]
+  salaryReports        SalaryReport[]
 
   @@index([tenantId])
   @@index([role])
@@ -796,4 +802,252 @@ model Resume {
 
   @@index([userId])
   @@map("resumes")
+}
+
+// ==========================================
+// JOB ALERTS FEATURE
+// ==========================================
+
+model JobAlert {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name            String   // User-defined name for the alert
+  isActive        Boolean  @default(true)
+
+  // Search criteria (stored as JSON for flexibility)
+  keywords        String[] // Job title keywords
+  locations       String[] // Locations to search
+  jobTypes        String[] // full-time, part-time, contract, etc.
+  salaryMin       Int?
+  salaryMax       Int?
+  remoteOnly      Boolean  @default(false)
+  industries      String[] // Industry filters
+  experienceLevel String?  // entry, mid, senior, etc.
+
+  // Notification settings
+  frequency       String   @default("daily") // instant, daily, weekly
+  emailEnabled    Boolean  @default(true)
+  lastSentAt      DateTime?
+  lastJobCount    Int      @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("job_alerts")
+}
+
+// ==========================================
+// COMPANY REVIEWS FEATURE
+// ==========================================
+
+model CompanyReview {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Review type
+  reviewType      String   // employee, former_employee, interviewed, applicant
+
+  // Ratings (1-5 scale)
+  overallRating       Float
+  workLifeBalance     Float?
+  compensation        Float?
+  jobSecurity         Float?
+  management          Float?
+  culture             Float?
+  careerGrowth        Float?
+
+  // Review content
+  title           String
+  pros            String
+  cons            String
+  advice          String?  // Advice to management
+
+  // Employment details (optional)
+  jobTitle        String?
+  department      String?
+  employmentStatus String?  // current, former
+  employmentType  String?  // full-time, part-time, contract, intern
+  yearsAtCompany  Int?
+
+  // Location
+  location        String?
+
+  // Moderation
+  isApproved      Boolean  @default(false)
+  approvedAt      DateTime?
+  approvedBy      String?  // SuperAdmin ID
+  isHidden        Boolean  @default(false)
+  hiddenReason    String?
+
+  // Helpful votes
+  helpfulCount    Int      @default(0)
+  notHelpfulCount Int      @default(0)
+
+  // Employer response
+  employerResponse    String?
+  employerRespondedAt DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  votes           ReviewVote[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([isApproved])
+  @@index([overallRating])
+  @@map("company_reviews")
+}
+
+model ReviewVote {
+  id          String   @id @default(cuid())
+  reviewId    String
+  review      CompanyReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  userId      String
+  isHelpful   Boolean  // true = helpful, false = not helpful
+
+  createdAt   DateTime @default(now())
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@map("review_votes")
+}
+
+// ==========================================
+// AUDIT LOGGING FEATURE
+// ==========================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+
+  // Who performed the action
+  actorType   String   // super_admin, employer, employee, system
+  actorId     String?  // User or SuperAdmin ID
+  actorEmail  String?
+  actorName   String?
+
+  // What action was performed
+  action      String   // create, update, delete, login, logout, approve, reject, suspend, etc.
+  resource    String   // user, job, application, tenant, settings, etc.
+  resourceId  String?
+
+  // Details
+  description String?
+  metadata    Json?    // Additional context (old values, new values, etc.)
+
+  // Request info
+  ipAddress   String?
+  userAgent   String?
+  requestId   String?  // For request tracing
+
+  // Categorization
+  category    String?  // authentication, data_modification, admin_action, security, etc.
+  severity    String   @default("info") // info, warning, error, critical
+
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([createdAt])
+  @@index([category])
+  @@index([severity])
+  @@map("audit_logs")
+}
+
+// ==========================================
+// TWO-FACTOR AUTHENTICATION
+// ==========================================
+
+model TwoFactorAuth {
+  id              String   @id @default(cuid())
+
+  // Can be either User or SuperAdmin
+  userType        String   // user, super_admin
+  userId          String   @unique
+
+  // TOTP settings
+  secret          String   // Encrypted TOTP secret
+  isEnabled       Boolean  @default(false)
+  verifiedAt      DateTime?
+
+  // Backup codes (hashed)
+  backupCodes     String[] // Hashed backup codes
+  backupCodesUsed Int      @default(0)
+
+  // Recovery
+  recoveryEmail   String?
+  recoveryPhone   String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userType])
+  @@map("two_factor_auth")
+}
+
+// ==========================================
+// SALARY INSIGHTS FEATURE
+// ==========================================
+
+model SalaryReport {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Job details
+  jobTitle        String
+  normalizedTitle String   // For grouping similar titles
+  tenantId        String?  // Optional company link
+  companyName     String?  // For anonymous reports
+
+  // Salary info
+  baseSalary      Int
+  currency        String   @default("PHP")
+  salaryPeriod    String   @default("yearly") // yearly, monthly, hourly
+  totalCompensation Int?   // Including bonuses, stock, etc.
+
+  // Compensation breakdown
+  bonus           Int?
+  stockOptions    Int?
+  commission      Int?
+  otherBenefits   String?
+
+  // Job details
+  location        String?
+  yearsExperience Int?
+  yearsAtCompany  Int?
+  employmentType  String?  // full-time, part-time, contract
+  department      String?
+
+  // Education
+  educationLevel  String?  // high_school, bachelors, masters, phd
+
+  // Verification
+  isVerified      Boolean  @default(false)
+  verifiedAt      DateTime?
+
+  // Moderation
+  isApproved      Boolean  @default(true)
+  isHidden        Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([normalizedTitle])
+  @@index([location])
+  @@index([baseSalary])
+  @@index([tenantId])
+  @@map("salary_reports")
 }
