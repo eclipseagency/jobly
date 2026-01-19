@@ -49,22 +49,20 @@ export interface OAuthUserInfo {
 export function getAuthorizationUrl(provider: OAuthProvider, state: string): string {
   const config = OAUTH_CONFIG[provider];
 
-  const params = new URLSearchParams({
+  const baseParams: Record<string, string> = {
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
     response_type: 'code',
     scope: config.scopes.join(' '),
     state,
-    access_type: provider === 'google' ? 'offline' : undefined,
-    prompt: provider === 'google' ? 'consent' : undefined,
-  } as Record<string, string>);
+  };
 
-  // Remove undefined values
-  for (const [key, value] of params.entries()) {
-    if (value === 'undefined') {
-      params.delete(key);
-    }
+  if (provider === 'google') {
+    baseParams.access_type = 'offline';
+    baseParams.prompt = 'consent';
   }
+
+  const params = new URLSearchParams(baseParams);
 
   return `${config.authUrl}?${params.toString()}`;
 }
