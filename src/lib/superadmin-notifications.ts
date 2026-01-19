@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 // Notification types for super admin
 export type SuperAdminNotificationType =
@@ -35,7 +36,7 @@ export async function createSuperAdminNotification(params: CreateNotificationPar
         relatedUserId: params.relatedUserId,
         relatedTenantId: params.relatedTenantId,
         relatedJobId: params.relatedJobId,
-        metadata: params.metadata,
+        metadata: params.metadata as Prisma.InputJsonValue,
       },
     });
     return notification;
