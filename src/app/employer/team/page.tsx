@@ -432,7 +432,9 @@ export default function TeamManagementPage() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-slate-900">{member.name}</p>
                         {member.isOwner && (
-                          <Crown className="w-4 h-4 text-yellow-500" title="Owner" />
+                          <span title="Owner">
+                            <Crown className="w-4 h-4 text-yellow-500" />
+                          </span>
                         )}
                         {member.userId === user?.id && (
                           <span className="text-xs text-slate-500">(You)</span>
