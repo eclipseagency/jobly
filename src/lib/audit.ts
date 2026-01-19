@@ -1,4 +1,5 @@
 import { prisma } from './db';
+import { Prisma } from '@prisma/client';
 
 export interface AuditLogData {
   actorType: 'super_admin' | 'employer' | 'employee' | 'system';
@@ -30,7 +31,7 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
         resource: data.resource,
         resourceId: data.resourceId,
         description: data.description,
-        metadata: data.metadata,
+        metadata: data.metadata as Prisma.InputJsonValue,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
         requestId: data.requestId,

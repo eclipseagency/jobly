@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { notifyNewJobPosted } from '@/lib/superadmin-notifications';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -118,6 +119,12 @@ export async function POST(request: NextRequest) {
     // Ensure tenant exists (creates one if using localStorage fallback)
     const tenantId = await ensureTenantExists(tenantIdHeader, userId || undefined);
 
+    // Get tenant name for notification
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { name: true },
+    });
+
     const job = await prisma.job.create({
       data: {
         tenantId,
@@ -133,6 +140,14 @@ export async function POST(request: NextRequest) {
         isActive: true,
       },
     });
+
+    // Notify super admin of new job posting
+    notifyNewJobPosted({
+      id: job.id,
+      title: job.title,
+      tenantId: job.tenantId,
+      tenantName: tenant?.name,
+    }).catch(console.error); // Non-blocking
 
     return NextResponse.json({ job });
   } catch (error) {

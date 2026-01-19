@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { notifyNewUserRegistration } from '@/lib/superadmin-notifications';
 
 // POST /api/auth/register - Register new user
 export async function POST(request: NextRequest) {
@@ -97,6 +98,16 @@ export async function POST(request: NextRequest) {
         tenantId,
       },
     });
+
+    // Notify super admin of new user registration
+    notifyNewUserRegistration({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId,
+      tenantName,
+    }).catch(console.error); // Non-blocking
 
     return NextResponse.json({
       success: true,

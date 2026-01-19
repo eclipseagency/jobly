@@ -212,6 +212,13 @@ model User {
   tenantMemberships    TenantMember[]
   securitySessions     SecuritySession[]
 
+  // Career development
+  careerGoals          CareerGoal[]
+  interviewPreps       InterviewPrep[]
+
+  // Social login
+  oauthAccounts        OAuthAccount[]
+
   @@index([tenantId])
   @@index([role])
   @@index([email])
@@ -602,6 +609,32 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@map("notifications")
+}
+
+// Super Admin notifications
+model SuperAdminNotification {
+  id        String   @id @default(cuid())
+
+  type      String   // new_user, new_employer, new_job, job_pending, employer_verification, user_suspended, etc.
+  title     String
+  message   String
+  link      String?  // Optional link to relevant page (e.g., /superadmin/users/123)
+  isRead    Boolean  @default(false)
+
+  // Optional references for quick access
+  relatedUserId     String?
+  relatedTenantId   String?
+  relatedJobId      String?
+
+  // Metadata for additional context
+  metadata  Json?    // { userName, companyName, jobTitle, etc. }
+
+  createdAt DateTime @default(now())
+
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+  @@map("super_admin_notifications")
 }
 
 // ==========================================
@@ -1226,9 +1259,189 @@ model RateLimitEntry {
 }
 
 // ==========================================
-// SECURITY: AUDIT LOG ENHANCEMENTS
+// CAREER GOALS TRACKER
 // ==========================================
 
-// Add tenantId to AuditLog for tenant-scoped logs
-// Note: The AuditLog model already exists, we're documenting the intended enhancement
-// The metadata JSON field can store tenantId for filtering
+// Career goal set by job seeker
+model CareerGoal {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Goal details
+  title           String   // e.g., "Become a Senior Developer"
+  targetRole      String   // Target job title
+  targetIndustry  String?  // Target industry
+  targetSalary    Int?     // Target salary
+  targetCompanies String[] // Dream companies
+
+  // Timeline
+  targetDate      DateTime?
+  priority        String   @default("medium") // low, medium, high
+
+  // Progress tracking
+  status          String   @default("active") // active, achieved, paused, abandoned
+  progressPercent Int      @default(0)
+  achievedAt      DateTime?
+
+  // Notes
+  description     String?
+  motivation      String?  // Why this goal matters
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  milestones      CareerMilestone[]
+  skillTargets    SkillTarget[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("career_goals")
+}
+
+// Milestones within a career goal
+model CareerMilestone {
+  id          String   @id @default(cuid())
+  goalId      String
+  goal        CareerGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  dueDate     DateTime?
+
+  // Status
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+
+  // Order
+  order       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([goalId])
+  @@map("career_milestones")
+}
+
+// Skill targets for career goals
+model SkillTarget {
+  id              String   @id @default(cuid())
+  goalId          String
+  goal            CareerGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  skillName       String
+  currentLevel    String?  // beginner, intermediate, advanced, expert
+  targetLevel     String   // intermediate, advanced, expert
+
+  // Progress
+  isAchieved      Boolean  @default(false)
+  achievedAt      DateTime?
+
+  // Resources
+  learningResources Json?  // [{ title, url, type }]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([goalId])
+  @@map("skill_targets")
+}
+
+// ==========================================
+// INTERVIEW PREPARATION
+// ==========================================
+
+// Interview prep sessions
+model InterviewPrep {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Context
+  companyName     String?
+  jobTitle        String?
+  interviewDate   DateTime?
+  interviewType   String?  // phone, video, onsite, technical, behavioral
+
+  // Prep content
+  companyNotes    String?  // Research notes about company
+  roleNotes       String?  // Notes about the role
+  questionsToAsk  String[] // Questions to ask interviewer
+
+  // Status
+  status          String   @default("preparing") // preparing, completed, archived
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  practiceQuestions InterviewQuestion[]
+
+  @@index([userId])
+  @@index([interviewDate])
+  @@map("interview_preps")
+}
+
+// Interview practice questions
+model InterviewQuestion {
+  id              String   @id @default(cuid())
+  prepId          String?
+  prep            InterviewPrep? @relation(fields: [prepId], references: [id], onDelete: Cascade)
+
+  // Question details
+  question        String
+  category        String   // behavioral, technical, situational, company-specific
+  difficulty      String   @default("medium") // easy, medium, hard
+
+  // User's answer/notes
+  myAnswer        String?
+  notes           String?
+
+  // Practice tracking
+  practiceCount   Int      @default(0)
+  lastPracticedAt DateTime?
+  confidence      Int?     // 1-5 rating
+
+  // For global question bank (prepId = null)
+  isGlobal        Boolean  @default(false)
+  industry        String?
+  jobRole         String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([prepId])
+  @@index([category])
+  @@index([isGlobal])
+  @@map("interview_questions")
+}
+
+// ==========================================
+// SOCIAL LOGIN
+// ==========================================
+
+// OAuth accounts linked to users
+model OAuthAccount {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider        String   // google, linkedin
+  providerAccountId String
+
+  // Tokens (encrypted)
+  accessToken     String?
+  refreshToken    String?
+  expiresAt       DateTime?
+
+  // Profile data from provider
+  email           String?
+  name            String?
+  avatar          String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
