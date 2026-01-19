@@ -35,12 +35,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
 
-    // Cannot modify owner
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
-    if (tenant?.ownerId === memberToUpdate.userId) {
+    // Cannot modify owner (check if member has EMPLOYER_OWNER role)
+    if (memberToUpdate.role === 'EMPLOYER_OWNER') {
       return NextResponse.json(
         { error: 'Cannot modify the owner' },
         { status: 403 }
@@ -103,7 +99,8 @@ export async function PUT(
         avatar: updatedMember.user.avatar,
         role: updatedMember.role,
         isActive: updatedMember.isActive,
-        joinedAt: updatedMember.joinedAt,
+        invitedAt: updatedMember.invitedAt,
+        acceptedAt: updatedMember.acceptedAt,
       },
     });
   } catch (error) {
@@ -149,12 +146,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
 
-    // Cannot remove owner
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
-    if (tenant?.ownerId === memberToRemove.userId) {
+    // Cannot remove owner (check if member has EMPLOYER_OWNER role)
+    if (memberToRemove.role === 'EMPLOYER_OWNER') {
       return NextResponse.json(
         { error: 'Cannot remove the owner' },
         { status: 403 }
