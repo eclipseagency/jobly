@@ -3,8 +3,11 @@
  *
  * This file demonstrates how to use the security system
  * in an actual API route.
+ *
+ * NOTE: This is an example/documentation file, not production code.
  */
 
+// @ts-nocheck - This is an example file for documentation purposes
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import {
