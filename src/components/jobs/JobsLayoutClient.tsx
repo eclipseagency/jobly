@@ -6,13 +6,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Quick filters
-const quickFilters = [
-  { label: 'Remote Jobs', href: '/jobs?locationType=remote', icon: '🌐' },
-  { label: 'Full-time', href: '/jobs?jobType=Full-time', icon: '⏰' },
-  { label: 'Entry Level', href: '/jobs?experienceLevel=entry', icon: '🌱' },
-];
-
 interface JobsLayoutClientProps {
   children: React.ReactNode;
 }
@@ -21,6 +14,11 @@ export function JobsLayoutClient({ children }: JobsLayoutClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { user, isLoggedIn } = useAuth();
+
+  // Navigation links - same for all users, redirect to login if not authenticated
+  const getNavHref = (path: string) => {
+    return isLoggedIn ? path : `/auth/employee/login?redirect=${encodeURIComponent(path)}`;
+  };
 
   const getInitials = (name: string) => {
     const parts = name.split(' ');
@@ -84,60 +82,36 @@ export function JobsLayoutClient({ children }: JobsLayoutClientProps) {
                 Browse All Jobs
               </Link>
 
-              {isLoggedIn && (
-                <>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
-                  >
-                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    My Dashboard
-                  </Link>
-                  <Link
-                    href="/dashboard/saved-jobs"
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
-                  >
-                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                    Saved Jobs
-                  </Link>
-                  <Link
-                    href="/dashboard/applications"
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
-                  >
-                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    My Applications
-                  </Link>
-                </>
-              )}
-            </div>
-
-            {/* Quick Filters */}
-            <div className="mt-8">
-              <p className="px-4 mb-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Quick Filters
-              </p>
-              <div className="space-y-1">
-                {quickFilters.map((filter) => (
-                  <Link
-                    key={filter.href}
-                    href={filter.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
-                  >
-                    <span className="text-base">{filter.icon}</span>
-                    {filter.label}
-                  </Link>
-                ))}
-              </div>
+              <Link
+                href={getNavHref('/dashboard')}
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
+              >
+                <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                My Dashboard
+              </Link>
+              <Link
+                href={getNavHref('/dashboard/saved-jobs')}
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
+              >
+                <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                Saved Jobs
+              </Link>
+              <Link
+                href={getNavHref('/dashboard/applications')}
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
+              >
+                <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                My Applications
+              </Link>
             </div>
 
             {/* For Employers CTA */}
