@@ -6,6 +6,7 @@
  */
 
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 // In-memory store for active connections (for single-server setup)
 // For production with multiple servers, use Redis pub/sub
@@ -84,7 +85,7 @@ export async function createNotification({
       type,
       title,
       message,
-      data,
+      data: data as Prisma.InputJsonValue,
     },
   });
 
