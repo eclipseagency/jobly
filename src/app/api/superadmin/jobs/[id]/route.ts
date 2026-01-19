@@ -197,8 +197,18 @@ export async function PATCH(
     }
 
     // General update
-    const allowedFields = ['title', 'description', 'location', 'salary', 'jobType', 'isActive'];
-    const filteredData: any = {};
+    const allowedFields = [
+      'title',
+      'description',
+      'requirements',
+      'location',
+      'locationType',
+      'salary',
+      'jobType',
+      'department',
+      'isActive'
+    ];
+    const filteredData: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
         filteredData[field] = updateData[field];

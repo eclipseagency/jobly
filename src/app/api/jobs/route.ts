@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { JobApprovalStatus } from '@prisma/client';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const where = {
       isActive: true,
-      approvalStatus: 'APPROVED',
+      approvalStatus: JobApprovalStatus.APPROVED,
       ...(search && {
         OR: [
           { title: { contains: search, mode: 'insensitive' as const } },

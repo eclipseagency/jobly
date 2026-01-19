@@ -30,16 +30,26 @@ import {
   Save,
   MessageSquare,
   Send,
+  Plus,
 } from 'lucide-react';
+
+interface Company {
+  id: string;
+  name: string;
+  logo?: string;
+  isVerified: boolean;
+}
 
 interface Job {
   id: string;
   title: string;
   description?: string;
+  requirements?: string;
   location?: string;
   locationType?: string;
   salary?: string;
   jobType?: string;
+  department?: string;
   isActive: boolean;
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   approvedAt?: string;
@@ -87,12 +97,35 @@ export default function JobsPage() {
   const [showJobModal, setShowJobModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRequestChangesModal, setShowRequestChangesModal] = useState(false);
-  const [editForm, setEditForm] = useState({ title: '', description: '', location: '', salary: '', jobType: '' });
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    requirements: '',
+    location: '',
+    locationType: '',
+    salary: '',
+    jobType: '',
+    department: ''
+  });
   const [changeRequestMessage, setChangeRequestMessage] = useState('');
   const [showActionModal, setShowActionModal] = useState<{ type: string; job: Job } | null>(null);
   const [actionReason, setActionReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [createForm, setCreateForm] = useState({
+    tenantId: '',
+    title: '',
+    description: '',
+    requirements: '',
+    location: '',
+    locationType: '',
+    salary: '',
+    jobType: '',
+    department: '',
+    autoApprove: true,
+  });
 
   const fetchJobs = async (page = 1) => {
     setLoading(true);
@@ -172,13 +205,80 @@ export default function JobsPage() {
     }
   };
 
+  const fetchCompanies = async () => {
+    try {
+      const token = localStorage.getItem('superadmin_token');
+      const response = await fetch('/api/superadmin/employers?limit=100', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCompanies(data.employers || []);
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
+
+  const openCreateModal = () => {
+    fetchCompanies();
+    setCreateForm({
+      tenantId: '',
+      title: '',
+      description: '',
+      requirements: '',
+      location: '',
+      locationType: '',
+      salary: '',
+      jobType: '',
+      department: '',
+      autoApprove: true,
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleCreateJob = async () => {
+    if (!createForm.tenantId || !createForm.title || !createForm.description) {
+      alert('Please fill in all required fields (Company, Title, Description)');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('superadmin_token');
+      const response = await fetch('/api/superadmin/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(createForm),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create job');
+      }
+
+      await fetchJobs(1);
+      setShowCreateModal(false);
+      alert('Job created successfully!');
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const openEditModal = (job: Job) => {
     setEditForm({
       title: job.title || '',
       description: job.description || '',
+      requirements: job.requirements || '',
       location: job.location || '',
+      locationType: job.locationType || '',
       salary: job.salary || '',
       jobType: job.jobType || '',
+      department: job.department || '',
     });
     setSelectedJob(job);
     setShowEditModal(true);
@@ -290,6 +390,21 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header with Create Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Jobs Management</h1>
+          <p className="text-gray-500">Manage and approve job listings</p>
+        </div>
+        <button
+          onClick={openCreateModal}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+        >
+          <Plus className="w-5 h-5" />
+          Create Job
+        </button>
+      </div>
+
       {/* Stats Bar */}
       <div className="grid grid-cols-4 gap-4">
         <button
@@ -923,7 +1038,7 @@ export default function JobsPage() {
                   value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter job title"
+                  placeholder="e.g., Senior Software Engineer"
                 />
               </div>
               <div>
@@ -934,8 +1049,20 @@ export default function JobsPage() {
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter job description"
-                  rows={6}
+                  placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
+                  rows={5}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Requirements
+                </label>
+                <textarea
+                  value={editForm.requirements}
+                  onChange={(e) => setEditForm({ ...editForm, requirements: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="List the required skills, qualifications, and experience..."
+                  rows={4}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -948,9 +1075,26 @@ export default function JobsPage() {
                     value={editForm.location}
                     onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter location"
+                    placeholder="e.g., Makati City, Metro Manila"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Work Setup
+                  </label>
+                  <select
+                    value={editForm.locationType}
+                    onChange={(e) => setEditForm({ ...editForm, locationType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Select work setup</option>
+                    <option value="remote">Remote</option>
+                    <option value="onsite">On-site</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Salary
@@ -960,8 +1104,33 @@ export default function JobsPage() {
                     value={editForm.salary}
                     onChange={(e) => setEditForm({ ...editForm, salary: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="e.g., $50,000 - $70,000"
+                    placeholder="e.g., ₱50,000 - ₱80,000/month"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Department
+                  </label>
+                  <select
+                    value={editForm.department}
+                    onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Select department</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Human Resources">Human Resources</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Customer Service">Customer Service</option>
+                    <option value="Design">Design</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Education">Education</option>
+                    <option value="BPO">BPO</option>
+                    <option value="Admin">Admin</option>
+                  </select>
                 </div>
               </div>
               <div>
@@ -974,11 +1143,11 @@ export default function JobsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="">Select job type</option>
-                  <option value="FULL_TIME">Full Time</option>
-                  <option value="PART_TIME">Part Time</option>
-                  <option value="CONTRACT">Contract</option>
-                  <option value="INTERNSHIP">Internship</option>
-                  <option value="FREELANCE">Freelance</option>
+                  <option value="Full-time">Full Time</option>
+                  <option value="Part-time">Part Time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Freelance">Freelance</option>
                 </select>
               </div>
             </div>
@@ -1065,6 +1234,199 @@ export default function JobsPage() {
               >
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 Send Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Job Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold">Create New Job</h2>
+                  <p className="text-sm text-gray-500">Post a job on behalf of a company</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Company <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={createForm.tenantId}
+                  onChange={(e) => setCreateForm({ ...createForm, tenantId: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Select a company</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name} {company.isVerified ? '✓' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Job Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="e.g., Senior Software Engineer"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."
+                  rows={4}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Requirements
+                </label>
+                <textarea
+                  value={createForm.requirements}
+                  onChange={(e) => setCreateForm({ ...createForm, requirements: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="List the required skills, qualifications, and experience..."
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.location}
+                    onChange={(e) => setCreateForm({ ...createForm, location: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="e.g., Makati City, Metro Manila"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Work Setup
+                  </label>
+                  <select
+                    value={createForm.locationType}
+                    onChange={(e) => setCreateForm({ ...createForm, locationType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Select work setup</option>
+                    <option value="remote">Remote</option>
+                    <option value="onsite">On-site</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Salary
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.salary}
+                    onChange={(e) => setCreateForm({ ...createForm, salary: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="e.g., ₱50,000 - ₱80,000/month"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Department
+                  </label>
+                  <select
+                    value={createForm.department}
+                    onChange={(e) => setCreateForm({ ...createForm, department: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Select department</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Human Resources">Human Resources</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Customer Service">Customer Service</option>
+                    <option value="Design">Design</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Education">Education</option>
+                    <option value="BPO">BPO</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Job Type
+                </label>
+                <select
+                  value={createForm.jobType}
+                  onChange={(e) => setCreateForm({ ...createForm, jobType: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Select job type</option>
+                  <option value="Full-time">Full Time</option>
+                  <option value="Part-time">Part Time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Freelance">Freelance</option>
+                </select>
+              </div>
+              <div className="pt-2 border-t">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={createForm.autoApprove}
+                    onChange={(e) => setCreateForm({ ...createForm, autoApprove: e.target.checked })}
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  />
+                  <span className="text-sm text-gray-700">Auto-approve this job (skip pending status)</span>
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-xl">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                disabled={actionLoading}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateJob}
+                disabled={actionLoading || !createForm.tenantId || !createForm.title || !createForm.description}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 disabled:opacity-50"
+              >
+                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Create Job
               </button>
             </div>
           </div>

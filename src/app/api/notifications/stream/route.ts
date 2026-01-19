@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -7,13 +6,13 @@ export const runtime = 'nodejs';
 // Store active connections (in production, use Redis pub/sub)
 const connections = new Map<string, ReadableStreamDefaultController>();
 
-// Helper to broadcast to a user
-export function broadcastToUser(userId: string, notification: object) {
+// Helper to broadcast to a user (internal use only, not exported from route)
+function broadcastToUser(userId: string, notification: object) {
   const controller = connections.get(userId);
   if (controller) {
     try {
       controller.enqueue(`data: ${JSON.stringify(notification)}\n\n`);
-    } catch (error) {
+    } catch {
       connections.delete(userId);
     }
   }

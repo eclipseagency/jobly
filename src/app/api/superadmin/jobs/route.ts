@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin, hasPermission } from '@/lib/superadmin-auth';
+import { JobApprovalStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,6 +104,94 @@ export async function GET(request: NextRequest) {
     console.error('[SuperAdmin Jobs] List error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch jobs' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/superadmin/jobs - Create a new job
+export async function POST(request: NextRequest) {
+  const authResult = requireSuperAdmin(request);
+  if (authResult instanceof NextResponse) return authResult;
+  const { admin } = authResult;
+
+  if (!hasPermission(admin, 'canApproveJobs')) {
+    return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json();
+    const {
+      tenantId,
+      title,
+      description,
+      requirements,
+      location,
+      locationType,
+      salary,
+      jobType,
+      department,
+      autoApprove = true,
+    } = body;
+
+    // Validate required fields
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Company (tenant) is required' }, { status: 400 });
+    }
+    if (!title) {
+      return NextResponse.json({ error: 'Job title is required' }, { status: 400 });
+    }
+    if (!description) {
+      return NextResponse.json({ error: 'Job description is required' }, { status: 400 });
+    }
+
+    // Verify tenant exists
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+    }
+
+    // Create the job
+    const job = await prisma.job.create({
+      data: {
+        title,
+        description,
+        requirements,
+        location,
+        locationType,
+        salary,
+        jobType,
+        department,
+        tenantId,
+        isActive: true,
+        approvalStatus: autoApprove ? JobApprovalStatus.APPROVED : JobApprovalStatus.PENDING,
+        approvedAt: autoApprove ? new Date() : null,
+        approvedBy: autoApprove ? admin.adminId : null,
+      },
+      include: {
+        tenant: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      job: {
+        ...job,
+        company: job.tenant.name,
+      },
+      message: autoApprove ? 'Job created and approved' : 'Job created (pending approval)',
+    }, { status: 201 });
+  } catch (error) {
+    console.error('[SuperAdmin Jobs] Create error:', error);
+    return NextResponse.json(
+      { error: 'Failed to create job' },
       { status: 500 }
     );
   }

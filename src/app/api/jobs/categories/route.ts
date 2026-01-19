@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { JobApprovalStatus } from '@prisma/client';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export async function GET() {
       by: ['department'],
       where: {
         isActive: true,
-        approvalStatus: 'APPROVED',
+        approvalStatus: JobApprovalStatus.APPROVED,
         department: {
           not: null,
         },
