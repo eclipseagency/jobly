@@ -23,11 +23,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { isRead } = body;
+    const { read } = body;
 
     const updated = await prisma.notification.update({
       where: { id: params.id },
-      data: { isRead },
+      data: { read },
     });
 
     return NextResponse.json({ notification: updated });
