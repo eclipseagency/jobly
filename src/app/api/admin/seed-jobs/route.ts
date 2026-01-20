@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { JobApprovalStatus } from '@prisma/client';
 
 const jobsData = [
   {
@@ -215,6 +216,7 @@ export async function POST(request: Request) {
           jobType: newData.jobType,
           department: newData.department,
           isActive: true,
+          approvalStatus: JobApprovalStatus.APPROVED,
         },
       });
 
@@ -237,6 +239,7 @@ export async function POST(request: Request) {
           jobType: newData.jobType,
           department: newData.department,
           isActive: true,
+          approvalStatus: JobApprovalStatus.APPROVED,
         },
       });
 
