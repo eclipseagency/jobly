@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40">
+  <circle cx="18" cy="20" r="12" fill="none" stroke="#0066CC" stroke-width="2.5"/>
+  <ellipse cx="18" cy="20" rx="5" ry="12" fill="none" stroke="#0066CC" stroke-width="1.5"/>
+  <line x1="6" y1="20" x2="30" y2="20" stroke="#0066CC" stroke-width="1.5"/>
+  <text x="36" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#0066CC">Globe</text>
+</svg>

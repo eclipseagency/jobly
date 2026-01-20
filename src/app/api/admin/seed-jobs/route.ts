@@ -261,6 +261,100 @@ Nice to Have:
     jobType: 'Full-time',
     department: 'Human Resources',
   },
+  {
+    title: 'Financial Analyst',
+    description: `We are seeking a detail-oriented Financial Analyst to join our Finance team. You will play a key role in financial planning, budgeting, and providing insights that drive business decisions.
+
+As a Financial Analyst, you will analyze financial data, prepare reports, and work closely with leadership to support strategic initiatives. This role offers excellent exposure to business operations and growth opportunities in finance.
+
+Key Responsibilities:
+• Prepare monthly, quarterly, and annual financial reports and analysis
+• Develop and maintain financial models for forecasting and budgeting
+• Analyze revenue, expenses, and profitability trends
+• Support the annual budgeting and planning process
+• Conduct variance analysis and provide actionable insights
+• Prepare presentations for management and stakeholders
+• Monitor KPIs and financial metrics across departments
+• Assist with ad-hoc financial analysis and special projects
+
+What We Offer:
+• Competitive salary with performance bonuses
+• Comprehensive HMO coverage
+• Hybrid work arrangement (3 days office, 2 days WFH)
+• CPA/CFA review assistance program
+• Career advancement opportunities
+• Modern office in Makati CBD
+• Annual performance reviews with salary adjustments`,
+    requirements: `Required Qualifications:
+• 2-4 years of experience in financial analysis or accounting
+• Bachelor's degree in Finance, Accounting, or related field
+• Strong proficiency in Excel (pivot tables, VLOOKUP, financial modeling)
+• Experience with financial reporting and analysis
+• Knowledge of accounting principles (GAAP/PFRS)
+• Excellent analytical and problem-solving skills
+• Strong attention to detail and accuracy
+• Good communication and presentation skills
+
+Nice to Have:
+• CPA license or working towards CPA/CFA certification
+• Experience with ERP systems (SAP, Oracle, NetSuite)
+• Knowledge of Power BI or Tableau for data visualization
+• Experience in tech, e-commerce, or fintech industry
+• MBA or master's degree in Finance`,
+    location: 'Makati City, Metro Manila',
+    locationType: 'Hybrid',
+    salary: '₱55,000 - ₱85,000/month',
+    jobType: 'Full-time',
+    department: 'Finance',
+  },
+  {
+    title: 'Operations Manager',
+    description: `We are looking for an experienced Operations Manager to oversee and optimize our daily business operations. You will lead a team and ensure smooth, efficient processes across the organization.
+
+As Operations Manager, you will be responsible for developing operational strategies, managing resources, and driving continuous improvement initiatives. This is a leadership role with significant impact on company performance.
+
+Key Responsibilities:
+• Oversee daily operations and ensure business objectives are met
+• Lead, mentor, and develop a team of operations staff
+• Develop and implement operational policies and procedures
+• Monitor and analyze operational metrics and KPIs
+• Identify opportunities for process improvement and cost reduction
+• Manage vendor relationships and negotiate contracts
+• Ensure compliance with company policies and regulations
+• Coordinate with other departments to align operational activities
+• Prepare operational reports for senior management
+
+What We Offer:
+• Competitive salary plus performance incentives
+• Comprehensive benefits package (HMO, life insurance)
+• Company car or car allowance
+• Leadership development programs
+• Flexible work arrangements
+• Annual company retreats
+• Stock options for senior roles
+• Dynamic and fast-paced work environment`,
+    requirements: `Required Qualifications:
+• 5+ years of experience in operations management
+• Proven track record of leading and developing teams
+• Strong knowledge of operations and process improvement methodologies
+• Experience with project management and resource allocation
+• Excellent leadership and people management skills
+• Strong analytical and decision-making abilities
+• Bachelor's degree in Business Administration, Operations Management, or related field
+• Proficiency in MS Office and operations management software
+
+Nice to Have:
+• Six Sigma or Lean certification
+• PMP or similar project management certification
+• Experience in BPO, logistics, or e-commerce operations
+• MBA or master's degree
+• Experience with ERP implementation or optimization`,
+    location: 'Quezon City, Metro Manila',
+    locationType: 'On-site',
+    salary: '₱90,000 - ₱130,000/month',
+    jobType: 'Full-time',
+    department: 'Operations',
+  },
 ];
 
 export async function POST(request: Request) {
