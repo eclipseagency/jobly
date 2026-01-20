@@ -55,14 +55,16 @@ const testimonials = [
   },
 ];
 
-// Featured companies
+// Featured companies - Major Philippine employers
 const featuredCompanies = [
-  { name: 'Accenture', logo: '/companies/accenture.svg' },
-  { name: 'Globe', logo: '/companies/globe.svg' },
-  { name: 'BDO', logo: '/companies/bdo.svg' },
-  { name: 'Jollibee', logo: '/companies/jollibee.svg' },
-  { name: 'PLDT', logo: '/companies/pldt.svg' },
-  { name: 'Ayala', logo: '/companies/ayala.svg' },
+  'Accenture Philippines',
+  'Globe Telecom',
+  'BDO Unibank',
+  'Jollibee Foods',
+  'PLDT Inc.',
+  'Ayala Corporation',
+  'San Miguel Corp',
+  'Converge ICT',
 ];
 
 // Job type interface
@@ -339,19 +341,10 @@ export default function Home() {
       <section className="py-12 border-b border-slate-100 w-full bg-white">
         <div className="container-center">
           <p className="text-center text-sm text-slate-500 mb-8">Trusted by leading companies in the Philippines</p>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
             {featuredCompanies.map((company) => (
-              <div key={company.name} className="h-8 flex items-center">
-                <Image
-                  src={company.logo}
-                  alt={company.name}
-                  width={120}
-                  height={32}
-                  className="h-6 md:h-8 w-auto object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+              <div key={company} className="px-4 py-2 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-100 transition-all duration-200">
+                <span className="text-sm md:text-base font-semibold text-slate-700">{company}</span>
               </div>
             ))}
           </div>
