@@ -215,12 +215,20 @@ export default function AdminDashboard() {
                 <p className="text-xs text-slate-400">Super Admin Panel</p>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/jobs"
+                className="px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Jobs
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </header>
