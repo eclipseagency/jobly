@@ -125,6 +125,50 @@ Nice to Have:
     jobType: 'Full-time',
     department: 'Design',
   },
+  {
+    title: 'Customer Success Manager',
+    description: `We are seeking a passionate Customer Success Manager to join our team and help our clients achieve their business goals. You will be the primary point of contact for our enterprise customers, ensuring they get maximum value from our products and services.
+
+As a Customer Success Manager, you will build strong relationships with clients, understand their needs, and proactively identify opportunities for growth and improvement. You'll work closely with sales, product, and support teams to deliver exceptional customer experiences.
+
+Key Responsibilities:
+• Manage a portfolio of enterprise accounts and serve as their trusted advisor
+• Conduct regular business reviews and health checks with customers
+• Develop and execute customer success plans aligned with client objectives
+• Monitor customer health metrics and proactively address at-risk accounts
+• Identify upsell and cross-sell opportunities within existing accounts
+• Gather customer feedback and advocate for product improvements
+• Coordinate with internal teams to resolve customer issues promptly
+• Drive customer adoption, retention, and expansion
+
+What We Offer:
+• Competitive base salary plus performance bonuses
+• Comprehensive HMO coverage for you and dependents
+• Hybrid work arrangement (2 days in office)
+• Career growth opportunities in a fast-growing company
+• Regular team events and company outings
+• Professional development and training programs
+• Transportation and meal allowances`,
+    requirements: `Required Qualifications:
+• 3+ years of experience in customer success, account management, or related roles
+• Excellent communication and interpersonal skills in English and Filipino
+• Strong problem-solving abilities and customer-centric mindset
+• Experience with CRM tools (Salesforce, HubSpot, or similar)
+• Ability to manage multiple accounts and priorities simultaneously
+• Bachelor's degree in Business, Communications, or related field
+• Proven track record of meeting retention and growth targets
+
+Nice to Have:
+• Experience in SaaS or technology industry
+• Knowledge of customer success platforms (Gainsight, ChurnZero)
+• Project management certification or experience
+• Experience with data analysis and reporting tools`,
+    location: 'Ortigas Center, Pasig City',
+    locationType: 'Hybrid',
+    salary: '₱70,000 - ₱100,000/month',
+    jobType: 'Full-time',
+    department: 'Customer Success',
+  },
 ];
 
 export async function POST(request: Request) {
@@ -149,8 +193,12 @@ export async function POST(request: Request) {
     }
 
     const updatedJobs = [];
+    const createdJobs = [];
 
-    // Update each job with new data
+    // Get tenant ID from first existing job for creating new jobs
+    const tenantId = existingJobs[0].tenantId;
+
+    // Update existing jobs with new data
     for (let i = 0; i < Math.min(existingJobs.length, jobsData.length); i++) {
       const job = existingJobs[i];
       const newData = jobsData[i];
@@ -173,10 +221,33 @@ export async function POST(request: Request) {
       updatedJobs.push({ id: updated.id, title: updated.title });
     }
 
+    // Create new jobs if there are more data entries than existing jobs
+    for (let i = existingJobs.length; i < jobsData.length; i++) {
+      const newData = jobsData[i];
+
+      const created = await prisma.job.create({
+        data: {
+          tenantId: tenantId,
+          title: newData.title,
+          description: newData.description,
+          requirements: newData.requirements,
+          location: newData.location,
+          locationType: newData.locationType,
+          salary: newData.salary,
+          jobType: newData.jobType,
+          department: newData.department,
+          isActive: true,
+        },
+      });
+
+      createdJobs.push({ id: created.id, title: created.title });
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Updated ${updatedJobs.length} jobs`,
-      jobs: updatedJobs
+      message: `Updated ${updatedJobs.length} jobs, created ${createdJobs.length} new jobs`,
+      updatedJobs,
+      createdJobs
     });
   } catch (error) {
     console.error('Error updating jobs:', error);
