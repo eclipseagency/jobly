@@ -170,6 +170,97 @@ Nice to Have:
     jobType: 'Full-time',
     department: 'Customer Success',
   },
+  {
+    title: 'Data Analyst',
+    description: `We are looking for a skilled Data Analyst to join our business intelligence team. You will transform raw data into actionable insights that drive strategic decisions across the organization.
+
+As a Data Analyst, you will work with large datasets, build dashboards, and collaborate with stakeholders to understand their data needs. Your analysis will directly impact product development, marketing strategies, and operational efficiency.
+
+Key Responsibilities:
+• Collect, clean, and analyze large datasets from multiple sources
+• Build and maintain dashboards and reports using BI tools
+• Identify trends, patterns, and anomalies in data
+• Collaborate with business teams to understand requirements and deliver insights
+• Develop and maintain documentation for data processes
+• Present findings to stakeholders in clear, actionable formats
+• Support A/B testing and experimentation initiatives
+• Ensure data quality and integrity across reporting systems
+
+What We Offer:
+• Competitive salary with performance bonuses
+• Comprehensive HMO for you and dependents
+• Flexible work schedule with remote options
+• Learning budget for courses and certifications
+• Access to premium data tools and platforms
+• Collaborative team environment
+• Career growth opportunities in a data-driven company`,
+    requirements: `Required Qualifications:
+• 2+ years of experience in data analysis or related role
+• Proficiency in SQL and Excel/Google Sheets
+• Experience with BI tools (Tableau, Power BI, or Looker)
+• Strong analytical and problem-solving skills
+• Knowledge of basic statistics and data visualization principles
+• Excellent communication skills to present data insights
+• Bachelor's degree in Statistics, Mathematics, Computer Science, or related field
+
+Nice to Have:
+• Experience with Python or R for data analysis
+• Knowledge of data warehousing concepts
+• Experience with Google Analytics or similar web analytics tools
+• Familiarity with machine learning concepts
+• Experience in e-commerce or fintech industry`,
+    location: 'Makati City, Metro Manila',
+    locationType: 'Hybrid',
+    salary: '₱50,000 - ₱80,000/month',
+    jobType: 'Full-time',
+    department: 'Data & Analytics',
+  },
+  {
+    title: 'Human Resources Specialist',
+    description: `Join our People & Culture team as an HR Specialist! We're seeking a passionate HR professional to help build and maintain a positive workplace culture while managing core HR functions.
+
+You will be responsible for the full employee lifecycle, from recruitment to offboarding, while ensuring compliance with Philippine labor laws and company policies. This role offers the opportunity to shape our employee experience and organizational culture.
+
+Key Responsibilities:
+• Manage end-to-end recruitment process including job postings, screening, and interviews
+• Handle employee onboarding and orientation programs
+• Administer employee benefits, leave management, and payroll coordination
+• Maintain accurate employee records and HR documentation
+• Ensure compliance with Philippine labor laws and regulations (DOLE)
+• Support employee engagement initiatives and company events
+• Handle employee relations and address workplace concerns
+• Assist in developing and implementing HR policies and procedures
+• Coordinate training and development programs
+
+What We Offer:
+• Competitive salary package
+• HMO coverage with dental and optical
+• Hybrid work arrangement
+• Birthday and anniversary leave
+• Team building activities and company events
+• Professional development opportunities
+• Supportive and inclusive work environment`,
+    requirements: `Required Qualifications:
+• 3+ years of experience in HR generalist or specialist role
+• Strong knowledge of Philippine labor laws (Labor Code, DOLE requirements)
+• Experience with HRIS systems and MS Office applications
+• Excellent interpersonal and communication skills in English and Filipino
+• Strong organizational skills and attention to detail
+• Ability to handle confidential information with discretion
+• Bachelor's degree in Human Resources, Psychology, or related field
+
+Nice to Have:
+• HR certifications (CHRP, SHRM-CP)
+• Experience with BambooHR, Sprout, or similar HRIS
+• Background in tech or startup companies
+• Experience in employee engagement and culture building
+• Knowledge of compensation and benefits benchmarking`,
+    location: 'BGC, Taguig City',
+    locationType: 'Hybrid',
+    salary: '₱45,000 - ₱65,000/month',
+    jobType: 'Full-time',
+    department: 'Human Resources',
+  },
 ];
 
 export async function POST(request: Request) {
